@@ -1,0 +1,12 @@
+CREATE TABLE IF NOT EXISTS faq_items (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  question VARCHAR(500) NOT NULL,
+  answer TEXT NOT NULL,
+  is_published BOOLEAN NOT NULL DEFAULT FALSE,
+  priority INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_faq_items_is_published ON faq_items (is_published);
+CREATE INDEX IF NOT EXISTS idx_faq_items_priority ON faq_items (priority);

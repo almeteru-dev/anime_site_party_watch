@@ -1,0 +1,24 @@
+CREATE TABLE themes (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE theme_translations (
+    id BIGSERIAL PRIMARY KEY,
+    theme_id INTEGER NOT NULL REFERENCES themes(id) ON DELETE CASCADE,
+    language_id INTEGER NOT NULL REFERENCES languages(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE anime_themes (
+    anime_id BIGINT NOT NULL REFERENCES anime(id) ON DELETE CASCADE,
+    theme_id INTEGER NOT NULL REFERENCES themes(id) ON DELETE CASCADE,
+    PRIMARY KEY (anime_id, theme_id)
+);
+
+CREATE TABLE producers (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL
+);
+
+ALTER TABLE anime ADD COLUMN producer_id INTEGER REFERENCES producers(id) ON DELETE SET NULL;

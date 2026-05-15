@@ -1,0 +1,271 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: #F8FAFC;
+  --background-secondary: #FFFFFF;
+  --background-tertiary: #F1F5F9;
+
+  --foreground: #0F172A;
+  --foreground-muted: #475569;
+  --foreground-subtle: #64748B;
+
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
+  --card-border: #E2E8F0;
+
+  --popover: #FFFFFF;
+  --popover-foreground: #0F172A;
+
+  --primary: #00D2FF;
+  --primary-foreground: #0F172A;
+
+  --secondary: #0EA5E9;
+  --secondary-foreground: #0F172A;
+
+  --muted: #F1F5F9;
+  --muted-foreground: #475569;
+
+  --accent: #00D2FF;
+  --accent-foreground: #0F172A;
+  --accent-primary: #00D2FF;
+  --accent-secondary: #0099CC;
+
+  --destructive: #FF4757;
+  --destructive-foreground: #FFFFFF;
+
+  --border: #E2E8F0;
+  --input: rgba(15, 23, 42, 0.08);
+  --ring: #00D2FF;
+
+  --radius: 0.75rem;
+
+  --glow-primary: 0 0 20px rgba(0, 210, 255, 0.35);
+  --glow-secondary: 0 0 30px rgba(14, 165, 233, 0.2);
+  --card-shadow: 0 1px 0 rgba(15, 23, 42, 0.06), 0 10px 30px rgba(15, 23, 42, 0.08);
+
+  --scanline-line: rgba(15, 23, 42, 0.04);
+}
+
+.dark {
+  --background: #040D1F;
+  --background-secondary: #081229;
+  --background-tertiary: #0D1A33;
+
+  --foreground: #FFFFFF;
+  --foreground-muted: #D1D9E6;
+  --foreground-subtle: #A3CFFF;
+
+  --card: #081229;
+  --card-foreground: #FFFFFF;
+  --card-border: rgba(163, 207, 255, 0.15);
+
+  --popover: #081229;
+  --popover-foreground: #FFFFFF;
+
+  --primary: #00D2FF;
+  --primary-foreground: #040D1F;
+
+  --secondary: #A3CFFF;
+  --secondary-foreground: #040D1F;
+
+  --muted: #0D1A33;
+  --muted-foreground: #A3CFFF;
+
+  --accent: #00D2FF;
+  --accent-foreground: #040D1F;
+  --accent-primary: #00D2FF;
+  --accent-secondary: #33CCFF;
+
+  --border: rgba(163, 207, 255, 0.2);
+  --input: rgba(163, 207, 255, 0.1);
+  --ring: #00D2FF;
+
+  --glow-primary: 0 0 20px rgba(0, 210, 255, 0.5);
+  --glow-secondary: 0 0 30px rgba(163, 207, 255, 0.3);
+  --card-shadow: inset 0 1px 0 rgba(163, 207, 255, 0.1), 0 4px 20px rgba(0, 0, 0, 0.4);
+
+  --scanline-line: rgba(255, 255, 255, 0.03);
+}
+
+@theme inline {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', monospace;
+  
+  --color-background: var(--background);
+  --color-background-secondary: var(--background-secondary);
+  --color-background-tertiary: var(--background-tertiary);
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-foreground-subtle: var(--foreground-subtle);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-card-border: var(--card-border);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-primary: var(--accent-primary);
+  --color-accent-secondary: var(--accent-secondary);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground overflow-x-hidden transition-colors duration-300;
+  }
+}
+
+@layer components {
+  .legal-content {
+    @apply text-foreground;
+  }
+
+  .legal-content h1 {
+    @apply text-3xl font-bold tracking-tight mt-10 first:mt-0;
+  }
+
+  .legal-content h2 {
+    @apply text-2xl font-semibold mt-8;
+  }
+
+  .legal-content h3 {
+    @apply text-xl font-semibold mt-6;
+  }
+
+  .legal-content p {
+    @apply mt-4 text-foreground-muted leading-relaxed;
+  }
+
+  .legal-content ul {
+    @apply mt-4 list-disc pl-6 space-y-2 text-foreground-muted;
+  }
+
+  .legal-content ol {
+    @apply mt-4 list-decimal pl-6 space-y-2 text-foreground-muted;
+  }
+
+  .legal-content li {
+    @apply leading-relaxed;
+  }
+
+  .legal-content a {
+    @apply text-primary underline underline-offset-4 hover:text-primary/80 transition-colors;
+  }
+
+  .legal-content strong {
+    @apply text-foreground;
+  }
+
+  .legal-content blockquote {
+    @apply mt-6 border-l-2 border-border pl-4 text-foreground-muted;
+  }
+
+  .legal-content table {
+    @apply mt-6 w-full border-collapse;
+  }
+
+  .legal-content th,
+  .legal-content td {
+    @apply border border-border p-2 align-top;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--secondary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Hide scrollbar for horizontal scroll sections */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Glow animations */
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: var(--glow-primary);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(0, 229, 255, 0.7);
+  }
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.glow-cyan-sm {
+  box-shadow: var(--glow-primary);
+}
+
+/* Language change shimmer effect */
+@keyframes language-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.language-changing {
+  position: relative;
+}
+
+.language-changing::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 229, 255, 0.03) 25%,
+    rgba(0, 229, 255, 0.08) 50%,
+    rgba(0, 229, 255, 0.03) 75%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: language-shimmer 0.6s ease-out forwards;
+  z-index: 9999;
+}

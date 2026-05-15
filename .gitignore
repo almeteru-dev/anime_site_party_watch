@@ -1,0 +1,61 @@
+# === V0 / Next.js Sandbox ===
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+.snowflake/
+.v0-trash/
+.vercel/
+next.user-config.*
+
+# === Frontend (Next.js) ===
+node_modules/
+.next/
+out/
+build/
+.env*.local
+.DS_Store
+
+# === Go (Backend) ===
+# Binary files
+backend/bin/
+backend/cmd/api/api
+backend/cmd/api/main
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Dependencies and cache
+backend/vendor/
+backend/go.work
+backend/go.work.sum
+coverage.out
+*.test
+
+# === Database & Docker ===
+pgdata/
+data/
+*.log
+*.sql.gz
+backup/
+
+# === Environment & Secrets ===
+# Ignore all .env files for security
+.env
+.env.*
+!.env.example
+!.env.docker.example
+
+# === IDEs & Editors ===
+# VS Code
+.vscode/
+!.vscode/extensions.json
+*.code-workspace
+
+# JetBrains (GoLand, WebStorm, IntelliJ)
+.idea/
+
+# === System Files ===
+.DS_Store
+Thumbs.db

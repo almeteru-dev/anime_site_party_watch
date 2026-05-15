@@ -1,0 +1,3 @@
+ALTER TABLE kind_options
+  ADD COLUMN IF NOT EXISTS ru_name VARCHAR(255);
+
