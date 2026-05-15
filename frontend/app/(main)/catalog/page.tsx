@@ -28,6 +28,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
     q: getFirst(sp.q),
     genres: parseCsv(getFirst(sp.genres)),
     themes: parseCsv(getFirst(sp.themes)),
+    producers: parseCsv(getFirst(sp.producers)),
     types: parseCsv(getFirst(sp.types)),
     statuses: parseCsv(getFirst(sp.statuses)),
     studios: parseCsv(getFirst(sp.studios)),

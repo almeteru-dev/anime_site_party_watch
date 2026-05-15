@@ -18,6 +18,21 @@ export function SynopsisSection({ anime }: SynopsisSectionProps) {
     russian: anime.translations?.find(t => t.language.code === "ru")?.title,
   }
 
+	const otherAltTitles = (() => {
+		const base = [alternativeTitles.romaji, alternativeTitles.russian]
+		const seen = new Set(base.map((s) => String(s || '').trim().toLowerCase()).filter(Boolean))
+		const out: string[] = []
+		for (const it of anime.alt_titles || []) {
+			const v = String((it as any)?.title || '').trim()
+			if (!v) continue
+			const key = v.toLowerCase()
+			if (seen.has(key)) continue
+			seen.add(key)
+			out.push(v)
+		}
+		return out
+	})()
+
   const details = {
     type: anime.kind
       ? locale === "ru"
@@ -34,6 +49,15 @@ export function SynopsisSection({ anime }: SynopsisSectionProps) {
         ? anime.studio.ru_name || anime.studio.name
         : anime.studio.name
       : t.common.na,
+		producers: (() => {
+			const ps = Array.isArray(anime.producers) ? anime.producers : []
+			if (ps.length) {
+				const names = ps.map((p) => p.name).filter(Boolean)
+				return names.length ? names.join(", ") : t.common.na
+			}
+			if (anime.producer) return anime.producer.name
+			return t.common.na
+		})(),
     source: anime.source
       ? locale === "ru"
         ? anime.source.ru_name || anime.source.name
@@ -54,11 +78,13 @@ export function SynopsisSection({ anime }: SynopsisSectionProps) {
   const labels = {
     synopsis: locale === "ru" ? "Описание" : "Synopsis",
     genres: locale === "ru" ? "Жанры" : "Genres",
+		themes: locale === "ru" ? "Темы" : "Themes",
     altTitles: locale === "ru" ? "Альтернативные названия" : "Alternative Titles",
     details: locale === "ru" ? "Детали" : "Details",
     type: locale === "ru" ? "Тип" : "Type",
     status: locale === "ru" ? "Статус" : "Status",
     studio: locale === "ru" ? "Студия" : "Studio",
+		producers: locale === "ru" ? "Продюсеры" : "Producers",
     source: locale === "ru" ? "Источник" : "Source",
     releasedOn: locale === "ru" ? "Дата релиза" : "Released on",
     airedOn: locale === "ru" ? "Дата старта" : "Aired on",
@@ -99,6 +125,22 @@ export function SynopsisSection({ anime }: SynopsisSectionProps) {
 				  </div>
 				</div>
 			  ) : null}
+
+			  {(anime.themes || []).length > 0 ? (
+				<div className="mt-4">
+				  <div className="text-sm font-semibold text-foreground mb-2">{labels.themes}</div>
+				  <div className="flex flex-wrap gap-2">
+					{(anime.themes || []).map((th) => (
+					  <span
+						key={th.id}
+						className="inline-flex items-center gap-2 rounded-lg border border-border bg-background-tertiary px-3 py-1.5 text-sm text-foreground-muted"
+					  >
+						<span className="truncate max-w-[180px]">{locale === "ru" ? th.ru_name || th.name : th.name}</span>
+					  </span>
+					))}
+				  </div>
+				</div>
+			  ) : null}
             </div>
 
             {/* Alternative Titles */}
@@ -120,6 +162,21 @@ export function SynopsisSection({ anime }: SynopsisSectionProps) {
                     <span className="text-foreground-muted">{alternativeTitles.russian}</span>
                   </div>
                 )}
+				{otherAltTitles.length > 0 ? (
+					<div className="pt-2">
+						<div className="text-xs font-semibold text-foreground-muted mb-2">{locale === "ru" ? "Другие:" : "Other:"}</div>
+						<div className="flex flex-wrap gap-2">
+							{otherAltTitles.map((name) => (
+								<span
+									key={name}
+									className="inline-flex items-center rounded-lg border border-border bg-background-tertiary px-3 py-1.5 text-sm text-foreground-muted"
+								>
+									<span className="truncate max-w-[220px]">{name}</span>
+								</span>
+							))}
+						</div>
+					</div>
+				) : null}
               </div>
             </div>
           </div>
@@ -135,6 +192,7 @@ export function SynopsisSection({ anime }: SynopsisSectionProps) {
                 {details.type !== t.common.na ? <DetailRow label={labels.type} value={details.type} /> : null}
                 {details.status !== t.common.na ? <DetailRow label={labels.status} value={details.status} /> : null}
                 {details.studio !== t.common.na ? <DetailRow label={labels.studio} value={details.studio} /> : null}
+				{details.producers !== t.common.na ? <DetailRow label={labels.producers} value={details.producers} /> : null}
                 {details.source !== t.common.na ? <DetailRow label={labels.source} value={details.source} /> : null}
                 {details.airedOn !== t.common.na ? <DetailRow label={labels.airedOn} value={details.airedOn} /> : null}
                 {details.releasedOn !== t.common.na ? <DetailRow label={labels.releasedOn} value={details.releasedOn} /> : null}

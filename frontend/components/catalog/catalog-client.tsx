@@ -37,6 +37,7 @@ function buildQuery(filters: FilterState, search: string, page: number): string 
   if (search.trim()) sp.set('q', search.trim())
   if (filters.genres.length) sp.set('genres', filters.genres.join(','))
   if (filters.themes.length) sp.set('themes', filters.themes.join(','))
+  if (filters.producers.length) sp.set('producers', filters.producers.join(','))
   if (filters.types.length) sp.set('types', filters.types.join(','))
   if (filters.statuses.length) sp.set('statuses', filters.statuses.join(','))
   if (filters.studio) sp.set('studios', filters.studio)
@@ -68,6 +69,7 @@ function deriveFiltersFromParams(params: Record<string, string | string[] | unde
   const page = Math.max(1, Math.floor(parseNumber(getFirst(params.page)) || 1))
   const genres = parseCsv(getFirst(params.genres))
   const themes = parseCsv(getFirst(params.themes))
+  const producers = parseCsv(getFirst(params.producers))
   const types = parseCsv(getFirst(params.types))
   const statuses = parseCsv(getFirst(params.statuses))
   const studio = getFirst(params.studios) || ''
@@ -97,6 +99,7 @@ function deriveFiltersFromParams(params: Record<string, string | string[] | unde
     filters: {
       genres,
       themes,
+      producers,
       types,
       statuses,
       studio,
@@ -198,6 +201,7 @@ export function CatalogClient({ initialAnimes, meta, initialSearchParams }: Cata
     const reset: FilterState = {
       genres: [],
       themes: [],
+      producers: [],
       types: [],
       statuses: [],
       studio: '',
@@ -280,6 +284,7 @@ export function CatalogClient({ initialAnimes, meta, initialSearchParams }: Cata
             filters={filters}
             genreOptions={meta.genres}
             themeOptions={meta.themes}
+            producerOptions={meta.producers}
             statusOptions={meta.statuses}
             studioOptions={meta.studios}
             sourceOptions={meta.sources}
@@ -322,6 +327,7 @@ export function CatalogClient({ initialAnimes, meta, initialSearchParams }: Cata
         onReset={handleResetFilters}
         genreOptions={meta.genres}
         themeOptions={meta.themes}
+        producerOptions={meta.producers}
         statusOptions={meta.statuses}
         studioOptions={meta.studios}
         sourceOptions={meta.sources}

@@ -4,7 +4,7 @@ import { X } from 'lucide-react'
 import { FilterSidebar, type FilterState } from './filter-sidebar'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/contexts/language-context'
-import type { Genre, KindOption, Source, Status, Studio, Theme } from '@/lib/api'
+import type { Genre, KindOption, Producer, Source, Status, Studio, Theme } from '@/lib/api'
 
 interface MobileFilterSheetProps {
   isOpen: boolean
@@ -13,6 +13,7 @@ interface MobileFilterSheetProps {
   onReset: () => void
   genreOptions: Genre[]
   themeOptions: Theme[]
+  producerOptions: Producer[]
   statusOptions: Status[]
   studioOptions: Studio[]
   sourceOptions: Source[]
@@ -31,6 +32,7 @@ export function MobileFilterSheet({
   onReset,
   genreOptions,
   themeOptions,
+	producerOptions,
   statusOptions,
   studioOptions,
   sourceOptions,
@@ -79,6 +81,7 @@ export function MobileFilterSheet({
                 filters={filters}
                 genreOptions={genreOptions}
                 themeOptions={themeOptions}
+				producerOptions={producerOptions}
                 statusOptions={statusOptions}
                 studioOptions={studioOptions}
                 sourceOptions={sourceOptions}

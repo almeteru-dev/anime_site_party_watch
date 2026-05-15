@@ -12,6 +12,7 @@ import {
 	adminCreateSource,
 	adminCreateStatus,
 	adminCreateStudio,
+	adminCreateTheme,
 	adminGetMeta,
 	adminJikanGetAnime,
 	adminShikimoriGetAnime,
@@ -191,6 +192,14 @@ export default function AdminAddAnimePage() {
 				nextMeta.genres.push(created)
 				return created
 			}
+			const ensureTheme = async (name: string) => {
+				const key = norm(name)
+				const found = nextMeta.themes.find((x) => norm(x.name) === key)
+				if (found) return found
+				const created = await adminCreateTheme({ name, ru_name: null })
+				nextMeta.themes.push(created)
+				return created
+			}
 			const pickedTrailer = (() => {
 				const vids = Array.isArray(a?.videos) ? a.videos : []
 				const pv = vids.find((v: any) => v?.kind === "pv" && typeof v?.player_url === "string") || vids.find((v: any) => typeof v?.player_url === "string")
@@ -262,6 +271,20 @@ export default function AdminAddAnimePage() {
 							next.producer_ids = Array.from(new Set(pids))
 							next.producer_id = next.producer_ids[0]
 						}
+					}
+					if ((next.theme_ids || []).length === 0 && Array.isArray(data?.themes) && data.themes.length) {
+						const tids: number[] = []
+						for (const t of data.themes) {
+							const tname = String(t?.name || "").trim()
+							if (!tname) continue
+							try {
+								const th = await ensureTheme(tname)
+								tids.push(th.id)
+							} catch {
+								missing.push("theme_ids")
+							}
+						}
+						if (tids.length) next.theme_ids = Array.from(new Set(tids))
 					}
 				} catch {
 					missing.push("mal")

@@ -15,6 +15,16 @@ export function HeroHeader({ anime, onStartWatching }: HeroHeaderProps) {
   const { locale, t } = useLanguage()
   const title = getLocalizedTitle(anime, locale)
   const bgUrl = getAnimeBackgroundUrl(anime)
+	const producersText = (() => {
+		const ps = Array.isArray(anime.producers) ? anime.producers : []
+		if (ps.length) {
+			const names = ps.map((p) => p.name).filter(Boolean)
+			if (names.length <= 2) return names.join(", ")
+			return `${names.slice(0, 2).join(", ")} +${names.length - 2}`
+		}
+		if (anime.producer) return anime.producer.name
+		return ""
+	})()
 
   const statusLabel = anime.status
     ? locale === "ru"
@@ -84,11 +94,13 @@ export function HeroHeader({ anime, onStartWatching }: HeroHeaderProps) {
             <div className="flex items-center gap-1.5">
               <Building2 className="w-4 h-4 text-foreground-subtle" />
               <span>
-				{anime.studio
-					? locale === "ru"
-						? anime.studio.ru_name || anime.studio.name
-						: anime.studio.name
-					: t.common.na}
+				{producersText
+					? producersText
+					: anime.studio
+						? locale === "ru"
+							? anime.studio.ru_name || anime.studio.name
+							: anime.studio.name
+						: t.common.na}
               </span>
             </div>
 

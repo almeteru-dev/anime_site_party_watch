@@ -6,11 +6,12 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/contexts/language-context'
-import type { Genre, KindOption, Source, Status, Studio, Theme } from '@/lib/api'
+import type { Genre, KindOption, Producer, Source, Status, Studio, Theme } from '@/lib/api'
 
 export interface FilterState {
   genres: string[]
   themes: string[]
+  producers: string[]
   types: string[]
   statuses: string[]
   studio: string
@@ -29,6 +30,7 @@ interface FilterSidebarProps {
   onReset: () => void
   genreOptions: Genre[]
   themeOptions: Theme[]
+  producerOptions: Producer[]
   statusOptions: Status[]
   studioOptions: Studio[]
   sourceOptions: Source[]
@@ -82,11 +84,13 @@ export function FilterSidebar({
   themeOptions,
   statusOptions,
   studioOptions,
+	producerOptions,
   sourceOptions,
   ratingOptions,
   typeOptions,
 }: FilterSidebarProps) {
   const { locale, t } = useLanguage()
+	const producersTitle = locale === "ru" ? "Продюсеры" : "Producers"
 
   const getItemLabel = (item: { name: string; ru_name?: string | null }, fallbackRu?: string) => {
     if (locale !== "ru") return item.name
@@ -106,6 +110,13 @@ export function FilterSidebar({
       : [...filters.themes, theme]
     onFiltersChange({ ...filters, themes: newThemes })
   }
+
+	const toggleProducer = (producer: string) => {
+		const newProducers = filters.producers.includes(producer)
+			? filters.producers.filter((p) => p !== producer)
+			: [...filters.producers, producer]
+		onFiltersChange({ ...filters, producers: newProducers })
+	}
 
   const toggleStatus = (status: string) => {
     const newStatuses = filters.statuses.includes(status)
@@ -270,6 +281,26 @@ export function FilterSidebar({
               ))}
             </div>
           </FilterSection>
+
+			{/* Producers */}
+			<FilterSection title={producersTitle}>
+				<div className="flex flex-wrap gap-2">
+					{producerOptions.map((p) => (
+						<button
+							key={p.id}
+							onClick={() => toggleProducer(p.name)}
+							className={cn(
+								"rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200",
+								filters.producers.includes(p.name)
+									? "bg-primary text-primary-foreground border border-primary shadow-[var(--glow-primary)]"
+									: "bg-muted/40 text-foreground-muted hover:bg-muted/60 hover:text-foreground border border-border/50 hover:border-primary/40"
+							)}
+						>
+							{getItemLabel(p)}
+						</button>
+					))}
+				</div>
+			</FilterSection>
 
           {/* Type */}
           <FilterSection title={t.catalog.filters.type}>
