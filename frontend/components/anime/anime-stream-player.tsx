@@ -135,6 +135,9 @@ export function AnimeStreamPlayer({
   const [autoplayBlocked, setAutoplayBlocked] = useState(false)
 	const [kodikSettings, setKodikSettings] = useState<{ geoblock: string; hide_selectors: boolean; skip_button: string } | null>(null)
 	const [watchProgressEpisodeNumber, setWatchProgressEpisodeNumber] = useState<number | null>(null)
+	const [showAllVoiceGroupsDub, setShowAllVoiceGroupsDub] = useState(false)
+	const [showAllVoiceGroupsSub, setShowAllVoiceGroupsSub] = useState(false)
+	const [episodesVisibleCount, setEpisodesVisibleCount] = useState(30)
 
 	useEffect(() => {
 		let mounted = true
@@ -175,6 +178,12 @@ export function AnimeStreamPlayer({
 			mounted = false
 		}
 	}, [anime.id, user?.id])
+
+	useEffect(() => {
+		setShowAllVoiceGroupsDub(false)
+		setShowAllVoiceGroupsSub(false)
+		setEpisodesVisibleCount(30)
+	}, [anime.id])
 
 	const persistWatchProgress = useCallback(
 		async (episodeNumber: number) => {
@@ -397,6 +406,54 @@ export function AnimeStreamPlayer({
     })
   }, [selectedEpisodeNumber, selectedServerLabel, selectedType, sourcesFor, voiceGroupsForType])
 
+	const displayedVoiceGroups = useMemo(() => {
+		if (availableVoiceGroups.length === 0) return []
+
+		const showAll = selectedType === "dubbed" ? showAllVoiceGroupsDub : showAllVoiceGroupsSub
+		if (showAll) return availableVoiceGroups
+
+		if (selectedType === "subbed") {
+			return availableVoiceGroups.slice(0, 5)
+		}
+
+		const preferred = [
+			"Anidub",
+			"Anilibria.TV",
+			"Aniliberty",
+			"Dream Cast",
+			"Studio Band",
+			"JAM",
+			"AnimeVost",
+			"Anistar",
+			"Ancord",
+		]
+		const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ")
+		const byKey = new Map<string, any>()
+		for (const g of availableVoiceGroups as any[]) {
+			const name = String(g?.name || "")
+			if (!name) continue
+			byKey.set(norm(name), g)
+		}
+		const out: any[] = []
+		for (const name of preferred) {
+			const hit = byKey.get(norm(name))
+			if (hit) out.push(hit)
+		}
+		return out
+	}, [availableVoiceGroups, selectedType, showAllVoiceGroupsDub, showAllVoiceGroupsSub])
+
+	const voiceGroupsToggle = useMemo(() => {
+		if (availableVoiceGroups.length === 0) return null
+		const showAll = selectedType === "dubbed" ? showAllVoiceGroupsDub : showAllVoiceGroupsSub
+		const hiddenCount = Math.max(0, availableVoiceGroups.length - displayedVoiceGroups.length)
+		if (showAll) {
+			if (selectedType === "subbed" && availableVoiceGroups.length <= 5) return null
+			return { showAll, hiddenCount }
+		}
+		if (hiddenCount <= 0) return null
+		return { showAll, hiddenCount }
+	}, [availableVoiceGroups.length, displayedVoiceGroups.length, selectedType, showAllVoiceGroupsDub, showAllVoiceGroupsSub])
+
   const sourcesForSelectedTeam = useMemo(() => {
     if (!selectedEpisodeNumber) return []
     if (!selectedVoiceGroupId) return []
@@ -409,8 +466,9 @@ export function AnimeStreamPlayer({
   useEffect(() => {
     if (!selectedEpisode) return
 
-    if (availableVoiceGroups.length > 0 && (!selectedVoiceGroupId || !availableVoiceGroups.some((g: any) => g.id === selectedVoiceGroupId))) {
-      setSelectedVoiceGroupId(availableVoiceGroups[0].id)
+		if (availableVoiceGroups.length > 0 && (!selectedVoiceGroupId || !availableVoiceGroups.some((g: any) => g.id === selectedVoiceGroupId))) {
+			const next = displayedVoiceGroups[0] || availableVoiceGroups[0]
+			if (next) setSelectedVoiceGroupId(next.id)
     }
 
     const currentSources = [...integratedSources, ...(selectedType === "dubbed" ? dubSources : subSources)]
@@ -427,7 +485,21 @@ export function AnimeStreamPlayer({
     const pick = typed.find((s) => s.is_default) || typed[0] || null
     setSelectedSourceId(pick?.id || null)
     setSelectedServerLabel(pick?.label || "")
-  }, [availableVoiceGroups, dubSources, integratedSources, selectedEpisode, selectedSourceId, selectedType, subSources, selectedVoiceGroupId])
+	}, [availableVoiceGroups, displayedVoiceGroups, dubSources, integratedSources, selectedEpisode, selectedSourceId, selectedType, subSources, selectedVoiceGroupId])
+
+	const visibleEpisodes = useMemo(() => {
+		if (!mergedEpisodes.length) return []
+		const n = Math.max(1, Math.min(mergedEpisodes.length, episodesVisibleCount))
+		return mergedEpisodes.slice(0, n)
+	}, [episodesVisibleCount, mergedEpisodes])
+
+	useEffect(() => {
+		if (mergedEpisodes.length === 0) return
+		setEpisodesVisibleCount((prev) => {
+			if (!prev || prev <= 0) return Math.min(30, mergedEpisodes.length)
+			return Math.min(prev, mergedEpisodes.length)
+		})
+	}, [mergedEpisodes.length])
 
   const selectedSource = useMemo(() => {
     const pool = [...integratedSources, ...dubSources, ...subSources]
@@ -729,8 +801,8 @@ export function AnimeStreamPlayer({
           {!hideLanguageSelector && (hasAnyDub || hasAnySub) ? (
             <div>
 			{mergedEpisodes.length > 1 ? (
-				<div className="flex items-center justify-between gap-6 mb-2">
-					<div className="flex-1">
+				<div className="flex flex-col gap-2 mb-2 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+					<div className="w-full sm:flex-1">
 						{prevEpisodeNumber !== null ? (
 							<button
 								type="button"
@@ -742,21 +814,23 @@ export function AnimeStreamPlayer({
 									void persistWatchProgress(prevEpisodeNumber)
 								}}
 								className={cn(
-									"inline-flex items-center justify-center h-11 px-5 rounded-lg border font-semibold",
+									"inline-flex w-full items-center justify-center rounded-lg border font-semibold sm:w-[170px]",
+									"h-11 px-5",
 									"bg-muted/60 border-border text-foreground hover:bg-muted/80 transition-all",
 									controlsDisabled && "opacity-60 cursor-not-allowed"
 								)}
 								title={locale === "ru" ? "Предыдущая серия" : "Previous episode"}
 								aria-label={locale === "ru" ? "Предыдущая серия" : "Previous episode"}
 							>
-								<span className="text-lg leading-none">
-									{locale === "ru" ? `← ${prevEpisodeNumber} серия` : `← Episode ${prevEpisodeNumber}`}
+								<span className="leading-none text-base sm:text-lg whitespace-nowrap">
+									<span className="sm:hidden">{locale === "ru" ? `← ${prevEpisodeNumber}` : `← ${prevEpisodeNumber}`}</span>
+									<span className="hidden sm:inline">{locale === "ru" ? `← ${prevEpisodeNumber} серия` : `← Episode ${prevEpisodeNumber}`}</span>
 								</span>
 							</button>
 						) : null}
 					</div>
 					{user && continueEpisodeNumber !== null ? (
-						<div className="flex-none">
+						<div className="w-full sm:flex-none sm:max-w-[320px]">
 							<button
 								type="button"
 								disabled={controlsDisabled || continueEpisodeNumber === selectedEpisodeNumber}
@@ -766,7 +840,7 @@ export function AnimeStreamPlayer({
 									setSelectedSourceId(null)
 								}}
 								className={cn(
-									"inline-flex items-center justify-center h-11 px-4 rounded-lg border text-sm font-semibold transition-all",
+									"inline-flex w-full items-center justify-center h-11 px-4 rounded-lg border text-sm font-semibold transition-all",
 									"bg-background-secondary border-border text-foreground hover:bg-background-tertiary",
 									(controlsDisabled || continueEpisodeNumber === selectedEpisodeNumber) && "opacity-60 cursor-not-allowed"
 								)}
@@ -781,13 +855,20 @@ export function AnimeStreamPlayer({
 										: `Resume from episode ${continueEpisodeNumber}`
 								}
 							>
-								{locale === "ru"
-									? `Продолжить просмотр с ${continueEpisodeNumber} серии`
-									: `Resume from episode ${continueEpisodeNumber}`}
+								<span className="w-full truncate">
+									<span className="sm:hidden">
+										{locale === "ru" ? `Продолжить с ${continueEpisodeNumber} серии` : `Resume ${continueEpisodeNumber}`}
+									</span>
+									<span className="hidden sm:inline">
+										{locale === "ru"
+											? `Продолжить просмотр с ${continueEpisodeNumber} серии`
+											: `Resume from episode ${continueEpisodeNumber}`}
+									</span>
+								</span>
 							</button>
 						</div>
 					) : null}
-					<div className="flex-1 flex justify-end">
+					<div className="w-full sm:flex-1 sm:flex sm:justify-end">
 						{nextEpisodeNumber !== null ? (
 							<button
 								type="button"
@@ -799,15 +880,17 @@ export function AnimeStreamPlayer({
 									void persistWatchProgress(nextEpisodeNumber)
 								}}
 								className={cn(
-									"inline-flex items-center justify-center h-11 px-5 rounded-lg border font-semibold",
+									"inline-flex w-full items-center justify-center rounded-lg border font-semibold sm:w-[170px]",
+									"h-11 px-5",
 									"bg-primary/15 border-primary/40 text-primary hover:bg-primary/20 transition-all",
 									controlsDisabled && "opacity-60 cursor-not-allowed"
 								)}
 								title={locale === "ru" ? "Следующая серия" : "Next episode"}
 								aria-label={locale === "ru" ? "Следующая серия" : "Next episode"}
 							>
-								<span className="text-lg leading-none">
-									{locale === "ru" ? `${nextEpisodeNumber} серия →` : `Episode ${nextEpisodeNumber} →`}
+								<span className="leading-none text-base sm:text-lg whitespace-nowrap">
+									<span className="sm:hidden">{locale === "ru" ? `${nextEpisodeNumber} →` : `${nextEpisodeNumber} →`}</span>
+									<span className="hidden sm:inline">{locale === "ru" ? `${nextEpisodeNumber} серия →` : `Episode ${nextEpisodeNumber} →`}</span>
 								</span>
 							</button>
 						) : null}
@@ -860,11 +943,31 @@ export function AnimeStreamPlayer({
 
           {!hideLanguageSelector && availableVoiceGroups.length > 0 ? (
             <div>
-              <div className="text-sm font-semibold text-foreground mb-2">
-					{locale === "ru" ? (selectedType === "dubbed" ? "Озвучка" : "Субтитры") : "Voice group"}
-				</div>
-              <div className="flex flex-wrap gap-2">
-                {availableVoiceGroups.map((g: any) => (
+					<div className="flex items-center justify-between gap-3 mb-2">
+						<div className="text-sm font-semibold text-foreground">
+							{locale === "ru" ? (selectedType === "dubbed" ? "Озвучка" : "Субтитры") : "Voice group"}
+						</div>
+						{voiceGroupsToggle ? (
+							<button
+								type="button"
+								disabled={controlsDisabled}
+								onClick={() => {
+									if (controlsDisabled) return
+									if (selectedType === "dubbed") setShowAllVoiceGroupsDub((v) => !v)
+									else setShowAllVoiceGroupsSub((v) => !v)
+							}}
+								className={cn(
+									"h-8 px-3 rounded-lg border text-xs font-semibold transition-all",
+									"bg-background-secondary border-border text-foreground-muted hover:text-foreground hover:bg-background-tertiary",
+									controlsDisabled && "opacity-60 cursor-not-allowed"
+								)}
+							>
+								{voiceGroupsToggle.showAll ? (locale === "ru" ? "Скрыть" : "Hide") : locale === "ru" ? "Показать все" : "Show all"}
+							</button>
+						) : null}
+					</div>
+					<div className="flex flex-wrap gap-2">
+						{displayedVoiceGroups.map((g: any) => (
                   <button
                     key={g.id}
                     disabled={controlsDisabled}
@@ -886,11 +989,11 @@ export function AnimeStreamPlayer({
             </div>
           ) : null}
 
-          {mergedEpisodes.length > 0 ? (
+			{mergedEpisodes.length > 0 ? (
             <div>
               <div className="text-sm font-semibold text-foreground mb-2">{locale === "ru" ? "Серии" : "Episodes"}</div>
               <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2">
-                {mergedEpisodes.map((ep) => (
+						{visibleEpisodes.map((ep) => (
                   <button
                     key={ep.id}
                     disabled={controlsDisabled}
@@ -911,6 +1014,61 @@ export function AnimeStreamPlayer({
                   </button>
                 ))}
               </div>
+
+					{mergedEpisodes.length > 30 ? (
+						<div className="mt-3 flex flex-wrap gap-2">
+							{episodesVisibleCount < mergedEpisodes.length ? (
+								<button
+									type="button"
+									disabled={controlsDisabled}
+									onClick={() => {
+										if (controlsDisabled) return
+										setEpisodesVisibleCount((prev) => Math.min(mergedEpisodes.length, (prev || 0) + 30))
+								}}
+									className={cn(
+										"h-10 px-4 rounded-xl border text-sm font-semibold transition-all",
+										"bg-background-secondary border-border text-foreground hover:bg-background-tertiary",
+										controlsDisabled && "opacity-60 cursor-not-allowed"
+									)}
+								>
+									{locale === "ru" ? "Показать еще 30" : "Show 30 more"}
+								</button>
+							) : null}
+							{episodesVisibleCount < mergedEpisodes.length ? (
+								<button
+									type="button"
+									disabled={controlsDisabled}
+									onClick={() => {
+										if (controlsDisabled) return
+										setEpisodesVisibleCount(mergedEpisodes.length)
+								}}
+									className={cn(
+										"h-10 px-4 rounded-xl border text-sm font-semibold transition-all",
+										"bg-primary/15 border-primary/40 text-primary hover:bg-primary/20",
+										controlsDisabled && "opacity-60 cursor-not-allowed"
+									)}
+								>
+									{locale === "ru" ? "Показать все" : "Show all"}
+								</button>
+							) : (
+								<button
+									type="button"
+									disabled={controlsDisabled}
+									onClick={() => {
+										if (controlsDisabled) return
+										setEpisodesVisibleCount(30)
+								}}
+									className={cn(
+										"h-10 px-4 rounded-xl border text-sm font-semibold transition-all",
+										"bg-background-secondary border-border text-foreground hover:bg-background-tertiary",
+										controlsDisabled && "opacity-60 cursor-not-allowed"
+									)}
+								>
+									{locale === "ru" ? "Скрыть все" : "Collapse"}
+								</button>
+							)}
+						</div>
+					) : null}
 
 				<div className="mt-3">
 					<AnimeRating animeId={anime.id} />
