@@ -210,9 +210,9 @@ export function SynopsisSection({ anime }: SynopsisSectionProps) {
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between items-center py-2 border-b border-border last:border-0">
-      <span className="text-foreground-subtle font-medium">{label}</span>
-      <span className="text-foreground-muted">{value}</span>
+    <div className="flex items-start gap-4 py-2 border-b border-border last:border-0">
+      <span className="text-foreground-subtle font-medium shrink-0 min-w-[120px]">{label}</span>
+      <span className="text-foreground-muted flex-1 text-right break-words">{value}</span>
     </div>
   )
 }

@@ -223,10 +223,6 @@ export default function AdminAddAnimePage() {
 			if (((next.duration || 0) <= 0 || next.duration === 24) && typeof a?.duration === "number" && a.duration > 0) next.duration = a.duration
 			if (((next.episodes || 0) <= 0 || next.episodes === 12) && typeof a?.episodes === "number" && a.episodes > 0) next.episodes = a.episodes
 			if ((next.episodes_aired || 0) <= 0 && typeof a?.episodes_aired === "number" && a.episodes_aired > 0) next.episodes_aired = a.episodes_aired
-			if ((next.score || 0) <= 0 && typeof a?.score === "string") {
-				const f = Number.parseFloat(a.score)
-				if (Number.isFinite(f)) next.score = f
-			}
 			if (!next.aired_on && typeof a?.aired_on === "string") next.aired_on = a.aired_on
 			if (!next.released_on && typeof a?.released_on === "string") next.released_on = a.released_on
 			if ((next.status_id == null) && typeof a?.status === "string" && a.status.trim()) {

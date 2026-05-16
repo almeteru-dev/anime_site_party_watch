@@ -153,12 +153,14 @@ export function WatchPartyRoomClient() {
 		}
 	}, [animeSlug])
 
+	const inviteCode = (effectiveRoom as any)?.invite_code as string | undefined
+
 	const inviteUrl = useMemo(() => {
-		const code = (effectiveRoom as any)?.invite_code
+		const code = inviteCode
 		if (!code) return ""
 		if (typeof window === "undefined") return ""
 		return `${window.location.origin}/watch-party/join/${code}`
-	}, [(effectiveRoom as any)?.invite_code])
+	}, [inviteCode])
 
 	const sync = useMemo(() => {
 		if (!effectiveRoom) return null

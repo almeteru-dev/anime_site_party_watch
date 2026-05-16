@@ -8,7 +8,7 @@ import { AnimeRating } from "@/components/anime/anime-rating"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import type { Anime, EpisodesByServer, WatchPartyContentState, WatchlistStatus, VideoSource, UserListStatus } from "@/lib/api"
-import { addToMyCollection, getMyCollection, getPublicSettings } from "@/lib/api"
+import { addToMyCollection, getMyAnimeWatchProgress, getMyCollection, getPublicSettings, setMyAnimeWatchProgress } from "@/lib/api"
 
 type StreamType = "dubbed" | "subbed"
 
@@ -134,6 +134,7 @@ export function AnimeStreamPlayer({
   const [initialListStatus, setInitialStatus] = useState<UserListStatus | null>(null)
   const [autoplayBlocked, setAutoplayBlocked] = useState(false)
 	const [kodikSettings, setKodikSettings] = useState<{ geoblock: string; hide_selectors: boolean; skip_button: string } | null>(null)
+	const [watchProgressEpisodeNumber, setWatchProgressEpisodeNumber] = useState<number | null>(null)
 
 	useEffect(() => {
 		let mounted = true
@@ -154,6 +155,39 @@ export function AnimeStreamPlayer({
 			mounted = false
 		}
 	}, [])
+
+	useEffect(() => {
+		let mounted = true
+		if (!user) {
+			setWatchProgressEpisodeNumber(null)
+			return
+		}
+		;(async () => {
+			try {
+				const ep = await getMyAnimeWatchProgress({ animeId: anime.id })
+				if (!mounted) return
+				setWatchProgressEpisodeNumber(ep)
+			} catch {
+				if (mounted) setWatchProgressEpisodeNumber(null)
+			}
+		})()
+		return () => {
+			mounted = false
+		}
+	}, [anime.id, user?.id])
+
+	const persistWatchProgress = useCallback(
+		async (episodeNumber: number) => {
+			if (!user) return
+			try {
+				await setMyAnimeWatchProgress({ animeId: anime.id, episodeNumber })
+				setWatchProgressEpisodeNumber(episodeNumber)
+			} catch {
+				;
+			}
+		},
+		[anime.id, user?.id]
+	)
 
   const syncEnabled = Boolean(sync?.enabled)
   const canControl = Boolean(sync?.canControl)
@@ -290,6 +324,28 @@ export function AnimeStreamPlayer({
     if (selectedEpisodeNumber === null) return null
     return mergedEpisodes.find((e) => e.number === selectedEpisodeNumber) || null
   }, [mergedEpisodes, selectedEpisodeNumber])
+
+	const nextEpisodeNumber = useMemo(() => {
+		if (selectedEpisodeNumber === null) return null
+		const idx = mergedEpisodes.findIndex((e) => e.number === selectedEpisodeNumber)
+		if (idx < 0) return null
+		const next = mergedEpisodes[idx + 1]
+		return next ? next.number : null
+	}, [mergedEpisodes, selectedEpisodeNumber])
+
+	const prevEpisodeNumber = useMemo(() => {
+		if (selectedEpisodeNumber === null) return null
+		const idx = mergedEpisodes.findIndex((e) => e.number === selectedEpisodeNumber)
+		if (idx <= 0) return null
+		const prev = mergedEpisodes[idx - 1]
+		return prev ? prev.number : null
+	}, [mergedEpisodes, selectedEpisodeNumber])
+
+	const continueEpisodeNumber = useMemo(() => {
+		if (watchProgressEpisodeNumber === null) return null
+		if (!mergedEpisodes.some((e) => e.number === watchProgressEpisodeNumber)) return null
+		return watchProgressEpisodeNumber
+	}, [mergedEpisodes, watchProgressEpisodeNumber])
 
   const integratedSources = useMemo(() => {
     if (!selectedEpisodeNumber || !integratedGroup) return []
@@ -672,7 +728,93 @@ export function AnimeStreamPlayer({
         <div className="mt-4 grid grid-cols-1 gap-4">
           {!hideLanguageSelector && (hasAnyDub || hasAnySub) ? (
             <div>
-              <div className="text-sm font-semibold text-foreground mb-2">{locale === "ru" ? "Язык" : "Language"}</div>
+			{mergedEpisodes.length > 1 ? (
+				<div className="flex items-center justify-between gap-6 mb-2">
+					<div className="flex-1">
+						{prevEpisodeNumber !== null ? (
+							<button
+								type="button"
+								disabled={controlsDisabled}
+								onClick={() => {
+									if (controlsDisabled) return
+									setSelectedEpisodeNumber(prevEpisodeNumber)
+									setSelectedSourceId(null)
+									void persistWatchProgress(prevEpisodeNumber)
+								}}
+								className={cn(
+									"inline-flex items-center justify-center h-11 px-5 rounded-lg border font-semibold",
+									"bg-muted/60 border-border text-foreground hover:bg-muted/80 transition-all",
+									controlsDisabled && "opacity-60 cursor-not-allowed"
+								)}
+								title={locale === "ru" ? "Предыдущая серия" : "Previous episode"}
+								aria-label={locale === "ru" ? "Предыдущая серия" : "Previous episode"}
+							>
+								<span className="text-lg leading-none">
+									{locale === "ru" ? `← ${prevEpisodeNumber} серия` : `← Episode ${prevEpisodeNumber}`}
+								</span>
+							</button>
+						) : null}
+					</div>
+					{user && continueEpisodeNumber !== null ? (
+						<div className="flex-none">
+							<button
+								type="button"
+								disabled={controlsDisabled || continueEpisodeNumber === selectedEpisodeNumber}
+								onClick={() => {
+									if (controlsDisabled) return
+									setSelectedEpisodeNumber(continueEpisodeNumber)
+									setSelectedSourceId(null)
+								}}
+								className={cn(
+									"inline-flex items-center justify-center h-11 px-4 rounded-lg border text-sm font-semibold transition-all",
+									"bg-background-secondary border-border text-foreground hover:bg-background-tertiary",
+									(controlsDisabled || continueEpisodeNumber === selectedEpisodeNumber) && "opacity-60 cursor-not-allowed"
+								)}
+								title={
+									locale === "ru"
+										? `Продолжить просмотр с ${continueEpisodeNumber} серии`
+										: `Resume from episode ${continueEpisodeNumber}`
+								}
+								aria-label={
+									locale === "ru"
+										? `Продолжить просмотр с ${continueEpisodeNumber} серии`
+										: `Resume from episode ${continueEpisodeNumber}`
+								}
+							>
+								{locale === "ru"
+									? `Продолжить просмотр с ${continueEpisodeNumber} серии`
+									: `Resume from episode ${continueEpisodeNumber}`}
+							</button>
+						</div>
+					) : null}
+					<div className="flex-1 flex justify-end">
+						{nextEpisodeNumber !== null ? (
+							<button
+								type="button"
+								disabled={controlsDisabled}
+								onClick={() => {
+									if (controlsDisabled) return
+									setSelectedEpisodeNumber(nextEpisodeNumber)
+									setSelectedSourceId(null)
+									void persistWatchProgress(nextEpisodeNumber)
+								}}
+								className={cn(
+									"inline-flex items-center justify-center h-11 px-5 rounded-lg border font-semibold",
+									"bg-primary/15 border-primary/40 text-primary hover:bg-primary/20 transition-all",
+									controlsDisabled && "opacity-60 cursor-not-allowed"
+								)}
+								title={locale === "ru" ? "Следующая серия" : "Next episode"}
+								aria-label={locale === "ru" ? "Следующая серия" : "Next episode"}
+							>
+								<span className="text-lg leading-none">
+									{locale === "ru" ? `${nextEpisodeNumber} серия →` : `Episode ${nextEpisodeNumber} →`}
+								</span>
+							</button>
+						) : null}
+					</div>
+				</div>
+			) : null}
+			<div className="text-sm font-semibold text-foreground mb-2">{locale === "ru" ? "Язык" : "Language"}</div>
               <div className="flex flex-wrap gap-2">
                 {hasAnyDub ? (
                   <button
@@ -756,6 +898,7 @@ export function AnimeStreamPlayer({
                       if (controlsDisabled) return
                       setSelectedEpisodeNumber(ep.number)
                       setSelectedSourceId(null)
+							void persistWatchProgress(ep.number)
                     }}
                     className={cn(
                       "p-3 rounded-lg font-semibold text-sm transition-all duration-300",

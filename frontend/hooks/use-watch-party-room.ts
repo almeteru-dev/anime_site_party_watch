@@ -78,7 +78,7 @@ export function useWatchPartyRoom(roomId: number | string) {
 
 	const canControl = useMemo(() => selfRole === "owner" || selfRole === "moderator", [selfRole])
 
-	const connect = useCallback(() => {
+	const connect = useCallback(function connect() {
 		if (wsRef.current) return
 		if (reconnectTimerRef.current) {
 			window.clearTimeout(reconnectTimerRef.current)
@@ -167,7 +167,7 @@ export function useWatchPartyRoom(roomId: number | string) {
 				return
 			}
 		}
-	}, [roomId])
+	}, [debug, roomId])
 
 	const disconnect = useCallback(() => {
 		pendingCloseRef.current = true

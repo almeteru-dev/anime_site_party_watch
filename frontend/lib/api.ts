@@ -1243,6 +1243,35 @@ export async function getMyAnimeRating(params: { animeId: number }): Promise<num
 	return typeof data.score === "number" ? data.score : null
 }
 
+export async function getMyAnimeWatchProgress(params: { animeId: number }): Promise<number | null> {
+	const res = await fetch(`${API_URL}/animes/${params.animeId}/progress`, {
+		credentials: "include",
+		cache: "no-store",
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to fetch watch progress")
+	}
+	return typeof data.episode_number === "number" ? data.episode_number : null
+}
+
+export async function setMyAnimeWatchProgress(params: { animeId: number; episodeNumber: number }): Promise<void> {
+	const res = await fetch(`${API_URL}/animes/${params.animeId}/progress`, {
+		method: "PUT",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		credentials: "include",
+		body: JSON.stringify({ episode_number: params.episodeNumber }),
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to save watch progress")
+	}
+}
+
 export interface AdminMeta {
   genres: Genre[]
   themes: Theme[]

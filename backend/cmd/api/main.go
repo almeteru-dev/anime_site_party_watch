@@ -98,6 +98,8 @@ func main() {
 		protected := api.Group("")
 		protected.Use(middleware.AuthMiddleware())
 		{
+			protected.GET("/animes/:id/progress", handlers.GetMyAnimeWatchProgress)
+			protected.PUT("/animes/:id/progress", handlers.UpsertMyAnimeWatchProgress)
 			protected.POST("/anime/rate", handlers.RateAnime)
 			protected.GET("/anime/:id/my-rating", handlers.GetMyAnimeRating)
 			protected.GET("/me", handlers.GetMe)

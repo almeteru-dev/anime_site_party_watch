@@ -76,7 +76,7 @@ export function HeroCarousel({ animes }: HeroCarouselProps) {
                         key={genre.id}
                         className="px-2.5 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-xs font-medium bg-primary/10 text-primary border border-primary/30 rounded-full"
                       >
-                        {genre.name}
+						{locale === "ru" ? genre.ru_name || genre.name : genre.name}
                       </span>
                     ))}
                   </div>
