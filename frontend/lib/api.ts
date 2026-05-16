@@ -28,6 +28,7 @@ export type WatchPartyContentState = {
   anime_slug?: string
   selected_type?: "dubbed" | "subbed"
   selected_episode_number?: number | null
+  selected_season?: number | null
   selected_voice_group_id?: number | null
   selected_server_label?: string
   selected_source_id?: number | null

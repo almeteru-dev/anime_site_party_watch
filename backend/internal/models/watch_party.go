@@ -1,54 +1,83 @@
 package models
 
-import "time"
+import (
+	"time"
 
-type WatchPartyRoom struct {
-	ID              int64      `gorm:"primaryKey;autoIncrement" json:"id"`
-	OwnerUserID     int64      `json:"owner_user_id"`
-	IsPublic        bool       `gorm:"not null;default:true" json:"is_public"`
-	PasswordHash    *string    `gorm:"type:varchar(200)" json:"-"`
-	InviteCode      string     `gorm:"not null;unique;type:varchar(32)" json:"invite_code"`
-	Status          string     `gorm:"not null;default:'active';type:varchar(20)" json:"status"`
-	DissolvedReason *string    `gorm:"type:varchar(50)" json:"dissolved_reason,omitempty"`
-	DissolvedAt     *time.Time `json:"dissolved_at,omitempty"`
-	ExpiresAt       time.Time  `json:"expires_at"`
+	"github.com/gorilla/websocket"
+)
 
-	ContentStateJSON string    `gorm:"column:content_state;type:jsonb;not null;default:'{}'" json:"content_state"`
-	IsPlaying        bool      `gorm:"not null;default:false" json:"is_playing"`
-	PlaybackRate     float64   `gorm:"not null;default:1" json:"playback_rate"`
-	PlaybackPosition float64   `gorm:"column:playback_position_sec;not null;default:0" json:"playback_position_sec"`
-	PlaybackSeq      int64     `gorm:"not null;default:0" json:"playback_seq"`
-	LastStateAt      time.Time `gorm:"not null;default:CURRENT_TIMESTAMP" json:"last_state_at"`
-	CreatedAt        time.Time `gorm:"not null;default:CURRENT_TIMESTAMP" json:"created_at"`
-	UpdatedAt        time.Time `gorm:"not null;default:CURRENT_TIMESTAMP" json:"updated_at"`
+// User - участник комнаты, модель для хранения в памяти (in-memory)
+type InMemoryUser struct {
+	ID       string
+	Name     string
+	IsOwner  bool
+	Conn     *websocket.Conn
+	UserID   int64 // Внутренний ID пользователя из БД
+	RoomID   string
 }
 
-func (WatchPartyRoom) TableName() string {
-	return "watch_party_rooms"
+// Room - комната совместного просмотра in-memory
+type InMemoryRoom struct {
+	ID         string              // UUID комнаты
+	OwnerID    string              // ID пользователя-владельца (in-memory)
+	OwnerUserID int64              // Внутренний ID владельца из БД
+	Users      map[string]*InMemoryUser // key: in-memory user ID
+	CreatedAt  time.Time
+	ExpiresAt  time.Time
+	CurrentState PlayerState
+	Chat       []InMemoryChatMessage
 }
 
-type WatchPartyRoomMember struct {
-	ID         int64      `gorm:"primaryKey;autoIncrement" json:"id"`
-	RoomID     int64      `gorm:"not null;index" json:"room_id"`
-	UserID     int64      `gorm:"not null;index" json:"user_id"`
-	Role       string     `gorm:"not null;default:'viewer';type:varchar(20)" json:"role"`
-	JoinedAt   time.Time  `gorm:"not null;default:CURRENT_TIMESTAMP" json:"joined_at"`
-	LastSeenAt time.Time  `gorm:"not null;default:CURRENT_TIMESTAMP" json:"last_seen_at"`
-	LeftAt     *time.Time `json:"left_at,omitempty"`
+type InMemoryChatMessage struct {
+	ID       string    `json:"id"`
+	UserID   int64     `json:"user_id"`
+	Name     string    `json:"name"`
+	Message  string    `json:"message"`
+	SentAt   time.Time `json:"sent_at"`
 }
 
-func (WatchPartyRoomMember) TableName() string {
-	return "watch_party_room_members"
+// PlayerState - текущее состояние плеера для всех участников
+type PlayerState struct {
+	IsPlaying     bool    `json:"is_playing"`
+	Time          float64 `json:"time"`
+	Season        int     `json:"season"`
+	Episode       int     `json:"episode"`
+	TranslationID int     `json:"translationId"`
 }
 
-type WatchPartyRoomMessage struct {
-	ID        int64     `gorm:"primaryKey;autoIncrement" json:"id"`
-	RoomID    int64     `gorm:"not null;index" json:"room_id"`
-	UserID    int64     `gorm:"not null;index" json:"user_id"`
-	Message   string    `gorm:"not null;type:text" json:"message"`
-	CreatedAt time.Time `gorm:"not null;default:CURRENT_TIMESTAMP" json:"created_at"`
+// Message - сообщение, передаваемое через WebSocket между клиентами и сервером
+type WSMessage struct {
+	Type    string      `json:"type"` // play, pause, seek, change_episode, transfer_ownership, users_update
+	Payload interface{} `json:"payload"`
 }
 
-func (WatchPartyRoomMessage) TableName() string {
-	return "watch_party_room_messages"
+// DB модель для PostgreSQL (GORM)
+type DBWatchPartyRoom struct {
+	ID              string    `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"id"`
+	OwnerUserID     int64     `gorm:"not null;index" json:"owner_user_id"`
+	CreatedAt       time.Time `gorm:"not null;default:CURRENT_TIMESTAMP" json:"created_at"`
+	ExpiresAt       time.Time `gorm:"not null;index" json:"expires_at"` // Автоматически удаляется через 12 часов
+	CurrentIsPlaying bool     `gorm:"not null;default:false" json:"current_is_playing"`
+	CurrentTimeSec  float64   `gorm:"column:current_time_sec;not null;default:0" json:"current_time_sec"`
+	CurrentSeason   int       `gorm:"not null;default:1" json:"current_season"`
+	CurrentEpisode  int       `gorm:"not null;default:1" json:"current_episode"`
+	CurrentTranslationID int `gorm:"not null;default:0" json:"current_translation_id"`
+	ContentStateJSON string `gorm:"column:content_state_json;type:text;not null;default:'{}'" json:"-"`
+}
+
+func (DBWatchPartyRoom) TableName() string {
+	return "watchparty_rooms"
+}
+
+// DB модель участников комнаты
+type DBWatchPartyRoomMember struct {
+	RoomID     string    `gorm:"primaryKey;type:uuid;references:watchparty_rooms.id;onDelete:CASCADE" json:"room_id"`
+	UserID     int64     `gorm:"primaryKey" json:"user_id"`
+	Username   string    `gorm:"not null;type:varchar(255)" json:"username"`
+	IsOwner    bool      `gorm:"not null;default:false" json:"is_owner"`
+	JoinedAt   time.Time `gorm:"not null;default:CURRENT_TIMESTAMP" json:"joined_at"`
+}
+
+func (DBWatchPartyRoomMember) TableName() string {
+	return "watchparty_room_users"
 }

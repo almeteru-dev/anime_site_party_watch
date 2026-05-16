@@ -23,8 +23,7 @@ func main() {
 
 	// Initialize Database
 	app.InitDB()
-	stopJanitor := make(chan struct{})
-	go handlers.StartWatchPartyJanitor(stopJanitor)
+	watchPartyHub := handlers.NewWatchPartyHub(app.DB)
 
 	// Initialize Gin router
 	r := gin.Default()
@@ -92,7 +91,6 @@ func main() {
 		api.GET("/animes/:id", handlers.GetAnimeByID)
 		api.GET("/animes/:id/episodes", handlers.GetAnimeEpisodes)
 		api.GET("/anime/:id/rating", handlers.GetAnimeAverageRating)
-		api.GET("/watch-party/invites/:inviteCode", handlers.WatchPartyResolveInvite)
 
 		// Protected routes
 		protected := api.Group("")
@@ -117,12 +115,9 @@ func main() {
 			protected.POST("/collection", handlers.UpdateCollectionEntry)
 			protected.DELETE("/users/:userId/collection/:animeId", handlers.RemoveFromCollection)
 
-			protected.POST("/watch-party/rooms", handlers.WatchPartyCreateRoom)
-			protected.GET("/watch-party/rooms/:roomId", handlers.WatchPartyGetRoom)
-			protected.POST("/watch-party/rooms/:roomId/join", handlers.WatchPartyJoinRoom)
-			protected.POST("/watch-party/rooms/:roomId/dissolve", handlers.WatchPartyDissolveRoom)
-			protected.POST("/watch-party/rooms/:roomId/members/:userId/role", handlers.WatchPartySetMemberRole)
-			protected.GET("/watch-party/rooms/:roomId/ws", handlers.WatchPartyRoomWS)
+			protected.POST("/watch-party/rooms", watchPartyHub.CreateRoom)
+			protected.GET("/watch-party/rooms/:roomId", watchPartyHub.GetRoom)
+			protected.GET("/watch-party/rooms/:roomId/ws", watchPartyHub.RoomWS)
 
 			// Admin routes
 			admin := protected.Group("/admin")

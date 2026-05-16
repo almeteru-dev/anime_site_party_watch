@@ -1,0 +1,1600 @@
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<title>База фильмов Kodik</title>
+    <link rel="stylesheet" href="%D0%91%D0%B0%D0%B7%D0%B0%20%D1%84%D0%B8%D0%BB%D1%8C%D0%BC%D0%BE%D0%B2%20Kodik_files/choices.min.css">
+    <script src="%D0%91%D0%B0%D0%B7%D0%B0%20%D1%84%D0%B8%D0%BB%D1%8C%D0%BC%D0%BE%D0%B2%20Kodik_files/sdk.js" defer="defer" async=""></script><script async="" src="%D0%91%D0%B0%D0%B7%D0%B0%20%D1%84%D0%B8%D0%BB%D1%8C%D0%BC%D0%BE%D0%B2%20Kodik_files/tag.js"></script><script src="%D0%91%D0%B0%D0%B7%D0%B0%20%D1%84%D0%B8%D0%BB%D1%8C%D0%BC%D0%BE%D0%B2%20Kodik_files/js-cookie@2.2.0"></script>
+    <script src="%D0%91%D0%B0%D0%B7%D0%B0%20%D1%84%D0%B8%D0%BB%D1%8C%D0%BC%D0%BE%D0%B2%20Kodik_files/choices.min.js"></script>
+        <link rel="preload" as="style" href="%D0%91%D0%B0%D0%B7%D0%B0%20%D1%84%D0%B8%D0%BB%D1%8C%D0%BC%D0%BE%D0%B2%20Kodik_files/app-65977cef.css"><link rel="modulepreload" href="%D0%91%D0%B0%D0%B7%D0%B0%20%D1%84%D0%B8%D0%BB%D1%8C%D0%BC%D0%BE%D0%B2%20Kodik_files/app-0c6c01f6.js"><link rel="modulepreload" href="https://bd.kodikres.com/build/assets/queryClient-0e27cd33.js"><link rel="modulepreload" href="https://bd.kodikres.com/build/assets/main-17fd702b.js"><link rel="modulepreload" href="https://bd.kodikres.com/build/assets/choices-c3976e98.js"><link rel="modulepreload" href="https://bd.kodikres.com/build/assets/useQuery-39b48a46.js"><link rel="modulepreload" href="https://bd.kodikres.com/build/assets/helpers-4e4b4876.js"><link rel="modulepreload" href="https://bd.kodikres.com/build/assets/iconBase-1aae3b6d.js"><link rel="modulepreload" href="https://bd.kodikres.com/build/assets/Center-17b8ada8.js"><link rel="modulepreload" href="https://bd.kodikres.com/build/assets/Select-f044780f.js"><link rel="modulepreload" href="https://bd.kodikres.com/build/assets/Input-c96f9caa.js"><link rel="modulepreload" href="https://bd.kodikres.com/build/assets/ActionIcon-4c6e9cf9.js"><link rel="modulepreload" href="https://bd.kodikres.com/build/assets/use-form-f99fcfab.js"><link rel="modulepreload" href="https://bd.kodikres.com/build/assets/WideNote-2f609e06.js"><link rel="stylesheet" href="%D0%91%D0%B0%D0%B7%D0%B0%20%D1%84%D0%B8%D0%BB%D1%8C%D0%BC%D0%BE%D0%B2%20Kodik_files/app-65977cef.css"><script type="module" src="%D0%91%D0%B0%D0%B7%D0%B0%20%D1%84%D0%B8%D0%BB%D1%8C%D0%BC%D0%BE%D0%B2%20Kodik_files/app-0c6c01f6.js"></script>    <script>
+      var playerIframeWidth = "610";
+      var playerIframeHeight = "370";
+      var singleCopyTemplate = null;
+      var bulkCopyTemplate = null;
+
+      
+      window.kodikConfig = Object.freeze({
+        playerDomain: "kodikplayer.com",
+        chatwootBaseUrl: "https:\/\/chat.kodikres.com",
+        supportMail: "support@kodikres.com",
+      });
+
+      var userUID = "aZ8XjJ";
+    </script>
+    <link rel="shortcut icon" href="https://bd.kodikres.com/packages/images/favicon.png">
+    <meta name="viewport" content="width=2100px, initial-scale=1">
+    <meta name="csrf-token" content="tnKsqUTYa7sLPP3dd8GaOw84SQwldvKZJEcrwDfL">
+    	</head>
+    <body>
+        <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+    <div class="container-fluid navbar-container kodik-navbar">
+      <div class="left-part">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="https://bd.kodikres.com/" style="margin-left: 0;"><img src="%D0%91%D0%B0%D0%B7%D0%B0%20%D1%84%D0%B8%D0%BB%D1%8C%D0%BC%D0%BE%D0%B2%20Kodik_files/kodik-logo.png"></a>
+        </div>
+
+        <!-- profile link -->
+        <ul class="nav navbar-nav profile-nav">
+          <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown" title="kagamishinomiya">
+              <span class="glyphicon glyphicon-user" aria-hidden="true" style="font-size: 11px;"></span>
+              <span class="name">kagamishinomiya</span>
+              <div class="caret-box"><b class="caret"></b></div>
+            </a>
+            <ul class="dropdown-menu">
+              
+              <li class="divider"></li>
+              <li><a href="https://bd.kodikres.com/logout">Выход</a></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+
+      <!-- menu links -->
+      
+      <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+        <ul class="nav navbar-nav kodik-nav">
+          <li class="dropdown">
+            <a href="https://bd.kodikres.com/films" class="dropdown-toggle" data-toggle="dropdown">Фильмы <b class="caret"></b></a>
+            <ul class="dropdown-menu">
+              <li><a href="https://bd.kodikres.com/films">Все фильмы</a></li>
+            </ul>
+          </li>
+          <li class="dropdown">
+            <a href="https://bd.kodikres.com/serials" class="dropdown-toggle" data-toggle="dropdown">Сериалы <b class="caret"></b></a>
+            <ul class="dropdown-menu">
+              <li><a href="https://bd.kodikres.com/serials">Все сериалы</a></li>
+            </ul>
+          </li>
+          <li class="dropdown">
+            <a href="https://bd.kodikres.com/serials" class="dropdown-toggle" data-toggle="dropdown">Аниме <b class="caret"></b></a>
+            <ul class="dropdown-menu">
+              <li><a href="https://bd.kodikres.com/serials?category=anime">Аниме сериалы</a></li>
+              <li><a href="https://bd.kodikres.com/films?category=anime">Аниме фильмы</a></li>
+            </ul>
+          </li>
+          <li>
+            <a href="https://bd.kodikres.com/blocks">Блокировки </a>
+          </li>
+
+          
+          <li>
+            <a href="https://bd.kodikres.com/orders">Заказы </a>
+          </li>
+
+          
+          <li>
+            <a href="https://bd.kodikres.com/posts">Новости </a>
+          </li>
+
+          <li class="tg-nav-item">
+            <a href="https://t.me/+VK-3XNYUDspjYjhi" target="_blank" class="tg-link" data-toggle="tooltip" data-placement="bottom" title="" data-original-title="Канал для экстренной связи">
+              <span class="tg-link-circle">
+                <svg width="20px" height="20px" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M41.4193 7.30899C41.4193 7.30899 45.3046 5.79399 44.9808 9.47328C44.8729 10.9883 43.9016 16.2908 43.1461 22.0262L40.5559 39.0159C40.5559 39.0159 40.3401 41.5048 38.3974 41.9377C36.4547 42.3705 33.5408 40.4227 33.0011 39.9898C32.5694 39.6652 24.9068 34.7955 22.2086 32.4148C21.4531 31.7655 20.5897 30.4669 22.3165 28.9519L33.6487 18.1305C34.9438 16.8319 36.2389 13.8019 30.8426 17.4812L15.7331 27.7616C15.7331 27.7616 14.0063 28.8437 10.7686 27.8698L3.75342 25.7055C3.75342 25.7055 1.16321 24.0823 5.58815 22.459C16.3807 17.3729 29.6555 12.1786 41.4193 7.30899Z" fill="#000000"></path>
+                </svg>
+              </span>
+            </a>
+          </li>
+
+          <!--<li>
+            <div id="open-support-chat"><div>Поддержка</div></div>
+          </li>-->
+        </ul>
+      </div><!-- /.navbar-collapse -->
+    </div><!-- /.container-fluid -->
+  </nav>
+
+  <div class="container-fluid">
+    <div class="row">
+      <div class="sidebar">
+        <ul class="nav nav-sidebar kodik-sidebar">
+          <li class="settings"><a href="https://bd.kodikres.com/users/profile">Настройки </a></li>
+                      <li class="stats"><a href="https://bd.kodikres.com/users/stats">Статистика</a></li>
+                  </ul>
+
+        <span>Инструкции</span>
+        <ul class="nav nav-sidebar kodik-sidebar">
+          <li class="docs"><a href="https://bd.kodikres.com/faq">FAQ </a></li>
+
+          <li class="docs"><a href="https://bd.kodikres.com/player-settings">Параметры iframe </a></li>
+
+          <li class="docs"><a href="https://bd.kodikres.com/modules/dle">Модули для DLE                 <i class="new" style="background-color: #23e343;" data-toggle="tooltip" data-placement="right" title="" data-original-title="Обновлены модули: Kodik Serials, Kodik, Kodik Антиблок, Kodik Base. Добавлена поддержка DLE 19 и настройка доменов. Подробности в описании.">+4</i>
+              </a></li>
+        </ul>
+
+        <span>Скрипты</span>
+        <ul class="nav nav-sidebar kodik-sidebar">
+          <li class="script"><a href="https://bd.kodikres.com/add-players">Автодобавление </a></li>
+          <li class="script"><a href="https://bd.kodikres.com/change-domains">Замена домена</a></li>
+                      <li class="players"><a href="https://bd.kodikres.com/api-links">Найденные плееры</a></li>
+                  </ul>
+
+        <span>Для разработчиков</span>
+        <ul class="nav nav-sidebar kodik-sidebar">
+          <li class="api"><a href="https://bd.kodikres.com/api/info">API </a></li>
+          <li class="files"><a href="https://bd.kodikres.com/files">Файлы базы </a></li>
+          <li class="player-api"><a href="https://bd.kodikres.com/api/player">API плеера </a></li>
+        </ul>
+
+              </div>
+      <div class="kodik-content">
+        
+
+        <script>
+          $(function () {
+            $('.sidebar [data-toggle="tooltip"], .kodik-nav .tg-link[data-toggle="tooltip"]').tooltip({container: "body"})
+          });
+        </script>
+
+              <div class="container">
+    <div class="col-md-10 col-md-offset-1">
+      <div class="page-header">
+        <h3>Документация по API: /search</h3>
+      </div>
+
+      <div class="panel panel-info">
+        <div class="panel-heading">
+          <h3 class="panel-title">API-токен</h3>
+        </div>
+        <div class="panel-body">
+          <p>
+            Ваш API-токен: <b>b620ed17748f3562ef16c7ef4a05d5cd</b>
+          </p>
+        </div>
+      </div>
+
+      <div class="panel panel-success">
+        <div class="panel-heading">
+          <h3 class="panel-title">Описание</h3>
+        </div>
+        <div class="panel-body">
+          <p>
+            Возвращает список наиболее подходящих вашему поисковому 
+запросу материалов. Наиболее релевантные материалы будут идти первыми.
+          </p>
+
+          <p>
+            Результаты <b>автоматически сортируются по последней серии и сезону</b>.
+ Таким образом изначально показывается озвучка с самой последней серией.
+ Изменяя параметр приоритезации озвучек можно изменить эту логику. Также
+ стоит учесть, что по умолчанию высокий приоритет имеют озвучки 
+"Дублированный" и "Проф. Многоголосый" (это можно отключить настроив 
+приоритет озвучек).
+          </p>
+
+          <p>
+            Запросы отправляются по ссылке: <code>https://kodik-api.com/search</code>
+          </p>
+        </div>
+      </div>
+
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title">Параметры</h3>
+        </div>
+        <div class="panel-body">
+          <table class="table table-hover table-bordered" style="margin-bottom: 0;">
+            <tbody><tr>
+              <th>Название</th>
+              <th>Стандартное значение</th>
+              <th>Доступные значения</th>
+              <th>Описание</th>
+            </tr>
+            <tr>
+              <td colspan="4" style="text-align: center"><b>Обязательные параметры</b></td>
+            </tr>
+            <tr class="danger">
+              <td>token</td>
+              <td>Отсутствует</td>
+              <td></td>
+              <td>API-токен. Необходимо указать для успешного выполнения запроса.</td>
+            </tr>
+            <tr>
+              <td colspan="4" style="text-align: center"><b>Хотя бы один из синих параметров обязателен</b></td>
+            </tr>
+            <tr class="info">
+              <td>title</td>
+              <td>Отсутствует</td>
+              <td>Любая строка</td>
+              <td>Название фильма. Не обязательно указывать четко, можно
+ использовать вариант, написанный пользователем или вариант содержащий 
+лишние слова. При указании одного этого параметра поиск будет вестись 
+сразу по нескольким полям: <code>title</code>, <code>title_orig</code>, <code>other_title</code>, а также по полям из сторонних источников: <code>anime_title</code>, <code>title_en</code>, <code>title</code>, <code>anime_license_name</code>, <code>other_titles</code>, <code>other_titles_en</code>, <code>other_titles_jp</code></td>
+            </tr>
+            <tr class="info">
+              <td>title_orig</td>
+              <td>Отсутствует</td>
+              <td>Любая строка</td>
+              <td>Оригинальное название. При использовании этого параметра поиск будет происходить только по <code>title_orig</code>. Не обязательно указывать четко, можно использовать вариант, написанный пользователем или вариант содержащий лишние слова.</td>
+            </tr>
+            <tr>
+              <td>strict</td>
+              <td><code>false</code></td>
+              <td><code>true</code>, <code>false</code></td>
+              <td>Если был указан параметр <code>title</code> или <code>title_orig</code>, то данный параметр определяет строгость проверки соотвествия названия материала поисковому запросу. При значении <code>true</code> в результатах поиска будут выведены только те материалы, в которых <b>порядок слов</b> точно такой же, как и в поисковом запросе (но <b>лишние слова</b> в поисковом запросе все равно <b>допускаются</b>)</td>
+            </tr>
+            <tr>
+              <td>full_match</td>
+              <td><code>false</code></td>
+              <td><code>true</code>, <code>false</code></td>
+              <td>Если был указан параметр <code>title</code> или <code>title_orig</code>, то данный параметр определяет строгость проверки соотвествия названия материала поисковому запросу. При значении <code>true</code> в результатах поиска будут выведены только те материалы, в которых название <b>полностью соотвествует</b>
+ поисковому запросу (никаких лишних слов, порядок слов и наличие 
+символов также полностью идентичны). Единственное, чем название может 
+отличаться от запроса, это регистром. При использовании вместе с <code>title</code> проверяется полное соотвествее хотя бы одному из названий материала.</td>
+            </tr>
+            <tr class="info">
+              <td>id</td>
+              <td>Отсутствует</td>
+              <td>movie-123123 / serial-123123</td>
+              <td>Поиск по Kodik ID</td>
+            </tr>
+            <tr class="info">
+              <td>player_link</td>
+              <td>Отсутствует</td>
+              <td>https://...</td>
+              <td>Поиск по любой ссылке на плеер</td>
+            </tr>
+            <tr>
+              <td colspan="4" style="text-align: center">Если передать сразу <b>несколько ID</b> из списка ниже (не касается Kodik ID), то выведутся все материалы, у которых есть совпадение <b>хотя бы одного ID</b>. Но они будут <b>отсортированы</b> по количеству совпавших ID. Самые релевантные будет вверху.</td>
+            </tr>
+            <tr class="info">
+              <td>kinopoisk_id</td>
+              <td>Отсутствует</td>
+              <td>0 - 999999999</td>
+              <td>Поиск по ID кинопоиска</td>
+            </tr>
+            <tr class="info">
+              <td>imdb_id</td>
+              <td>Отсутствует</td>
+              <td>tt0 - tt999999999</td>
+              <td>Поиск по ID IMDb</td>
+            </tr>
+            <tr class="info">
+              <td>mdl_id</td>
+              <td>Отсутствует</td>
+              <td>123456 / 123456-title</td>
+              <td>Поиск по ID MyDramaList</td>
+            </tr>
+            <tr class="info">
+              <td>worldart_animation_id</td>
+              <td>Отсутствует</td>
+              <td>0 - 999999999</td>
+              <td>Поиск по ID World Art в разделе <a href="http://www.world-art.ru/animation/" target="_blank">аниме</a> (У World Art есть разные разделы материалов, в каждом из которых свои независимые ID)</td>
+            </tr>
+            <tr class="info">
+              <td>worldart_cinema_id</td>
+              <td>Отсутствует</td>
+              <td>0 - 999999999</td>
+              <td>Поиск по ID World Art в разделе <a href="http://www.world-art.ru/cinema/" target="_blank">кино</a></td>
+            </tr>
+            <tr class="info">
+              <td>worldart_link</td>
+              <td>Отсутствует</td>
+              <td>Ссылка на world art</td>
+              <td>Поиск по полной ссылке World Art</td>
+            </tr>
+            <tr class="info">
+              <td>shikimori_id</td>
+              <td>Отсутствует</td>
+              <td>0 - 999999999</td>
+              <td>Поиск по ID Shikimori</td>
+            </tr>
+            <tr>
+              <td colspan="4" style="text-align: center"><b>Необязательные параметры</b></td>
+            </tr>
+            <tr>
+              <td>limit</td>
+              <td>Отсутствует</td>
+              <td>1 - 100</td>
+              <td>Максимальное выводимое количество материалов.</td>
+            </tr>
+            <tr>
+              <td>types</td>
+              <td>Все типы</td>
+              <td>Фильмы: <code>foreign-movie</code>, <code>soviet-cartoon</code>, <code>foreign-cartoon</code>, <code>russian-cartoon</code>, <code>anime</code>, <code>russian-movie</code><br>Сериалы: <code>cartoon-serial</code>, <code>documentary-serial</code>, <code>russian-serial</code>, <code>foreign-serial</code>, <code>anime-serial</code>, <code>multi-part-film</code></td>
+              <td>Фильтрация материалов по их типу. Для удобства 
+доступно большое количество типов фильмов и сериалов. Необходимые типы 
+указываются через запятую</td>
+            </tr>
+            <tr>
+              <td>year</td>
+              <td>Отсутствует</td>
+              <td><code>1982</code>, <code>1982,2020</code></td>
+              <td>Фильтрация материалов по году. Если указать этот параметр, то будут выведены только материалы соответствующего года</td>
+            </tr>
+            <tr>
+              <td>translation_id</td>
+              <td>Отсутствует</td>
+              <td><code>714</code>, <code>714,720</code></td>
+              <td>Фильтрация материалов по ID озвучки. ID всех озвучек можно получить через API ресурс <a href="https://bd.kodikres.com/api/info/translations" target="_blank">/translations</a> либо на странице <a href="https://bd.kodikres.com/translations-list" target="_blank">списка озвучек</a>.</td>
+            </tr>
+            <tr>
+              <td>translation_type</td>
+              <td>Отсутствует</td>
+              <td><code>voice</code>, <code>subtitles</code></td>
+              <td>Фильтрация материалов по типу перевода. Позволяет выводить только голосовой перевод или только субтитры.</td>
+            </tr>
+            <tr>
+              <td>has_field</td>
+              <td>Отсутствует</td>
+              <td><code>kinopoisk_id</code>, <code>imdb_id</code>, <code>mdl_id</code>, <code>worldart_link</code>, <code>shikimori_id</code></td>
+              <td>
+                Фильтрация материалов по наличию у них определенного поля. Показываются материалы, у которых есть <b>хотя бы одно</b> из перечисленных полей. Для того чтобы показывались только материалы, у которых есть <b>все</b> перечисленные поля, нужно использовать параметр <code>has_field_and</code>.
+              </td>
+            </tr>
+            <tr>
+              <td>prioritize_translations</td>
+              <td><code>704,734</code></td>
+              <td><code>123,123</code>,<code>subtitles</code>,<code>voice</code></td>
+              <td>
+                Повышение приоритета определенных озвучек. ID 
+перечисляются через запятую. Чем "левее" ID, тем выше его приоритет. ID 
+всех озвучек можно получить через API ресурс <a href="https://bd.kodikres.com/api/info/translations" target="_blank">/translations</a> либо на странице <a href="https://bd.kodikres.com/translations-list" target="_blank">списка озвучек</a>. <b>Стандартно повышаются</b> приоритеты озвучек "Дублированный" и "Проф. Многоголосый". <br><b>Чтобы отключить</b> стандартную приоритизацию, нужно передать значение <code>0</code>. Вместо ID также можно указывать тип перевода (subtitles/voice).
+              </td>
+            </tr>
+            <tr>
+              <td>unprioritize_translations</td>
+              <td><code>800,882,subtitles</code></td>
+              <td><code>123,123</code>,<code>subtitles</code>,<code>voice</code></td>
+              <td>
+                Понижение приоритета определенных озвучек. ID 
+перечисляются через запятую. Чем "левее" ID, тем ниже его приоритет. ID 
+всех озвучек можно получить через API ресурс <a href="https://bd.kodikres.com/api/info/translations" target="_blank">/translations</a> либо на странице <a href="https://bd.kodikres.com/translations-list" target="_blank">списка озвучек</a>. <b>Стандартно понижаются</b> приоритеты озвучек "Украинский", "English" и все субтитры. <br><b>Чтобы отключить</b> стандартную приоритизацию, нужно передать значение <code>0</code>. Вместо ID также можно указывать тип перевода (subtitles/voice).
+              </td>
+            </tr>
+            
+            <tr>
+              <td>prioritize_translation_type</td>
+              <td><code>voice</code></td>
+              <td><code>voice</code> ИЛИ <code>subtitles</code></td>
+              <td>
+                Повышение приоритета определенного типа перевода. Если указать <code>voice</code>, то сначала будут выводиться голосовые озвучки. Если <code>subtitles</code>, то субтитры.
+              </td>
+            </tr>
+            <tr>
+              <td>block_translations</td>
+              <td>Отсутствует</td>
+              <td><code>714</code>, <code>714,720</code></td>
+              <td>
+                Удаление определенных озвучек из результатов поиска. ID 
+перечисляются через запятую. ID всех озвучек можно получить через API 
+ресурс <a href="https://bd.kodikres.com/api/info/translations" target="_blank">/translations</a> либо на странице <a href="https://bd.kodikres.com/translations-list" target="_blank">списка озвучек</a>
+              </td>
+            </tr>
+            <tr>
+              <td>camrip</td>
+              <td>Отсутствует</td>
+              <td><code>true</code>, <code>false</code></td>
+              <td>Фильтрация материалов по параметру camrip. Если 
+указать false, то будут выведены только материалы с качественной 
+картинкой. Если не указывать этот параметр, то будут выведены все 
+материалы.</td>
+            </tr>
+            <tr>
+              <td>lgbt</td>
+              <td>Отсутствует</td>
+              <td><code>true</code>, <code>false</code></td>
+              <td>Фильтрация материалов по параметру lgbt. Если указать 
+false, то будут выведены только материалы не содержащие LGBT сцен. Если 
+не указывать этот параметр, то будут выведены все материалы.</td>
+            </tr>
+            <tr>
+              <td>with_seasons</td>
+              <td><code>false</code></td>
+              <td><code>true</code>, <code>false</code></td>
+              <td>Если указать <code>true</code>, вместе с сериалами в поле <code>seasons</code>
+ также будут перечислены сезоны сериала. Этот и следующий параметр 
+сделаны для того, чтобы не перегружать вывод материалов огромным 
+количеством информации о сезонах и сериях, если эта информация не нужна 
+при парсинге.</td>
+            </tr>
+            <tr>
+              <td>season</td>
+              <td>Отсутствует</td>
+              <td><code>1</code>, <code>5</code></td>
+              <td>С помощью данного параметра вы можете указать какой 
+именно сезон вас интересует. Таким образом в результатах поиска будут 
+выведены только сериалы, в которых есть данный сезон. Передача данного 
+параметра также автоматически включает параметр <code>with_seasons</code></td>
+            </tr>
+            <tr>
+              <td>with_episodes, with_episodes_data</td>
+              <td><code>false</code></td>
+              <td><code>true</code>, <code>false</code></td>
+              <td>Если указать <code>true</code>, то к каждому сериалу будет добавлено поле <code>seasons</code> (даже если <code>with_seasons</code> не указано или указано как <code>false</code>) и к каждому сезону будет добавлено поле <code>episodes</code> с сериями этого сезона. При использовании параметра <code>with_episodes</code> номерам серий будут соответсовать обычные ссылки серий. При использовании <code>with_episodes_data</code> номерам будут соотвествовать объекты серий, где ссылка будет доступна через <code>link</code> параметр, название серии (при его наличии) через <code>title</code> параметр, а кадры через <code>screenshots</code></td>
+            </tr>
+            <tr>
+              <td>episode</td>
+              <td>Отсутствует</td>
+              <td><code>1</code>, <code>5</code></td>
+              <td>С помощью данного параметра вы можете указать какой 
+именно эпизод конкретного сезона вас интересует. Таким образом в 
+результатах поиска будет выведены только сериалы с данным эпизодом. При 
+использовании этого параметра <b>необходимо</b> также передавать параметр <code>season</code>. Передача данного параметра также автоматически включает параметр <code>with_episodes</code>.</td>
+            </tr>
+            <tr>
+              <td>with_page_links</td>
+              <td><code>false</code></td>
+              <td><code>true</code>, <code>false</code></td>
+              <td>Если указать <code>true</code>, то все ссылки на 
+плееры будут заменены на специальные ссылки на страницы с плеерами 
+(подходят для случаев, когда у вас нет своего сайта). Настроить внешний 
+вид этих страниц можно в настройках в базе. Если вместе с этим 
+параметром будут указан параметр <code>with_seasons</code> или <code>with_episodes</code> / <code>with_episodes_data</code>, то в сезонах и сериях ссылки также будут заменены.</td>
+            </tr>
+            <tr>
+              <td>not_blocked_in</td>
+              <td>Отсутствует</td>
+              <td><code>RU,UA</code>, <code>RU</code></td>
+              <td>Фильтрация материалов по странам, в которых они не должны быть заблокированы. Коды стран указываются через запятую.</td>
+            </tr>
+            <tr>
+              <td>not_blocked_for_me</td>
+              <td>Отсутствует</td>
+              <td><code>true</code>, <code>false</code></td>
+              <td>Более простой аналог предыдущего параметра. Наш сервер
+ сам проверяет с какой страны происходит текущий запрос и не выводит те 
+материалы, которые для этой страны заблокированы. Данный параметр может 
+пригодиться, если API вызывается через javascript на вашем сайте</td>
+            </tr>
+            <tr>
+              <td colspan="4" style="text-align: center"><b>Фильтрация по информации с КиноПоиска, Shikimori, MyDramaList</b></td>
+            </tr>
+            <tr>
+              <td>with_material_data</td>
+              <td><code>false</code></td>
+              <td><code>true</code>, <code>false</code></td>
+              <td>
+                Если указать <code>true</code>, к каждому фильму/сериалу будет добавлено поле <code>material_data</code>, содержащее информацию с КиноПоиска и Shikimori.
+                <a href="#kinopoisk-structure">Структура информации</a>
+              </td>
+            </tr>
+            <tr>
+              <td>countries</td>
+              <td>Отсутствует</td>
+              <td><code>США</code>, <code>США,Россия</code></td>
+              <td>
+                Фильтрация материалов по стране. Можно указать как одно 
+значение, так и несколько значений через запятую (тогда будут выведены 
+материалы, у которых есть <b>хотя бы одна</b> из перечисленных стран). Параметр регистрозависимый. Чтобы показывались только материалы, у которых есть <b>все указанные страны</b>, используйте параметр <code>countries_and</code>.
+              </td>
+            </tr>
+            <tr>
+              <td>genres, anime_genres, drama_genres, all_genres</td>
+              <td>Отсутствует</td>
+              <td><code>биография</code>, <code>биография,боевик</code></td>
+              <td>
+                Фильтрация материалов по жанру. Можно указать как одно 
+значение, так и несколько значений через запятую (тогда будут выведены 
+материалы, у которых есть <b>хотя бы один</b> из указаных жанров). 
+Искать можно по жанрам с КиноПоиск, Shikimori, MyDramaList, либо сразу 
+по всем жанрам. Параметр регистронезависимый. Чтобы показывались только 
+материалы, у которых есть <b>все указанные жанры</b>, добавьте к параметру <code>_and</code> в конце. Например: <code>genres_and</code>.
+              </td>
+            </tr>
+            <tr>
+              <td>duration</td>
+              <td>Отсутствует</td>
+              <td><code>30</code>, <code>40-80</code></td>
+              <td>
+                Фильтрация материалов по продолжительности (в минутах). 
+Указать можно как единичное значение для поиска точной 
+продолжительности, так и интервал.
+              </td>
+            </tr>
+            <tr>
+              <td>kinopoisk_rating, imdb_rating, shikimori_rating, mydramalist_rating</td>
+              <td>Отсутствует</td>
+              <td><code>7.0</code>, <code>6</code>, <code>6.5-8.2</code></td>
+              <td>
+                Фильтрация материалов по рейтингу КиноПоиска, IMDb, 
+Shikimori или MyDramaList. Указать можно как единичное значение для 
+поиска точного рейтинга, так и интервал.
+              </td>
+            </tr>
+            <tr>
+              <td>actors, directors, producers, writers, composers, editors, designers, operators</td>
+              <td>Отсутствует</td>
+              <td><code>Крис Хемсворт</code>, <code>Крис Хемсворт,Марк Руффало</code></td>
+              <td>
+                Фильтрация материалов по персонам. Можно указать как 
+одно значение, так и несколько значений через запятую (тогда будут 
+выведены материалы, у которых есть <b>хотя бы одна</b> из указанных 
+персон). Параметр регистронезависимый. Можно указывать фильтры сразу по 
+нескольким профессиям. Чтобы показывались только материалы, у которых 
+есть <b>все указанные персоны</b>, добавьте к параметру <code>_and</code> в конце. Например: <code>actors_and</code>.
+              </td>
+            </tr>
+            <tr>
+              <td>rating_mpaa</td>
+              <td>Отсутствует</td>
+              <td><code>G</code>, <code>PG</code>, <code>PG-13</code>, <code>R</code>, <code>R+</code>, <code>Rx</code>, <code>R, PG-13</code></td>
+              <td>
+                Фильтрация материалов по возрастному рейтингу. Можно 
+указать как одно значение, так и несколько значений через запятую. 
+Параметр регистронезависимый.
+              </td>
+            </tr>
+            <tr>
+              <td>minimal_age</td>
+              <td>Отсутствует</td>
+              <td><code>16</code>, <code>12-16</code></td>
+              <td>
+                Фильтрация материалов по минимальному возрасту, с 
+которого можно смотреть. Можно указать как одно значение, так и диапазон
+ значений.
+              </td>
+            </tr>
+            <tr>
+              <td>anime_kind</td>
+              <td>Отсутствует</td>
+              <td><code>tv</code>, <code>movie</code>, <code>ova</code>, <code>ona</code>, <code>special</code>, <code>music</code>, <code>tv_13</code>, <code>tv_24</code>, <code>tv_48</code>, <code>movie,ova</code></td>
+              <td>
+                Фильтрация материалов по аниме типу. Можно указать как 
+одно значение, так и несколько значений через запятую (тогда будут 
+выведены материалы, у которых есть хотя бы один из перечисленных типов).
+              </td>
+            </tr>
+            <tr>
+              <td>mydramalist_tags</td>
+              <td>Отсутствует</td>
+              <td><code>Friendship</code>, <code>Friendship,Violence</code></td>
+              <td>
+                Фильтрация материалов по тегам MyDramaList. Можно 
+указать как одно значение, так и несколько значений через запятую (тогда
+ будут выведены материалы, у которых есть <b>хотя бы один</b> из перечисленных типов). Чтобы показывались только материалы, у которых есть <b>все указанные теги</b>, используйте параметр <code>mydramalist_tags_and</code>.
+              </td>
+            </tr>
+            <tr>
+              <td>anime_status, drama_status, all_status</td>
+              <td>Отсутствует</td>
+              <td><code>anons</code>, <code>ongoing</code>, <code>released</code>, <code>ongoing,released</code></td>
+              <td>
+                Фильтрация материалов по статусу Shikimori, MyDramaList 
+или по всем статусам. Можно указать как одно значение, так и несколько 
+значений через запятую (тогда будут выведены материалы, у которых есть 
+хотя бы один из перечисленных статусов).
+              </td>
+            </tr>
+            <tr>
+              <td>anime_studios</td>
+              <td>Отсутствует</td>
+              <td><code>J.C.Staff</code>, <code>Studio Hibari</code>, <code>J.C.Staff,Studio Hibari</code></td>
+              <td>
+                Фильтрация материалов по аниме студии. Можно указать как
+ одно значение, так и несколько значений через запятую (тогда будут 
+выведены материалы, у которых есть <b>хотя бы одна</b> из перечисленных студий). Чтобы показывались только материалы, у которых есть <b>все указанные студии</b>, используйте параметр <code>anime_studios_and</code>.
+              </td>
+            </tr>
+            <tr>
+              <td>anime_licensed_by</td>
+              <td>Отсутствует</td>
+              <td><code>Wakanim</code>, <code>Русский Репортаж</code>, <code>Wakanim,Русский Репортаж</code></td>
+              <td>
+                Фильтрация материалов по владельцу лицензии. Можно 
+указать как одно значение, так и несколько значений через запятую (тогда
+ будут выведены материалы, у которых есть <b>хотя бы один</b> из перечисленных владельцев). Чтобы показывались только материалы, у которых есть <b>все указанные владельцы</b>, используйте параметр <code>anime_licensed_by_and</code>.
+              </td>
+            </tr>
+          </tbody></table>
+        </div>
+      </div>
+
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title">Стуктура ответа</h3>
+        </div>
+        <div class="panel-body">
+          <table class="table table-hover table-bordered" style="margin-bottom: 0;">
+            <tbody><tr>
+              <th>Название</th>
+              <th>Описание</th>
+            </tr>
+            <tr>
+              <td>id</td>
+              <td>Уникальный ID материала</td>
+            </tr>
+            <tr>
+              <td>title</td>
+              <td>Название</td>
+            </tr>
+            <tr>
+              <td>title_orig</td>
+              <td>Оригинальное название</td>
+            </tr>
+            <tr>
+              <td>other_title</td>
+              <td>Другое название (часто встречается в аниме)</td>
+            </tr>
+            <tr>
+              <td>link</td>
+              <td>Ссылка на плеер</td>
+            </tr>
+            <tr>
+              <td>year</td>
+              <td>Год</td>
+            </tr>
+            <tr>
+              <td>kinopoisk_id</td>
+              <td>ID кинопоиска</td>
+            </tr>
+            <tr>
+              <td>imdb_id</td>
+              <td>ID IMDb</td>
+            </tr>
+            <tr>
+              <td>mdl_id</td>
+              <td>ID MyDramaList</td>
+            </tr>
+            <tr>
+              <td>worldart_link</td>
+              <td>Ссылка на материал на world art (Используется не ID, так как на world art есть разные разделы с независимыми ID)</td>
+            </tr>
+            <tr>
+              <td>shikimori_id</td>
+              <td>ID Shikimori (только цифры)</td>
+            </tr>
+            <tr>
+              <td>type</td>
+              <td>Тип материала</td>
+            </tr>
+            <tr>
+              <td>quality</td>
+              <td>Качество видео. <a href="https://bd.kodikres.com/qualities-list" target="_blank">Список всех качеств</a>, <a href="https://bd.kodikres.com/api/info/qualities" target="_blank">API качества</a></td>
+            </tr>
+            <tr>
+              <td>camrip</td>
+              <td>Является ли материал камрипом</td>
+            </tr>
+            <tr>
+              <td>lgbt</td>
+              <td>Содержит ли материал LGBT сцены</td>
+            </tr>
+            <tr>
+              <td>translation</td>
+              <td>Объект содержащий <code>id</code> озвучки, <code>title</code> (название) и <code>type</code> (тип: <code>voice</code> или <code>subtitles</code>) озвучки. <a href="https://bd.kodikres.com/translations-list" target="_blank">Список всех озвучек</a>, <a href="https://bd.kodikres.com/api/info/translations" target="_blank">API озвучки</a></td>
+            </tr>
+            <tr>
+              <td>created_at</td>
+              <td>Дата создания материала. Указывается в формате <a href="https://ru.wikipedia.org/wiki/ISO_8601" target="_blank">ISO 8601</a></td>
+            </tr>
+            <tr>
+              <td>updated_at</td>
+              <td>Дата обновления материала. Указывается в формате <a href="https://ru.wikipedia.org/wiki/ISO_8601" target="_blank">ISO 8601</a></td>
+            </tr>
+            <tr>
+              <td>blocked_countries</td>
+              <td>Массив, содержащий страны, в которых материал заблокирован. Либо пустой массив, если материал не заблокирован нигде.</td>
+            </tr>
+            <tr class="warning">
+              <td>seasons</td>
+              <td>Объект с сезонами и с сериями в них. Поле присутствует только если в запросе были указаны параметры <code>with_seasons</code> или <code>with_episodes</code> / <code>with_episodes_data</code></td>
+            </tr>
+            <tr>
+              <td>last_season</td>
+              <td>Номер последнего сезона сериала. Поле присутствует только в материалах c типом сериала</td>
+            </tr>
+            <tr>
+              <td>last_episode</td>
+              <td>Номер последнего эпизода сериала. Поле присутствует только в материалах c типом сериала</td>
+            </tr>
+            <tr>
+              <td>episodes_count</td>
+              <td>Общее количество эпизодов в сериале. Поле присутствует только в материалах c типом сериала</td>
+            </tr>
+            <tr class="warning">
+              <td>blocked_seasons</td>
+              <td>Если сериал заблокирован целиком, то поле содержит строку <code>"all"</code>, если заблокированы отдельные сезоны, то поле явлется объектом и содержит номера сезонов и к каждом сезону: либо <code>"all"</code> (если заблокированы все эпизоды), либо массив из номеров серий <code>["1", "2", "3"]</code>
+ (если заблокированы отдельные серии). Если ничего не заблокировано, 
+поле является пустым объектом. Поле присутствует только в материалах c 
+типом сериала</td>
+            </tr>
+            <tr>
+              <td>screenshots</td>
+              <td>Ссылки на кадры из видео. Для сериалов в основной 
+информации выводятся кадры из первой серии. Для получения кадров каждой 
+серии, нужно использовать параметр <code>with_episodes_data</code>, который описан выше</td>
+            </tr>
+          </tbody></table>
+        </div>
+      </div>
+
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title">Примеры использования</h3>
+        </div>
+        <div class="panel-body">
+          <code>https://kodik-api.com/search?<b>token</b>=b620ed17748f3562ef16c7ef4a05d5cd&amp;<b>title</b>=Аватар%20смотреть%20онлайн%20бесплатно</code>
+          <br><br>
+          <pre><div class="copy-button">Копировать</div><code class="json hljs language-json"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"time"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"5ms"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"total"</span><span class="hljs-punctuation">:</span> <span class="hljs-number">27</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"results"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">"id"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"movie-452654"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"type"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"foreign-movie"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"link"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"http://kodikplayer.com/video/93/2fc1d3b9759726b2bc5b104b225d2b4a/720p"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"title"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"Аватар"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"title_orig"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"Avatar"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"translation"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+        <span class="hljs-attr">"id"</span><span class="hljs-punctuation">:</span> <span class="hljs-number">704</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"title"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"Дублированный"</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"type"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"voice"</span>
+      <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"year"</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2009</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"kinopoisk_id"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"251733"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"imdb_id"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"tt0499549"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"quality"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"BDRip 720p"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"blocked_countries"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"created_at"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"2014-06-22T22:19:22Z"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"updated_at"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"2016-04-25T07:03:33Z"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"screenshots"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+        <span class="hljs-string">"https://i.kodikres.com/screenshots/video/50811/1.jpg"</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-string">"https://i.kodikres.com/screenshots/video/50811/2.jpg"</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-string">"https://i.kodikres.com/screenshots/video/50811/3.jpg"</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-string">"https://i.kodikres.com/screenshots/video/50811/4.jpg"</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-string">"https://i.kodikres.com/screenshots/video/50811/5.jpg"</span>
+      <span class="hljs-punctuation">]</span>
+    <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-comment">// ...</span>
+  <span class="hljs-punctuation">]</span>
+<span class="hljs-punctuation">}</span></code></pre>
+          <br>
+          <code style="white-space: normal;">https://kodik-api.com/search?<b>token</b>=b620ed17748f3562ef16c7ef4a05d5cd&amp;<b>kinopoisk_id</b>=1161904&amp;<b>with_episodes</b>=true&amp;<b>with_material_data</b>=true</code>
+          <br><br>
+          <pre><div class="copy-button">Копировать</div><code class="json hljs language-json"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"time"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"5ms"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"total"</span><span class="hljs-punctuation">:</span> <span class="hljs-number">9</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"results"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">"id"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"serial-452654"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"type"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"anime"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"link"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"http://kodikplayer.com/serial/4309/bc6def495a31545c7f648f7fb68d22a8/720p"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"title"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"Игра престолов"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"title_orig"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"Game of Thrones"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"translation"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+        <span class="hljs-attr">"id"</span><span class="hljs-punctuation">:</span> <span class="hljs-number">611</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"title"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"ColdFilm"</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"type"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"voice"</span>
+      <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"year"</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2011</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"last_season"</span><span class="hljs-punctuation">:</span><span class="hljs-number">9</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"last_episode"</span><span class="hljs-punctuation">:</span><span class="hljs-number">4</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"episodes_count"</span><span class="hljs-punctuation">:</span><span class="hljs-number">119</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"kinopoisk_id"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"1161904"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"imdb_id"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"tt0944947"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"quality"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"WEB-DL 720p"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"blocked_countries"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">"RU"</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span> <span class="hljs-comment">// Пример материала, заблокированного в стране</span>
+      <span class="hljs-attr">"blocked_seasons"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+        <span class="hljs-attr">"5"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"all"</span><span class="hljs-punctuation">,</span> <span class="hljs-comment">// так указывается, если заблокированы все серии сезона</span>
+        <span class="hljs-attr">"7"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">"1"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"2"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"3"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"5"</span><span class="hljs-punctuation">]</span> <span class="hljs-comment">// так указывается, если заблокированы отдельные серии сезона</span>
+      <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"created_at"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"2017-07-17T16:34:52Z"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"updated_at"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"2018-04-06T14:19:27Z"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"seasons"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+        <span class="hljs-attr">"5"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+          <span class="hljs-attr">"link"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"http://kodikplayer.com/season/27856/e3135c7e3536a7951fd1f96e59489176/720p"</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">"episodes"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+            <span class="hljs-attr">"1"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"http://kodikplayer.com/seria/119601/09249413a7eb3c03b15df57cd56a051b/720p"</span><span class="hljs-punctuation">,</span>
+            <span class="hljs-attr">"2"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"http://kodikplayer.com/seria/203940/05e3237674dc90b2c480a21050db57ba/720p"</span><span class="hljs-punctuation">,</span>
+            <span class="hljs-attr">"3"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"http://kodikplayer.com/seria/203941/69fd4f9ef364e60e030943b9cf6d6916/720p"</span><span class="hljs-punctuation">,</span>
+            <span class="hljs-attr">"4"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"http://kodikplayer.com/seria/203942/90c93ca7d6a3166c29196d35ddb1c9fd/720p"</span><span class="hljs-punctuation">,</span>
+            <span class="hljs-attr">"5"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"http://kodikplayer.com/seria/203943/e3135c7e3536a7951fd1f96e59489176/720p"</span><span class="hljs-punctuation">,</span>
+            <span class="hljs-attr">"6"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"http://kodikplayer.com/seria/203944/d8f7de8e918335ffc6b780d274826c22/720p"</span><span class="hljs-punctuation">,</span>
+            <span class="hljs-attr">"7"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"http://kodikplayer.com/seria/203945/008f3c7ca24cfc659962bb858b4ce616/720p"</span><span class="hljs-punctuation">,</span>
+            <span class="hljs-attr">"8"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"http://kodikplayer.com/seria/203946/b34efcc830388f48c07b8872055f6ef4/720p"</span><span class="hljs-punctuation">,</span>
+            <span class="hljs-attr">"9"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"http://kodikplayer.com/seria/203947/3852080912d733a26730682ac992e09e/720p"</span><span class="hljs-punctuation">,</span>
+            <span class="hljs-attr">"10"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"http://kodikplayer.com/seria/203948/c37539d296668c32595bff972f9c46cd/720p"</span>
+          <span class="hljs-punctuation">}</span>
+        <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"6"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+          <span class="hljs-attr">"link"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"http://kodikplayer.com/season/27857/d8f7de8e918335ffc6b780d274826c22/720p"</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">"episodes"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+            <span class="hljs-attr">"1"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"http://kodikplayer.com/seria/119611/09249413a7eb3c03b15df57cd56a051b/720p"</span><span class="hljs-punctuation">,</span>
+            <span class="hljs-attr">"2"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"http://kodikplayer.com/seria/203949/05e3237674dc90b2c480a21050db57ba/720p"</span><span class="hljs-punctuation">,</span>
+            <span class="hljs-attr">"3"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"http://kodikplayer.com/seria/203950/69fd4f9ef364e60e030943b9cf6d6916/720p"</span><span class="hljs-punctuation">,</span>
+            <span class="hljs-attr">"4"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"http://kodikplayer.com/seria/203951/90c93ca7d6a3166c29196d35ddb1c9fd/720p"</span><span class="hljs-punctuation">,</span>
+            <span class="hljs-attr">"5"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"http://kodikplayer.com/seria/203952/e3135c7e3536a7951fd1f96e59489176/720p"</span><span class="hljs-punctuation">,</span>
+            <span class="hljs-attr">"6"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"http://kodikplayer.com/seria/203953/d8f7de8e918335ffc6b780d274826c22/720p"</span><span class="hljs-punctuation">,</span>
+            <span class="hljs-attr">"7"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"http://kodikplayer.com/seria/203954/008f3c7ca24cfc659962bb858b4ce616/720p"</span><span class="hljs-punctuation">,</span>
+            <span class="hljs-attr">"8"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"http://kodikplayer.com/seria/203955/b34efcc830388f48c07b8872055f6ef4/720p"</span><span class="hljs-punctuation">,</span>
+            <span class="hljs-attr">"9"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"http://kodikplayer.com/seria/203956/3852080912d733a26730682ac992e09e/720p"</span><span class="hljs-punctuation">,</span>
+            <span class="hljs-attr">"10"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"http://kodikplayer.com/seria/203957/c37539d296668c32595bff972f9c46cd/720p"</span>
+          <span class="hljs-punctuation">}</span>
+        <span class="hljs-punctuation">}</span>
+      <span class="hljs-punctuation">}</span>
+      <span class="hljs-attr">"material_data"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+        <span class="hljs-attr">"title"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"Игра престолов"</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"title_en"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"Game of Thrones"</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"year"</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2011</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"tagline"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"Победа или смерть"</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"description"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"К концу подходит время благоденствия, и лето, длившееся почти десятилетие, угасает. Вокруг средоточия власти Семи королевств, Железного трона, зреет заговор, и в это непростое время король решает искать поддержки у друга юности Эддарда Старка. В мире, где все — от короля до наемника — рвутся к власти, плетут интриги и готовы вонзить нож в спину, есть место и благородству, состраданию и любви. Между тем, никто не замечает пробуждение тьмы из легенд далеко на Севере — и лишь Стена защищает живых к югу от нее."</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"poster_url"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"https://st.kp.yandex.net/images/film_iphone/iphone360_464963.jpg"</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"duration"</span><span class="hljs-punctuation">:</span> <span class="hljs-number">55</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"countries"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">"США"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"Великобритания"</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"genres"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">"фэнтези"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"боевик"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"драма"</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"kinopoisk_rating"</span><span class="hljs-punctuation">:</span> <span class="hljs-number">9</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"kinopoisk_votes"</span><span class="hljs-punctuation">:</span> <span class="hljs-number">268732</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"imdb_rating"</span><span class="hljs-punctuation">:</span> <span class="hljs-number">9.4</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"imdb_votes"</span><span class="hljs-punctuation">:</span> <span class="hljs-number">1553335</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"premiere_ru"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"2011-09-08"</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"premiere_world"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"2011-04-17"</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"actors"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">"Питер Динклэйдж"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"Лина Хиди"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"Эмилия Кларк"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"Кит Харингтон"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"Софи Тёрнер"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"Мэйси Уильямс"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"Николай Костер-Вальдау"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"Иэн Глен"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"Алфи Аллен"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"Джон Брэдли"</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"directors"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span> <span class="hljs-string">"Дэвид Наттер"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"Алан Тейлор"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"Алекс Грейвз"</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"producers"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">"Дэвид Бениофф"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"Д.Б. Уайсс"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"Джордж Р.Р. Мартин"</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"writers"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span> <span class="hljs-string">"Дэвид Бениофф"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"Джордж Р.Р. Мартин"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"Д.Б. Уайсс"</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"composers"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">"Рамин Джавади"</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"editors"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">"Кэти Вейланд"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"Фрэнсис Паркер"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"Криспин Грин"</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"designers"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">"Дебора Райли"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"Джемма Джексон"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"Филип Элтон"</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"operators"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">"Анетт Хаелльмигк"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"Джонатан Фриман"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"Роберт МакЛаклен"</span><span class="hljs-punctuation">]</span>
+      <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"screenshots"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+        <span class="hljs-string">"https://i.kodikres.com/screenshots/video/50811/1.jpg"</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-string">"https://i.kodikres.com/screenshots/video/50811/2.jpg"</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-string">"https://i.kodikres.com/screenshots/video/50811/3.jpg"</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-string">"https://i.kodikres.com/screenshots/video/50811/4.jpg"</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-string">"https://i.kodikres.com/screenshots/video/50811/5.jpg"</span>
+      <span class="hljs-punctuation">]</span>
+    <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-comment">// ...</span>
+  <span class="hljs-punctuation">]</span>
+<span class="hljs-punctuation">}</span></code></pre>
+        </div>
+      </div>
+
+      <div class="panel panel-default" id="kinopoisk-structure">
+        <div class="panel-heading">
+          <h3 class="panel-title">Стуктура информации КиноПоиска, Shikimori, MyDramaList</h3>
+        </div>
+        <div class="panel-body">
+          <div class="warning-note" style="margin-bottom: 15px;">
+            <p>
+              При отсутствии информации кинопоиска, shikimori и mydramalist для какого-либо материала, поле <code>material_data</code> будет отсуствовать.
+            </p>
+            <p style="margin-bottom: 0;">
+              При отсутствии какой-то части информации внутри поля <code>material_data</code>, данное поле будет отсутствовать. Например при отстутсвии информации об актерах, поле <code>actors</code> будет отсутствовать.
+            </p>
+          </div>
+
+          <table class="table table-hover table-bordered" style="margin-bottom: 0;">
+            <tbody><tr>
+              <th>Название</th>
+              <th>Описание</th>
+              <th>Источник</th>
+              <th>Пример</th>
+            </tr>
+            <tr>
+              <td>title</td>
+              <td>Название</td>
+              <td>KinoPoisk, Shikimori</td>
+              <td><code>"Аватар"</code></td>
+            </tr>
+            <tr>
+              <td>anime_title</td>
+              <td>Название аниме</td>
+              <td>Shikimori</td>
+              <td><code>"Аватар"</code></td>
+            </tr>
+            <tr>
+              <td>title_en</td>
+              <td>Оригинальное название</td>
+              <td>KinoPoisk, Shikimori, MyDramaList</td>
+              <td><code>"Avatar"</code></td>
+            </tr>
+            <tr>
+              <td>other_titles</td>
+              <td>Другие названия материала (массив)</td>
+              <td>Shikimori, MyDramaList</td>
+              <td><code>["Аватар", "Аватар 2", "Аватар 3"]</code></td>
+            </tr>
+            <tr>
+              <td>other_titles_en</td>
+              <td>Другие названия материала на английском (массив)</td>
+              <td>Shikimori</td>
+              <td><code>["Avatar", "Avatar 2", "Avatar 3"]</code></td>
+            </tr>
+            <tr>
+              <td>other_titles_jp</td>
+              <td>Другие названия материала на японском (массив)</td>
+              <td>Shikimori</td>
+              <td><code>["アバター", "アバター 2", "アバター 3"]</code></td>
+            </tr>
+            <tr>
+              <td>anime_license_name</td>
+              <td>Название лицензии в России</td>
+              <td>Shikimori</td>
+              <td><code>"Аватар"</code></td>
+            </tr>
+            <tr>
+              <td>anime_licensed_by</td>
+              <td>Владельцы лицензий (массив)</td>
+              <td>Shikimori</td>
+              <td><code>["Wakanim","Русский Репортаж"]</code></td>
+            </tr>
+            <tr>
+              <td>anime_kind</td>
+              <td>Тип аниме</td>
+              <td>Shikimori</td>
+              <td><code>"ova"</code></td>
+            </tr>
+            <tr>
+              <td>mydramalist_tags</td>
+              <td>Теги MyDramaList</td>
+              <td>MyDramaList</td>
+              <td><code>["Friendship", "Violence"]</code></td>
+            </tr>
+            <tr>
+              <td>all_status</td>
+              <td>Статус материала</td>
+              <td>Shikimori, MyDramaList</td>
+              <td><code>"released"</code></td>
+            </tr>
+            <tr>
+              <td>anime_status</td>
+              <td>Статус аниме</td>
+              <td>Shikimori</td>
+              <td><code>"released"</code></td>
+            </tr>
+            <tr>
+              <td>drama_status</td>
+              <td>Статус дорамы</td>
+              <td>MyDramaList</td>
+              <td><code>"released"</code></td>
+            </tr>
+            <tr>
+              <td>year</td>
+              <td>Год</td>
+              <td>KinoPoisk</td>
+              <td><code>2016</code></td>
+            </tr>
+            <tr>
+              <td>tagline</td>
+              <td>Слоган</td>
+              <td>KinoPoisk</td>
+              <td><code>«An entire universe. Once and for all»</code></td>
+            </tr>
+            <tr>
+              <td>description</td>
+              <td>Описание</td>
+              <td>KinoPoisk, Shikimori</td>
+              <td><code>"Пока Мстители и их союзники продо..."</code></td>
+            </tr>
+            <tr>
+              <td>anime_description</td>
+              <td>Описание аниме</td>
+              <td>Shikimori</td>
+              <td><code>"Пока Мстители и их союзники продо..."</code></td>
+            </tr>
+            <tr>
+              <td>poster_url</td>
+              <td>Ссылка на постер</td>
+              <td>KinoPoisk, Shikimori, MyDramaList</td>
+              <td><code>"https://st.kp.yandex.net/images/film_iphone/iphone360_840471.jpg"</code></td>
+            </tr>
+            <tr>
+              <td>anime_poster_url</td>
+              <td>Ссылка на постер аниме</td>
+              <td>Shikimori</td>
+              <td><code>"https://shiki.one/system/animes/original/35683.jpg"</code></td>
+            </tr>
+            <tr>
+              <td>drama_poster_url</td>
+              <td>Ссылка на постер дорамы</td>
+              <td>MyDramaList</td>
+              <td><code>"https://i.mydramalist.com/dpOZz_4f.jpg"</code></td>
+            </tr>
+            <tr>
+              <td>screenshots</td>
+              <td>Ссылки на кадры (массив)</td>
+              <td>Shikimori</td>
+              <td><code>["https://site.com/image1.png", "https://site.com/image2.png"]</code></td>
+            </tr>
+            <tr>
+              <td>duration</td>
+              <td>Продолжительность (в минутах)</td>
+              <td>KinoPoisk, Shikimori, MyDramaList</td>
+              <td><code>160</code></td>
+            </tr>
+            <tr>
+              <td>countries</td>
+              <td>Страны (массив)</td>
+              <td>KinoPoisk, MyDramaList</td>
+              <td><code>["США", "Великобритания"]</code></td>
+            </tr>
+            <tr>
+              <td>all_genres</td>
+              <td>Все жанры (массив)</td>
+              <td>KinoPoisk, Shikimori, MyDramaList</td>
+              <td><code>["комедия", "боевик"]</code></td>
+            </tr>
+            <tr>
+              <td>genres</td>
+              <td>Жанры (массив)</td>
+              <td>KinoPoisk</td>
+              <td><code>["комедия", "боевик"]</code></td>
+            </tr>
+            <tr>
+              <td>anime_genres</td>
+              <td>Аниме жанры (массив)</td>
+              <td>Shikimori</td>
+              <td><code>["приключения","комедия"]</code></td>
+            </tr>
+            <tr>
+              <td>drama_genres</td>
+              <td>Дорама жанры (массив)</td>
+              <td>MyDramaList</td>
+              <td><code>["приключения","комедия"]</code></td>
+            </tr>
+            <tr>
+              <td>anime_studios</td>
+              <td>Аниме студии (массив)</td>
+              <td>Shikimori</td>
+              <td><code>["Studio Deen"]</code></td>
+            </tr>
+            <tr>
+              <td>kinopoisk_rating</td>
+              <td>Рейтинг на КиноПоиске</td>
+              <td>KinoPoisk</td>
+              <td><code>7.2</code></td>
+            </tr>
+            <tr>
+              <td>kinopoisk_votes</td>
+              <td>Количество голосов рейтинга на КиноПоиске</td>
+              <td>KinoPoisk</td>
+              <td><code>723856</code></td>
+            </tr>
+            <tr>
+              <td>imdb_rating</td>
+              <td>Рейтинг на IMDb</td>
+              <td>KinoPoisk</td>
+              <td><code>7.2</code></td>
+            </tr>
+            <tr>
+              <td>imdb_votes</td>
+              <td>Количество голосов рейтинга на IMDb</td>
+              <td>KinoPoisk</td>
+              <td><code>723856</code></td>
+            </tr>
+            <tr>
+              <td>shikimori_rating</td>
+              <td>Рейтинг на Shikimori</td>
+              <td>Shikimori</td>
+              <td><code>7.2</code></td>
+            </tr>
+            <tr>
+              <td>shikimori_votes</td>
+              <td>Количество голосов рейтинга на Shikimori</td>
+              <td>Shikimori</td>
+              <td><code>723856</code></td>
+            </tr>
+            <tr>
+              <td>mydramalist_rating</td>
+              <td>Рейтинг на MyDramaList</td>
+              <td>MyDramaList</td>
+              <td><code>7.2</code></td>
+            </tr>
+            <tr>
+              <td>mydramalist_votes</td>
+              <td>Количество голосов рейтинга на MyDramaList</td>
+              <td>MyDramaList</td>
+              <td><code>723856</code></td>
+            </tr>
+            <tr>
+              <td>premiere_ru</td>
+              <td>Дата премьеры в России</td>
+              <td>KinoPoisk</td>
+              <td><code>"2018-04-16"</code></td>
+            </tr>
+            <tr>
+              <td>premiere_world</td>
+              <td>Дата премьеры в мире</td>
+              <td>KinoPoisk</td>
+              <td><code>"2018-04-16"</code></td>
+            </tr>
+            <tr>
+              <td>aired_at</td>
+              <td>Дата начала показа</td>
+              <td>Shikimori, MyDramaList</td>
+              <td><code>"2018-04-16"</code></td>
+            </tr>
+            <tr>
+              <td>released_at</td>
+              <td>Дата конца показа</td>
+              <td>Shikimori, MyDramaList</td>
+              <td><code>"2018-04-16"</code></td>
+            </tr>
+            <tr>
+              <td>next_episode_at</td>
+              <td>Время выхода следующей серии</td>
+              <td>Shikimori, MyDramaList</td>
+              <td><code>"2021-04-06T14:19:27Z"</code></td>
+            </tr>
+            <tr>
+              <td>rating_mpaa</td>
+              <td>Рейтинг MPAA</td>
+              <td>KinoPoisk, Shikimori</td>
+              <td><code>"PG-13"</code></td>
+            </tr>
+            <tr>
+              <td>minimal_age</td>
+              <td>Минимально возможный возраст для просмотра</td>
+              <td>KinoPoisk, MyDramaList, Shikimori (из MPAA)</td>
+              <td><code>16</code></td>
+            </tr>
+            <tr>
+              <td>episodes_total</td>
+              <td>Количество эпизодов</td>
+              <td>Shikimori, MyDramaList</td>
+              <td><code>14</code></td>
+            </tr>
+            <tr>
+              <td>episodes_aired</td>
+              <td>Количество уже вышедших эпизодов</td>
+              <td>Shikimori, MyDramaList</td>
+              <td><code>14</code></td>
+            </tr>
+            <tr>
+              <td>actors</td>
+              <td>Актеры (массив)</td>
+              <td>KinoPoisk, MyDramaList</td>
+              <td><code>["Роберт Дауни мл.", "Крис Хемсворт", "Марк Руффало"]</code></td>
+            </tr>
+            <tr>
+              <td>directors</td>
+              <td>Режиссеры (массив)</td>
+              <td>KinoPoisk, MyDramaList</td>
+              <td><code>["Роберт Дауни мл.", "Крис Хемсворт", "Марк Руффало"]</code></td>
+            </tr>
+            <tr>
+              <td>producers</td>
+              <td>Продюссеры (массив)</td>
+              <td>KinoPoisk, MyDramaList</td>
+              <td><code>["Роберт Дауни мл.", "Крис Хемсворт", "Марк Руффало"]</code></td>
+            </tr>
+            <tr>
+              <td>writers</td>
+              <td>Сценаристы (массив)</td>
+              <td>KinoPoisk, MyDramaList</td>
+              <td><code>["Роберт Дауни мл.", "Крис Хемсворт", "Марк Руффало"]</code></td>
+            </tr>
+            <tr>
+              <td>composers</td>
+              <td>Композиторы (массив)</td>
+              <td>KinoPoisk, MyDramaList</td>
+              <td><code>["Роберт Дауни мл.", "Крис Хемсворт", "Марк Руффало"]</code></td>
+            </tr>
+            <tr>
+              <td>editors</td>
+              <td>Монтажеры (массив)</td>
+              <td>KinoPoisk, MyDramaList</td>
+              <td><code>["Роберт Дауни мл.", "Крис Хемсворт", "Марк Руффало"]</code></td>
+            </tr>
+            <tr>
+              <td>designers</td>
+              <td>Художники (массив)</td>
+              <td>KinoPoisk, MyDramaList</td>
+              <td><code>["Роберт Дауни мл.", "Крис Хемсворт", "Марк Руффало"]</code></td>
+            </tr>
+            <tr>
+              <td>operators</td>
+              <td>Операторы (массив)</td>
+              <td>KinoPoisk, MyDramaList</td>
+              <td><code>["Роберт Дауни мл.", "Крис Хемсворт", "Марк Руффало"]</code></td>
+            </tr>
+          </tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+        <script>
+  $(".moment-date").each((i, e) => {
+    const span = $(e);
+    const date = span.attr("data-date");
+    const calendarSettings = {
+      lastWeek: 'DD.MM.YYYY',
+      sameElse: 'DD.MM.YYYY'
+    };
+
+    const formattedDate = moment(date).locale("ru").calendar(null, calendarSettings);
+    span.html(formattedDate);
+  });
+
+  const minDates = document.querySelectorAll(".moment-date-min");
+  minDates.forEach(item => {
+    const date = item.getAttribute("data-date");
+    if (date !== "") {
+      item.innerHTML = moment(date).format("DD.MM.YY HH:mm");
+    }
+  });
+</script>      </div>
+    </div>
+  </div>
+
+      <!-- Yandex.Metrika counter --> <script type="text/javascript"> (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)}; m[i].l=1*new Date();k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)}) (window, document, "script", "https://cdn.jsdelivr.net/npm/yandex-metrica-watch/tag.js", "ym"); ym(58428505, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true }); </script> <noscript><div><img src="https://mc.yandex.ru/watch/58428505" style="position:absolute; left:-9999px;" alt="" /></div></noscript> <!-- /Yandex.Metrika counter -->
+
+                  <script type="text/javascript">
+        // Empty yandex metrika bloating
+        try {
+          localStorage.removeItem('_ym_retryReqs');
+        } catch (e) {
+          console.warn('localStorage is not available');
+        }
+
+        jQuery(document).on('yacounter38081900inited', function () {
+          yaCounter38081900.userParams({
+            name: "kagamishinomiya",
+            sites: ["lycorislib.moe"],
+            group: 2
+          });
+
+          yaCounter38081900.params({
+            name: "kagamishinomiya",
+            sites: ["lycorislib.moe"],
+            group: 2
+          });
+        });
+      </script>
+
+      <!-- Chatwoot BEGIN -->
+      <script>
+        window.chatwootSettings = {"position":"right","type":"expanded_bubble","launcherTitle":"Напишите нам"};
+        (function(d,t) {
+          var BASE_URL = window.kodikConfig.chatwootBaseUrl;
+          var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+          g.src=BASE_URL+"/packs/js/sdk.js";
+          g.defer = true;
+          g.async = true;
+          s.parentNode.insertBefore(g,s);
+          g.onload=function(){
+            window.chatwootSDK.run({
+              websiteToken: 'bi32uKgGquAvx3pEReZGqs7q',
+              baseUrl: BASE_URL
+            })
+          }
+        })(document,"script");
+
+        window.addEventListener("chatwoot:ready", function () {
+          window.$chatwoot.setUser(`db:4973`, {
+            name: "kagamishinomiya",
+            email: "kagamishinomiya+db@gmail.com",
+            identifier_hash: "09d91b378cfd084ea85f83ea4f4f3aad6e420bf8b89dbd43b055a9793c3812c4",
+          });
+
+          window.$chatwoot.setCustomAttributes({
+            sites: "lycorislib.moe",
+            file_text: "kodik2610825695",
+            uid: userUID,
+          });
+        });
+      </script>
+      <!-- Chatwoot END -->
+
+
+      
+      <div id="image-zoom-box"></div>
+      <iframe src="%D0%91%D0%B0%D0%B7%D0%B0%20%D1%84%D0%B8%D0%BB%D1%8C%D0%BC%D0%BE%D0%B2%20Kodik_files/storage.html" id="local-storage-iframe"></iframe>
+    
+<style id="cw-widget-styles" data-turbo-permanent="true">
+:root {
+  --b-100: #F2F3F7;
+  --s-700: #37546D;
+}
+
+.woot-widget-holder {
+  box-shadow: 0 5px 40px rgba(0, 0, 0, .16);
+  opacity: 1;
+  will-change: transform, opacity;
+  transform: translateY(0);
+  overflow: hidden !important;
+  position: fixed !important;
+  transition: opacity 0.2s linear, transform 0.25s linear;
+  z-index: 2147483000 !important;
+}
+
+.woot-widget-holder.woot-widget-holder--flat {
+  box-shadow: none;
+  border-radius: 0;
+  border: 1px solid var(--b-100);
+}
+
+.woot-widget-holder iframe {
+  border: 0;
+  color-scheme: normal;
+  height: 100% !important;
+  width: 100% !important;
+  max-height: 100vh !important;
+}
+
+.woot-widget-holder.has-unread-view {
+  border-radius: 0 !important;
+  min-height: 80px !important;
+  height: auto;
+  bottom: 94px;
+  box-shadow: none !important;
+  border: 0;
+}
+
+.woot-widget-bubble {
+  background: #1f93ff;
+  border-radius: 100px;
+  border-width: 0px;
+  bottom: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .16) !important;
+  cursor: pointer;
+  height: 64px;
+  padding: 0px;
+  position: fixed;
+  user-select: none;
+  width: 64px;
+  z-index: 2147483000 !important;
+  overflow: hidden;
+}
+
+.woot-widget-bubble.woot-widget-bubble--flat {
+  border-radius: 0;
+}
+
+.woot-widget-holder.woot-widget-holder--flat {
+  bottom: 90px;
+}
+
+.woot-widget-bubble.woot-widget-bubble--flat {
+  height: 56px;
+  width: 56px;
+}
+
+.woot-widget-bubble.woot-widget-bubble--flat svg {
+  margin: 16px;
+}
+
+.woot-widget-bubble.woot-widget-bubble--flat.woot--close::before,
+.woot-widget-bubble.woot-widget-bubble--flat.woot--close::after {
+  left: 28px;
+  top: 16px;
+}
+
+.woot-widget-bubble.unread-notification::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #ff4040;
+  border-radius: 100%;
+  top: 0px;
+  right: 0px;
+  border: 2px solid #ffffff;
+  transition: background 0.2s ease;
+}
+
+.woot-widget-bubble.woot-widget--expanded {
+  bottom: 24px;
+  display: flex;
+  height: 48px !important;
+  width: auto !important;
+  align-items: center;
+}
+
+.woot-widget-bubble.woot-widget--expanded div {
+  align-items: center;
+  color: #fff;
+  display: flex;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen-Sans, Ubuntu, Cantarell, Helvetica Neue, Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  justify-content: center;
+  padding-right: 20px;
+  width: auto !important;
+}
+
+.woot-widget-bubble.woot-widget--expanded.woot-widget-bubble-color--lighter div{
+  color: var(--s-700);
+}
+
+.woot-widget-bubble.woot-widget--expanded svg {
+  height: 20px;
+  margin: 14px 8px 14px 16px;
+  width: 20px;
+}
+
+.woot-widget-bubble.woot-elements--left {
+  left: 20px;
+}
+
+.woot-widget-bubble.woot-elements--right {
+  right: 20px;
+}
+
+.woot-widget-bubble:hover {
+  background: #1f93ff;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, .4) !important;
+}
+
+.woot-widget-bubble svg {
+  all: revert;
+  height: 24px;
+  margin: 20px;
+  width: 24px;
+}
+
+.woot-widget-bubble.woot-widget-bubble-color--lighter path{
+  fill: var(--s-700);
+}
+
+@media only screen and (min-width: 667px) {
+  .woot-widget-holder.woot-elements--left {
+    left: 20px;
+ }
+  .woot-widget-holder.woot-elements--right {
+    right: 20px;
+ }
+}
+
+.woot--close:hover {
+  opacity: 1;
+}
+
+.woot--close::before, .woot--close::after {
+  background-color: #fff;
+  content: ' ';
+  display: inline;
+  height: 24px;
+  left: 32px;
+  position: absolute;
+  top: 20px;
+  width: 2px;
+}
+
+.woot-widget-bubble-color--lighter.woot--close::before, .woot-widget-bubble-color--lighter.woot--close::after {
+  background-color: var(--s-700);
+}
+
+.woot--close::before {
+  transform: rotate(45deg);
+}
+
+.woot--close::after {
+  transform: rotate(-45deg);
+}
+
+.woot--hide {
+  bottom: -100vh !important;
+  top: unset !important;
+  opacity: 0;
+  visibility: hidden !important;
+  z-index: -1 !important;
+}
+
+.woot-widget--without-bubble {
+  bottom: 20px !important;
+}
+.woot-widget-holder.woot--hide{
+  transform: translateY(40px);
+}
+.woot-widget-bubble.woot--close {
+  transform: translateX(0px) scale(1) rotate(0deg);
+  transition: transform 300ms ease, opacity 100ms ease, visibility 0ms linear 0ms, bottom 0ms linear 0ms;
+}
+.woot-widget-bubble.woot--close.woot--hide {
+  transform: translateX(8px) scale(.75) rotate(45deg);
+  transition: transform 300ms ease, opacity 200ms ease, visibility 0ms linear 500ms, bottom 0ms ease 200ms;
+}
+
+.woot-widget-bubble {
+  transform-origin: center;
+  will-change: transform, opacity;
+  transform: translateX(0) scale(1) rotate(0deg);
+  transition: transform 300ms ease, opacity 100ms ease, visibility 0ms linear 0ms, bottom 0ms linear 0ms;
+}
+.woot-widget-bubble.woot--hide {
+  transform: translateX(8px) scale(.75) rotate(-30deg);
+  transition: transform 300ms ease, opacity 200ms ease, visibility 0ms linear 500ms, bottom 0ms ease 200ms;
+}
+
+.woot-widget-bubble.woot-widget--expanded {
+  transform: translateX(0px);
+  transition: transform 300ms ease, opacity 100ms ease, visibility 0ms linear 0ms, bottom 0ms linear 0ms;
+}
+.woot-widget-bubble.woot-widget--expanded.woot--hide {
+  transform: translateX(8px);
+  transition: transform 300ms ease, opacity 200ms ease, visibility 0ms linear 500ms, bottom 0ms ease 200ms;
+}
+.woot-widget-bubble.woot-widget-bubble--flat.woot--close {
+  transform: translateX(0px);
+  transition: transform 300ms ease, opacity 10ms ease, visibility 0ms linear 0ms, bottom 0ms linear 0ms;
+}
+.woot-widget-bubble.woot-widget-bubble--flat.woot--close.woot--hide {
+  transform: translateX(8px);
+  transition: transform 300ms ease, opacity 200ms ease, visibility 0ms linear 500ms, bottom 0ms ease 200ms;
+}
+.woot-widget-bubble.woot-widget--expanded.woot-widget-bubble--flat {
+  transform: translateX(0px);
+  transition: transform 300ms ease, opacity 200ms ease, visibility 0ms linear 0ms, bottom 0ms linear 0ms;
+}
+.woot-widget-bubble.woot-widget--expanded.woot-widget-bubble--flat.woot--hide {
+  transform: translateX(8px);
+  transition: transform 300ms ease, opacity 200ms ease, visibility 0ms linear 500ms, bottom 0ms ease 200ms;
+}
+
+@media only screen and (max-width: 667px) {
+  .woot-widget-holder {
+    height: 100%;
+    right: 0;
+    top: 0;
+    width: 100%;
+ }
+
+ .woot-widget-holder iframe {
+    min-height: 100% !important;
+  }
+
+
+ .woot-widget-holder.has-unread-view {
+    height: auto;
+    right: 0;
+    width: auto;
+    bottom: 0;
+    top: auto;
+    max-height: 100vh;
+    padding: 0 8px;
+  }
+
+  .woot-widget-holder.has-unread-view iframe {
+    min-height: unset !important;
+  }
+
+ .woot-widget-holder.has-unread-view.woot-elements--left {
+    left: 0;
+  }
+
+  .woot-widget-bubble.woot--close {
+    bottom: 60px;
+    opacity: 0;
+    visibility: hidden !important;
+    z-index: -1 !important;
+  }
+}
+
+@media only screen and (min-width: 667px) {
+  .woot-widget-holder {
+    border-radius: 16px;
+    bottom: 104px;
+    height: calc(90% - 64px - 20px);
+    max-height: 640px !important;
+    min-height: 250px !important;
+    width: 400px !important;
+ }
+}
+
+.woot-hidden {
+  display: none !important;
+}
+</style><div class="woot-widget-holder woot--hide woot-elements--right" id="cw-widget-holder" data-turbo-permanent="true"><iframe src="https://chat.kodikres.com/widget?website_token=bi32uKgGquAvx3pEReZGqs7q&amp;cw_conversation=eyJhbGciOiJIUzI1NiJ9.eyJzb3VyY2VfaWQiOiI4ZWVjNzdhYy1jMjUwLTQ3ZTQtODcwZi1iZWVmZDU4MDA1OTAiLCJpbmJveF9pZCI6MSwiZXhwIjoxNzk0MzM3NzI3LCJpYXQiOjE3Nzg3ODU3Mjd9.OJP0o7Fo8kwpkSvGZWS_mYmwLX2NUI4UWkp4ZhKSIes" allow="camera;microphone;fullscreen;display-capture;picture-in-picture;clipboard-write;" id="chatwoot_live_chat_widget" style=""></iframe></div><div class="woot--bubble-holder" id="cw-bubble-holder" data-turbo-permanent="true"><button class="woot-widget-bubble woot-elements--right woot-widget--expanded" title="Open chat window" style="background: rgb(39, 137, 230);"><svg id="woot-widget-bubble-icon" width="24" height="24" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M240.808 240.808H122.123C56.6994 240.808 3.45695 187.562 3.45695 122.122C3.45695 56.7031 56.6994 3.45697 122.124 3.45697C187.566 3.45697 240.808 56.7031 240.808 122.122V240.808Z" fill="#FFFFFF"></path></svg><div id="woot-widget--expanded__text">Напишите нам</div></button><button class="woot-elements--right woot-widget-bubble woot--close woot--hide" style="background: rgb(39, 137, 230);"></button></div></body></html>

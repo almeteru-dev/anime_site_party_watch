@@ -1,37 +1,204 @@
-## 1.Architecture design
+## 1. Architecture Design
 ```mermaid
 graph TD
-  A["User Browser"] --> B["React Frontend Application"]
-  B --> C["Supabase JS SDK"]
-  C --> D["Supabase Auth"]
-  C --> E["Supabase Database (Postgres)"]
-  C --> F["Supabase Realtime"]
-
-  subgraph "Frontend Layer"
-    B
-  end
-
-  subgraph "Service Layer (Provided by Supabase)"
-    D
-    E
-    F
-  end
+    A[User Browser] --> B[React Frontend (Next.js)]
+    B --> C[WebSocket Server (Gin + WebSocket)]
+    B --> D[Kodik iframe Player]
+    D --> B[PostMessage API]
+    C --> E[PostgreSQL Database]
+    
+    subgraph "Frontend Layer"
+        B
+        D
+    end
+    
+    subgraph "Backend Layer"
+        C
+    end
+    
+    subgraph "Data Layer"
+        E
+    end
 ```
 
-## 2.Technology Description
-- Frontend: React@18 + tailwindcss@3 + vite
-- Backend: Supabase (Auth + Postgres + Realtime)
+- Frontend: React@18 + TypeScript + TailwindCSS + Vanilla JS для работы с Kodik postMessage
+- Initialization Tool: Next.js App Router
+- Backend: Go + Gin + WebSocket (встроенная поддержка сокетов)
+- Database: PostgreSQL
 
-## 3.Route definitions
 | Route | Purpose |
 |-------|---------|
-| /watch-party/new | Create a new Watch Party room (auth required) |
-| /watch-party/:roomId | Main room experience (player + chat + participants + invite) |
-| /watch-party/join/:inviteCode | Resolve invite code to a room and redirect to /watch-party/:roomId |
-| /login | Sign in (existing) |
+| /watch-party/new | Страница создания комнаты |
+| /watch-party/join/[inviteCode] | Страница входа по инвайту |
+| /watch-party/[roomId] | Основная страница комнаты с Kodik плеером, чатом и панелью участников |
 
-## 4.API definitions (If it includes backend services)
-None (frontend uses Supabase SDK directly).
+## 4. Frontend Kodik Integration Code
+```javascript
+// Kodik Player Integration - фронтенд логика синхронизации
+const kodikIframe = document.getElementById('kodik-player')?.contentWindow;
+let isSuppressed = false; // Флаг для предотвращения эхо-событий
+let lastServerTime = 0;
+const DRIFT_THRESHOLD = 2.5; // Порог рассинхрона в секундах
+
+// Обработчик сообщений от плеера
+window.addEventListener('message', (e) => {
+  if (!e.data?.key) return;
+  
+  // Не отправляем событие, если оно было вызвано нашей синхронной командой
+  if (isSuppressed) {
+    isSuppressed = false;
+    return;
+  }
+
+  const { key, value } = e.data;
+  if (canControl) { // Только владелец/модератор отправляет события
+    switch(key) {
+      case 'kodik_player_play':
+        socket.send({ type: 'state_update', is_playing: true });
+        break;
+      case 'kodik_player_pause':
+        socket.send({ type: 'state_update', is_playing: false });
+        break;
+      case 'kodik_player_seek':
+        socket.send({ type: 'state_update', playback_position_sec: value.time });
+        break;
+      case 'kodik_player_current_episode':
+        socket.send({ 
+          type: 'episode_change',
+          season: value.season,
+          episode: value.episode,
+          translation_id: value.translation.id
+        });
+        break;
+      case 'kodik_player_speed_changenew':
+        socket.send({ type: 'state_update', playback_rate: value.speed });
+        break;
+      case 'kodik_player_time_update': // Heartbeat каждую секунду
+        if (Math.abs(value - lastServerTime) > DRIFT_THRESHOLD) {
+          syncSeek(lastServerTime);
+        }
+        break;
+    }
+  }
+});
+
+// Обработчик сетевых команд от сервера
+socket.onmessage = (event) => {
+  const msg = JSON.parse(event.data);
+  if (!kodikIframe) return;
+
+  isSuppressed = true; // Включаем подавление чтобы не отправить эхо обратно
+  switch(msg.type) {
+    case 'state_update':
+      lastServerTime = msg.playback_position_sec;
+      if (msg.is_playing) {
+        kodikIframe.postMessage({ key: 'kodik_player_api', value: { method: 'play' } }, '*');
+      } else {
+        kodikIframe.postMessage({ key: 'kodik_player_api', value: { method: 'pause' } }, '*');
+      }
+      kodikIframe.postMessage({ 
+        key: 'kodik_player_api', 
+        value: { method: 'speed', speed: msg.playback_rate } 
+      }, '*');
+      break;
+    case 'episode_change':
+      kodikIframe.postMessage({
+        key: 'kodik_player_api',
+        value: { method: 'change_episode', season: msg.season, episode: msg.episode }
+      }, '*');
+      break;
+    case 'force_sync':
+      syncSeek(msg.playback_position_sec);
+      break;
+  }
+};
+
+// Вспомогательная функция перемотки
+function syncSeek(seconds) {
+  if (!kodikIframe) return;
+  isSuppressed = true;
+  kodikIframe.postMessage({
+    key: 'kodik_player_api',
+    value: { method: 'seek', seconds: seconds }
+  }, '*');
+}
+
+// Обход политики автоплея - кнопка "Войти в трансляцию"
+document.getElementById('join-broadcast')?.addEventListener('click', () => {
+  document.getElementById('autoplay-overlay').style.display = 'none';
+  // Первый клик пользователя, теперь можно запустить плеер
+  if (roomState.is_playing) {
+    kodikIframe?.postMessage({ key: 'kodik_player_api', value: { method: 'play' } }, '*');
+  }
+});
+```
+
+## 5. Backend WebSocket Code
+```go
+// Бэкенд логика ретрансляции событий комнаты
+func (wpHub *WatchPartyHub) broadcast(roomID int64, payload any) {
+	wpHub.mu.Lock()
+	clients, exists := wpHub.rooms[roomID]
+	wpHub.mu.Unlock()
+	if !exists {
+		return
+	}
+	// Отправляем всем клиентам комнаты
+	for _, client := range clients {
+		client.send(payload)
+	}
+}
+
+// Обработка входящих событий от клиентов
+func (client *watchPartyClient) handleMessage(msg watchPartyInbound) {
+	switch strings.ToLower(msg.Type) {
+	case "state_update":
+		if client.role != "owner" && client.role != "moderator" {
+			return
+		}
+		// Обновляем состояние в БД
+		updates := map[string]any{
+			"is_playing":            *msg.IsPlaying,
+			"playback_rate":         *msg.Rate,
+			"playback_position_sec": *msg.PositionSec,
+			"playback_seq":          client.room.PlaybackSeq + 1,
+			"last_state_at":         time.Now(),
+		}
+		app.DB.Model(&models.WatchPartyRoom{}).Where("id = ?", client.roomID).Updates(updates)
+		// Ретранслируем всем остальным
+		wpHub.broadcast(client.roomID, gin.H{
+			"type":                  "state_update",
+			"is_playing":            *msg.IsPlaying,
+			"playback_rate":         *msg.Rate,
+			"playback_position_sec": *msg.PositionSec,
+		})
+	case "episode_change":
+		// Ретранслируем смену эпизода всем клиентам
+		wpHub.broadcast(client.roomID, gin.H{
+			"type":     "episode_change",
+			"season":   msg.Season,
+			"episode":  msg.Episode,
+		})
+	}
+}
+
+// Heartbeat для периодической синхронизации времени
+func (wpHub *WatchPartyHub) startHeartbeat() {
+	ticker := time.NewTicker(3 * time.Second)
+	defer ticker.Stop()
+	for range ticker.C {
+		wpHub.mu.Lock()
+		for roomID, room := range wpHub.activeRooms {
+			// Отправляем всем клиентам текущее время для проверки рассинхрона
+			wpHub.broadcast(roomID, gin.H{
+			"type":                  "force_sync",
+			"playback_position_sec": room.PlaybackPosition,
+			})
+		}
+		wpHub.mu.Unlock()
+	}
+}
+```
 
 ## 6.Data model(if applicable)
 
@@ -50,6 +217,9 @@ erDiagram
     boolean is_playing
     float playback_rate
     float playback_position_sec
+    int current_season
+    int current_episode
+    bigint current_translation_id
     bigint playback_seq
     timestamptz last_state_at
     timestamptz owner_heartbeat_at

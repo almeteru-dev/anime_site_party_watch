@@ -8,8 +8,12 @@ import { ArtVideoPlayer, type ArtVideoPlayerHandle } from "@/components/anime/ar
 import { SourceSelector, type PlayerSource } from "@/components/anime/source-selector"
 
 function extractIframeSrc(input: string): string | null {
-  const match = input.match(/src\s*=\s*"([^"]+)"/i)
-  return match?.[1] || null
+	const m1 = input.match(/src\s*=\s*"([^"]+)"/i)
+	if (m1?.[1]) return m1[1]
+	const m2 = input.match(/src\s*=\s*'([^']+)'/i)
+	if (m2?.[1]) return m2[1]
+	const m3 = input.match(/src\s*=\s*([^\s>]+)/i)
+	return m3?.[1] || null
 }
 
 function toYouTubeEmbed(input: string): string | null {
@@ -186,7 +190,7 @@ export function AnimePlayerContainer({
               key={`${active.id}:${active.url || ""}`}
               src={iframeSrc}
               className="absolute inset-0 w-full h-full"
-              allow="autoplay; encrypted-media; picture-in-picture"
+              allow="autoplay *; fullscreen *; encrypted-media *; picture-in-picture *"
               allowFullScreen
             />
           ) : (

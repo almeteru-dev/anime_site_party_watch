@@ -1,6 +1,8 @@
 ## 1. Product Overview
-Watch Party Rooms let you watch the same content together in a shared room with synchronized playback, synchronized content selection, and real-time chat.
-Only authenticated users can create rooms; participants join via invite links and follow room dissolve rules.
+Платформа для совместного просмотра аниме в реальном времени с поддержкой Kodik плеера. Позволяет пользователям создавать комнаты, приглашать друзей и смотреть видео одновременно с полной синхронизацией всех действий в плеере.
+- Основная проблема: отсутствие возможности совместного просмотра с синхронизацией через внешний iframe-плеер Kodik
+- Целевая аудитория: все зарегистрированные пользователи платформы
+- Рыночная ценность: увеличение вовлеченности и удержания пользователей за счет социального взаимодействия с поддержкой основного видеоплеера сайта
 
 ## 2. Core Features
 
@@ -17,20 +19,13 @@ Our Watch Party requirements consist of the following main pages:
 3. **Sign in / Register (existing)**: authenticate before creating a room (and to fully participate).
 
 ### 2.3 Page Details
-| Page Name | Module Name | Feature description |
-|-----------|-------------|---------------------|
-| Create Watch Party | Access control | Block unauthenticated users from creating; prompt sign-in and return after auth. |
-| Create Watch Party | Content selection | Choose the content to watch (e.g., title/episode/source based on existing catalog); preview selection summary. |
-| Create Watch Party | Room creation | Create a room as Owner; generate invite link; set room expiration (max 12h). |
-| Watch Party Room | Room entry | Validate room is active and not expired/dissolved; join as Participant; show end-state if dissolved/expired. |
-| Watch Party Room | Invite link | Display and copy shareable invite link; allow re-copy any time. |
-| Watch Party Room | Participant list & roles | Show current participants; label the Owner; update list in real time. |
-| Watch Party Room | Synchronized content selection | Display the current selected content; update instantly when Owner changes content. |
-| Watch Party Room | Playback synchronization | Keep play/pause/seek/rate in sync across participants; resolve drift by applying periodic state corrections. |
-| Watch Party Room | Owner playback controls | Allow Owner to play/pause/seek/change rate; broadcast changes to participants. |
-| Watch Party Room | Real-time chat | Send and receive messages in real time; show message author and timestamp. |
-| Watch Party Room | Leave & dissolve rules | Allow any participant to leave; allow Owner to manually dissolve; automatically dissolve when Owner leaves; automatically expire/dissolve at max 12h. |
-| Sign in / Register (existing) | Authentication | Sign in/up to create a room; return to intended page after auth. |
+| Страница | Модуль | Описание |
+|---------|--------|----------|
+| Страница комнаты (watch-party/[roomId]) | Видео плеер Kodik | Интегрированный iframe плеер с поддержкой postMessage API для синхронизации всех действий |
+| Страница комнаты | Панель участников | Список всех пользователей в комнате с указанием их ролей (владелец, модератор, зритель) |
+| Страница комнаты | Чат комнаты | Текстовый чат для общения участников во время просмотра |
+| Страница создания комнаты | Форма создания | Выбор аниме, настроек приватности, генерация пригласительной ссылки |
+| Страница входа по инвайту | Форма подключения | Ввод пароля (для приватных комнат) и подключение к существующей комнате |
 
 ## 3. Core Process
 **Authenticated User (Participant) Flow**
@@ -51,9 +46,37 @@ Our Watch Party requirements consist of the following main pages:
 
 ```mermaid
 graph TD
-  A["Sign in / Register"] --> B["Create Watch Party"]
-  B --> C["Watch Party Room"]
-  D["Invite Link"] --> C
-  C --> E["Room Ended (Dissolved/Expired)"]
-  C --> C
+  A[Главная страница] --> B[Создать комнату /watch-party/new]
+  A --> C[Присоединиться /watch-party/join/[inviteCode]]
+  B --> D[Страница комнаты /watch-party/[roomId]]
+  C --> D
+  D --> E[Синхронизация Kodik плеера]
+  D --> F[Чат участников]
+  D --> G[Панель управления комнатой]
 ```
+
+## 4. UI/UX
+
+### 4.1 Design Style
+- Primary color: #8b5cf6 (фиолетовый), secondary: #06b6d4 (циановый)
+- Кнопки: скругленные 12px, современный hover-эффект
+- Шрифты: Inter, основной текст 14px, заголовки 18px
+- Лейаут: карточный дизайн, верхняя навигация, сетка 3 колонки (участники | плеер | чат)
+- Иконки: линейные из Lucide, минималистичный стиль
+- Ключевой элемент: кнопка «Войти в трансляцию» для обхода политики автоплея браузеров
+
+### 4.2 UI Elements
+| Страница | Элемент | Описание |
+|----------|---------|----------|
+| Страница комнаты | Kodik плеер | iframe занимает всю центральную ячейку сетки, имеет оверлей с кнопкой «Войти в трансляцию» до первого клика пользователя |
+| Страница комнаты | Панель участников | Фиксированная боковая панель с аватарами пользователей, роль подсвечивается цветом (владелец — золото, модератор — синий) |
+| Страница комнаты | Чат | Скролл-контейнер с сообщениями, поле ввода внизу, собственные сообщения выровнены вправо |
+| Страница создания | Форма создания | Карточка с полями: выбор аниме, чекбокс приватности, ввод пароля, кнопка генерации инвайта |
+
+### 4.3 Responsiveness
+Десктоп-first, мобильная адаптация с перестроением лейаута в одну колонку, сенсорные взаимодействия оптимизированы. Кнопка входа в трансляцию адаптируется под размер экрана.
+
+### 4.4 Дополнительные требования к реализации
+- Защита от зацикливания (infinite loop): локальный флаг подавления событий после выполнения синхронной команды
+- Алгоритм Heartbeat: проверка рассинхрона >2.5 секунд с принудительной перемоткой только при превышении порога
+- Обработка политики автоплея: обязательный клик пользователя перед первым запуском плеера

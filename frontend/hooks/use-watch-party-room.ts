@@ -43,6 +43,11 @@ type StateUpdateMsg = {
 	by_user_id: number
 }
 
+type ForceSyncMsg = {
+	type: "force_sync"
+	playback_position_sec: number
+}
+
 type ChatMsg = {
 	type: "chat_message"
 	id: number
@@ -56,7 +61,7 @@ type ChatMsg = {
 type RoomEndedMsg = { type: "room_ended"; status: string; reason: string; at: string }
 type RoleUpdatedMsg = { type: "role_updated"; user_id: number; role: WatchPartyRole }
 
-type Incoming = SnapshotMsg | PresenceMsg | StateUpdateMsg | ChatMsg | RoomEndedMsg | RoleUpdatedMsg | { type: string }
+type Incoming = SnapshotMsg | PresenceMsg | StateUpdateMsg | ForceSyncMsg | ChatMsg | RoomEndedMsg | RoleUpdatedMsg | { type: string }
 
 export function useWatchPartyRoom(roomId: number | string) {
 	const [wsStatus, setWsStatus] = useState<"idle" | "connecting" | "open" | "closed" | "error">("idle")
@@ -76,7 +81,7 @@ export function useWatchPartyRoom(roomId: number | string) {
 		return window.localStorage.getItem("wpDebug") === "1"
 	}, [])
 
-	const canControl = useMemo(() => selfRole === "owner" || selfRole === "moderator", [selfRole])
+	const canControl = useMemo(() => selfRole === "owner", [selfRole])
 
 	const connect = useCallback(function connect() {
 		if (wsRef.current) return

@@ -28,8 +28,12 @@ type WatchPartySync = {
 } | null
 
 function extractIframeSrc(input: string): string | null {
-  const match = input.match(/src\s*=\s*"([^"]+)"/i)
-  return match?.[1] || null
+	const m1 = input.match(/src\s*=\s*"([^"]+)"/i)
+	if (m1?.[1]) return m1[1]
+	const m2 = input.match(/src\s*=\s*'([^']+)'/i)
+	if (m2?.[1]) return m2[1]
+	const m3 = input.match(/src\s*=\s*([^\s>]+)/i)
+	return m3?.[1] || null
 }
 
 function toYouTubeEmbed(input: string): string | null {
@@ -125,6 +129,7 @@ export function AnimeStreamPlayer({
 
   const [selectedType, setSelectedType] = useState<StreamType>("dubbed")
   const [selectedEpisodeNumber, setSelectedEpisodeNumber] = useState<number | null>(null)
+	const [selectedSeason, setSelectedSeason] = useState<number | null>(null)
   const [selectedVoiceGroupId, setSelectedVoiceGroupId] = useState<number | null>(null)
   const [selectedServerLabel, setSelectedServerLabel] = useState<string>("")
   const [selectedSourceId, setSelectedSourceId] = useState<number | null>(null)
@@ -139,6 +144,25 @@ export function AnimeStreamPlayer({
 	const [showAllVoiceGroupsSub, setShowAllVoiceGroupsSub] = useState(false)
 	const [episodesVisibleCount, setEpisodesVisibleCount] = useState(30)
 
+  const syncEnabled = Boolean(sync?.enabled)
+  const canControl = Boolean(sync?.canControl)
+  const controlsDisabled = syncEnabled && !canControl
+
+  const kodikIframeRef = useRef<Window | null>(null)
+  const lastServerTimeRef = useRef<number>(0)
+  const DRIFT_THRESHOLD = 2.5 // Порог рассинхрона в секундах
+  const [broadcastJoined, setBroadcastJoined] = useState(!syncEnabled) // По умолчанию доступно, если не синхронизация
+	const suppressUntilRef = useRef<number>(0)
+	const [kodikSettingsReady, setKodikSettingsReady] = useState(false)
+
+	useEffect(() => {
+		if (!syncEnabled) {
+			setBroadcastJoined(true)
+			return
+		}
+		setBroadcastJoined(false)
+	}, [syncEnabled])
+
 	useEffect(() => {
 		let mounted = true
 		;(async () => {
@@ -152,12 +176,15 @@ export function AnimeStreamPlayer({
 				})
 			} catch {
 				if (mounted) setKodikSettings(null)
+			} finally {
+				if (mounted) setKodikSettingsReady(true)
 			}
 		})()
 		return () => {
 			mounted = false
 		}
 	}, [])
+
 
 	useEffect(() => {
 		let mounted = true
@@ -198,9 +225,147 @@ export function AnimeStreamPlayer({
 		[anime.id, user?.id]
 	)
 
-  const syncEnabled = Boolean(sync?.enabled)
-  const canControl = Boolean(sync?.canControl)
-  const controlsDisabled = syncEnabled && !canControl
+  // Вспомогательная функция перемотки плеера
+  const syncSeek = useCallback((seconds: number) => {
+    if (!kodikIframeRef.current) return
+	suppressUntilRef.current = Date.now() + 600
+    kodikIframeRef.current.postMessage({
+      key: 'kodik_player_api',
+      value: { method: 'seek', seconds: seconds }
+    }, '*')
+  }, [])
+
+  // Обработчик сообщений от Kodik плеера через PostMessage
+  useEffect(() => {
+    if (!syncEnabled) return
+    if (!broadcastJoined) return
+
+    const kodikMessageListener = (e: MessageEvent) => {
+      if (!e.data?.key) return
+		if (kodikIframeRef.current && e.source !== kodikIframeRef.current) return
+		if (Date.now() < suppressUntilRef.current) return
+      
+      const { key, value } = e.data
+      
+      if (canControl && sync?.onPlaybackChange) {
+        switch(key) {
+          case 'kodik_player_play':
+            sync.onPlaybackChange({
+              is_playing: true,
+              playback_rate: sync.playback?.playback_rate || 1,
+								playback_position_sec: lastServerTimeRef.current
+            })
+            break
+          case 'kodik_player_pause':
+            sync.onPlaybackChange({
+              is_playing: false,
+              playback_rate: sync.playback?.playback_rate || 1,
+								playback_position_sec: lastServerTimeRef.current
+            })
+            break
+          case 'kodik_player_seek':
+            if (value?.time !== undefined) {
+              sync.onPlaybackChange({
+                is_playing: sync.playback?.is_playing || false,
+                playback_rate: sync.playback?.playback_rate || 1,
+                playback_position_sec: value.time
+              })
+              lastServerTimeRef.current = value.time
+            }
+            break
+          case 'kodik_player_speed_changenew':
+            if (value?.speed !== undefined) {
+              sync.onPlaybackChange({
+                is_playing: sync.playback?.is_playing || false,
+                playback_rate: value.speed,
+                playback_position_sec: lastServerTimeRef.current
+              })
+            }
+            break
+          case 'kodik_player_time_update':
+							if (typeof value === 'number') {
+								if (canControl) {
+									lastServerTimeRef.current = value
+								} else {
+									const drift = Math.abs(value - lastServerTimeRef.current)
+									if (drift > DRIFT_THRESHOLD) syncSeek(lastServerTimeRef.current)
+								}
+							}
+            break
+        }
+      }
+
+      // Обработка смены эпизода владельцем
+      if (key === 'kodik_player_current_episode' && canControl && sync?.onSelectionChange) {
+        if (value?.season !== undefined && value?.episode !== undefined) {
+			const nextEpisode = typeof value.episode === "number" ? value.episode : null
+			const nextSeason = typeof value.season === "number" ? value.season : null
+			if (nextEpisode === selectedEpisodeNumber && nextSeason === selectedSeason) return
+          // Обновляем состояние комнаты при смене серии/сезона
+          const currentContent = sync.selection || {}
+          sync.onSelectionChange({
+            ...currentContent,
+			selected_episode_number: nextEpisode,
+			selected_season: nextSeason,
+			selected_voice_group_id: currentContent.selected_voice_group_id
+          })
+        }
+      }
+    }
+
+    window.addEventListener('message', kodikMessageListener)
+    return () => window.removeEventListener('message', kodikMessageListener)
+	}, [syncEnabled, broadcastJoined, canControl, selectedEpisodeNumber, selectedSeason, sync, syncSeek])
+
+  // Применение входящих сетевых команд от сервера к Kodik плееру
+  useEffect(() => {
+	if (!syncEnabled || !broadcastJoined || !kodikIframeRef.current) return
+    const pb = sync?.playback
+    if (!pb) return
+    if (pb.playback_seq <= lastAppliedSeqRef.current) return
+    
+    lastAppliedSeqRef.current = pb.playback_seq
+    lastServerTimeRef.current = pb.playback_position_sec
+	suppressUntilRef.current = Date.now() + 900
+
+    // Применяем состояние к плееру
+    if (pb.is_playing) {
+      kodikIframeRef.current.postMessage({
+        key: 'kodik_player_api',
+        value: { method: 'play' }
+      }, '*')
+    } else {
+      kodikIframeRef.current.postMessage({
+        key: 'kodik_player_api',
+        value: { method: 'pause' }
+      }, '*')
+    }
+
+    // Применяем скорость воспроизведения
+    kodikIframeRef.current.postMessage({
+      key: 'kodik_player_api',
+      value: { method: 'speed', speed: pb.playback_rate }
+    }, '*')
+  }, [broadcastJoined, sync, syncEnabled])
+
+  // Отслеживаем смену эпизода от сервера для переключения на клиентах
+  useEffect(() => {
+    if (!syncEnabled || !kodikIframeRef.current || !sync?.selection) return
+    if (canControl) return // Владелец сам управляет плеером
+    
+    const sel = sync.selection
+    if (sel.selected_episode_number !== null && sel.selected_season !== null) {
+		suppressUntilRef.current = Date.now() + 1200
+      kodikIframeRef.current.postMessage({
+        key: 'kodik_player_api',
+        value: {
+          method: 'change_episode',
+          season: sel.selected_season,
+          episode: sel.selected_episode_number
+        }
+      }, '*')
+    }
+  }, [sync?.selection?.selected_episode_number, sync?.selection?.selected_season, syncEnabled, canControl])
 
   useEffect(() => {
     if (!syncEnabled) return
@@ -212,6 +377,9 @@ export function AnimeStreamPlayer({
     if (typeof sel.selected_episode_number === "number" || sel.selected_episode_number === null) {
       if (sel.selected_episode_number !== selectedEpisodeNumber) setSelectedEpisodeNumber(sel.selected_episode_number ?? null)
     }
+		if (typeof sel.selected_season === "number" || sel.selected_season === null) {
+			if (sel.selected_season !== selectedSeason) setSelectedSeason(sel.selected_season ?? null)
+		}
     if (typeof sel.selected_voice_group_id === "number" || sel.selected_voice_group_id === null) {
       if (sel.selected_voice_group_id !== selectedVoiceGroupId) setSelectedVoiceGroupId(sel.selected_voice_group_id ?? null)
     }
@@ -240,6 +408,7 @@ export function AnimeStreamPlayer({
       anime_slug: anime.url,
       selected_type: selectedType,
       selected_episode_number: selectedEpisodeNumber,
+		selected_season: selectedSeason,
       selected_voice_group_id: selectedVoiceGroupId,
       selected_server_label: selectedServerLabel,
       selected_source_id: selectedSourceId,
@@ -248,7 +417,7 @@ export function AnimeStreamPlayer({
     if (key === lastSelectionSentRef.current) return
     lastSelectionSentRef.current = key
     sync.onSelectionChange(content)
-  }, [anime.url, canControl, selectedEpisodeNumber, selectedServerLabel, selectedSourceId, selectedType, selectedVoiceGroupId, sync, syncEnabled])
+	}, [anime.url, canControl, selectedEpisodeNumber, selectedSeason, selectedServerLabel, selectedSourceId, selectedType, selectedVoiceGroupId, sync, syncEnabled])
 
   useEffect(() => {
     if (!user) return
@@ -521,6 +690,17 @@ export function AnimeStreamPlayer({
     return withAutoplay(src)
   }, [activeUrl, autoplayTrailer, kodikSettings, selectedEpisode])
 
+	const shouldDelayKodikRender = useMemo(() => {
+		if (kind !== "iframe") return false
+		if (!syncEnabled) return false
+		try {
+			const u = new URL(iframeSrc)
+			return /kodikplayer\.com$/i.test(u.hostname) && !kodikSettingsReady
+		} catch {
+			return false
+		}
+	}, [iframeSrc, kind, kodikSettingsReady, syncEnabled])
+
   const handleUpdateList = async (animeId: string, status: any) => {
     if (!user) throw new Error("Unauthorized")
     await addToMyCollection({ animeId, status: status as WatchlistStatus })
@@ -706,13 +886,25 @@ export function AnimeStreamPlayer({
       <div className="container mx-auto max-w-5xl">
         <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-border bg-background-secondary">
           {kind === "iframe" ? (
-            <iframe
-			  key={`${selectedType}:${selectedEpisodeNumber}:${selectedSourceId}:${iframeSrc}`}
-              src={iframeSrc}
+				shouldDelayKodikRender ? (
+					<div className="absolute inset-0 flex items-center justify-center text-sm text-foreground-muted">
+						Загрузка плеера…
+					</div>
+				) : (
+					<iframe
+					  id="kodik-player"
+					  key={`${selectedType}:${selectedEpisodeNumber}:${selectedSourceId}`}
+					  src={iframeSrc}
+              ref={(el) => {
+                if (el?.contentWindow) {
+                  kodikIframeRef.current = el.contentWindow
+                }
+              }}
               className="absolute inset-0 w-full h-full"
-              allow="autoplay; encrypted-media; picture-in-picture"
+              allow="autoplay *; fullscreen *; encrypted-media *; picture-in-picture *"
               allowFullScreen
-            />
+					/>
+				)
           ) : (
             <ArtVideoPlayer
 			  key={`${selectedType}:${selectedEpisodeNumber}:${selectedSourceId}:${activeUrl}`}
@@ -738,6 +930,37 @@ export function AnimeStreamPlayer({
 			  }}
             />
           )}
+		  {/* Оверлей с кнопкой "Войти в трансляцию" для обхода политики автоплея браузеров */}
+		  {syncEnabled && !broadcastJoined ? (
+			<div 
+				id="autoplay-overlay"
+				className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white"
+			>
+				<div className="text-2xl font-bold mb-2">🎬 Watch Party</div>
+				<div className="text-sm text-gray-300 mb-6">Нажмите чтобы присоединиться к трансляции</div>
+				<button
+					id="join-broadcast"
+					type="button"
+					onClick={() => {
+						setBroadcastJoined(true)
+						// Первый клик пользователя, теперь можно запустить плеер
+					const pb = sync?.playback
+					if (!kodikIframeRef.current || !pb) return
+					suppressUntilRef.current = Date.now() + 1500
+						kodikIframeRef.current.postMessage({ key: 'kodik_player_api', value: { method: 'speed', speed: pb.playback_rate } }, '*')
+						kodikIframeRef.current.postMessage({ key: 'kodik_player_api', value: { method: 'seek', seconds: pb.playback_position_sec } }, '*')
+					if (pb.is_playing) {
+						kodikIframeRef.current.postMessage({ key: 'kodik_player_api', value: { method: 'play' } }, '*')
+					} else {
+						kodikIframeRef.current.postMessage({ key: 'kodik_player_api', value: { method: 'pause' } }, '*')
+					}
+					}}
+					className="h-12 px-8 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+				>
+					Войти в трансляцию
+				</button>
+			</div>
+		  ) : null}
 		  {autoplayBlocked ? (
 			<button
 				type="button"
@@ -755,12 +978,11 @@ export function AnimeStreamPlayer({
 				Нажмите, чтобы запустить синхронно
 			</button>
 		  ) : null}
-		  {controlsDisabled ? <div className="absolute inset-0" /> : null}
+		  {controlsDisabled && broadcastJoined ? <div className="absolute inset-0 z-10" /> : null}
         </div>
-		{syncEnabled && kind === "iframe" ? (
+		{syncEnabled && kind === "iframe" && !broadcastJoined ? null : syncEnabled && kind === "iframe" ? (
 			<div className="mt-2 text-xs text-foreground-muted">
-				Синхронизация Play/Pause/Seek недоступна для внешнего iframe-плеера. Для полной синхронизации нужен источник типа
-				 direct.
+				Синхронизация активна: Play/Pause/Seek/episode/speed работают в реальном времени для всех участников.
 			</div>
 		) : null}
 
@@ -830,7 +1052,7 @@ export function AnimeStreamPlayer({
 						) : null}
 					</div>
 					{user && continueEpisodeNumber !== null ? (
-						<div className="w-full sm:flex-none sm:max-w-[320px]">
+					<div className="w-full sm:w-auto sm:flex-none sm:max-w-[320px] sm:min-w-0">
 							<button
 								type="button"
 								disabled={controlsDisabled || continueEpisodeNumber === selectedEpisodeNumber}
@@ -855,7 +1077,7 @@ export function AnimeStreamPlayer({
 										: `Resume from episode ${continueEpisodeNumber}`
 								}
 							>
-								<span className="w-full truncate">
+								<span className="w-full truncate sm:min-w-0">
 									<span className="sm:hidden">
 										{locale === "ru" ? `Продолжить с ${continueEpisodeNumber} серии` : `Resume ${continueEpisodeNumber}`}
 									</span>
