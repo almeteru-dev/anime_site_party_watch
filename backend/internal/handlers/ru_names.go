@@ -68,17 +68,32 @@ func setSourceRUName(sourceID int, ruName *string) error {
 		Error
 }
 
-func setGenreRUName(genreID int, ruName *string) error {
+func setGenreRUName(genreID int, ruName *string, ruDescription *string) error {
 	ruID, err := getRuLanguageID()
 	if err != nil {
 		return err
 	}
 	n := normalizeOptionalName(ruName)
-	if n == nil {
+	d := normalizeOptionalName(ruDescription)
+	if n == nil && d == nil {
 		return app.DB.Where("genre_id = ? AND language_id = ?", genreID, ruID).Delete(&models.GenreTranslation{}).Error
 	}
+	nameToStore := ""
+	if n != nil {
+		nameToStore = *n
+	} else {
+		var tr models.GenreTranslation
+		if err := app.DB.Where("genre_id = ? AND language_id = ?", genreID, ruID).First(&tr).Error; err == nil {
+			nameToStore = tr.Name
+		}
+		if nameToStore == "" {
+			var g models.Genre
+			_ = app.DB.Select("name").First(&g, genreID).Error
+			nameToStore = g.Name
+		}
+	}
 	return app.DB.Where("genre_id = ? AND language_id = ?", genreID, ruID).
-		Assign(models.GenreTranslation{Name: *n}).
+		Assign(map[string]any{"name": nameToStore, "description": d}).
 		FirstOrCreate(&models.GenreTranslation{GenreID: genreID, LanguageID: ruID}).
 		Error
 }
@@ -98,17 +113,32 @@ func setStudioRUName(studioID int, ruName *string) error {
 		Error
 }
 
-func setThemeRUName(themeID int, ruName *string) error {
+func setThemeRUName(themeID int, ruName *string, ruDescription *string) error {
 	ruID, err := getRuLanguageID()
 	if err != nil {
 		return err
 	}
 	n := normalizeOptionalName(ruName)
-	if n == nil {
+	d := normalizeOptionalName(ruDescription)
+	if n == nil && d == nil {
 		return app.DB.Where("theme_id = ? AND language_id = ?", themeID, ruID).Delete(&models.ThemeTranslation{}).Error
 	}
+	nameToStore := ""
+	if n != nil {
+		nameToStore = *n
+	} else {
+		var tr models.ThemeTranslation
+		if err := app.DB.Where("theme_id = ? AND language_id = ?", themeID, ruID).First(&tr).Error; err == nil {
+			nameToStore = tr.Name
+		}
+		if nameToStore == "" {
+			var t models.Theme
+			_ = app.DB.Select("name").First(&t, themeID).Error
+			nameToStore = t.Name
+		}
+	}
 	return app.DB.Where("theme_id = ? AND language_id = ?", themeID, ruID).
-		Assign(models.ThemeTranslation{Name: *n}).
+		Assign(map[string]any{"name": nameToStore, "description": d}).
 		FirstOrCreate(&models.ThemeTranslation{ThemeID: themeID, LanguageID: ruID}).
 		Error
 }
@@ -187,14 +217,19 @@ func applyGenreRU(items []models.Genre) error {
 	if err := app.DB.Where("language_id = ? AND genre_id IN ?", ruID, ids).Find(&trs).Error; err != nil {
 		return err
 	}
-	lookup := make(map[int]string, len(trs))
+	lookupName := make(map[int]string, len(trs))
+	lookupDesc := make(map[int]*string, len(trs))
 	for _, tr := range trs {
-		lookup[tr.GenreID] = tr.Name
+		lookupName[tr.GenreID] = tr.Name
+		lookupDesc[tr.GenreID] = tr.Description
 	}
 	for i := range items {
-		if v, ok := lookup[items[i].ID]; ok {
+		if v, ok := lookupName[items[i].ID]; ok {
 			vv := v
 			items[i].RUName = &vv
+		}
+		if d, ok := lookupDesc[items[i].ID]; ok {
+			items[i].DescriptionRU = d
 		}
 	}
 	return nil
@@ -245,14 +280,19 @@ func applyThemeRU(items []models.Theme) error {
 	if err := app.DB.Where("language_id = ? AND theme_id IN ?", ruID, ids).Find(&trs).Error; err != nil {
 		return err
 	}
-	lookup := make(map[int]string, len(trs))
+	lookupName := make(map[int]string, len(trs))
+	lookupDesc := make(map[int]*string, len(trs))
 	for _, tr := range trs {
-		lookup[tr.ThemeID] = tr.Name
+		lookupName[tr.ThemeID] = tr.Name
+		lookupDesc[tr.ThemeID] = tr.Description
 	}
 	for i := range items {
-		if v, ok := lookup[items[i].ID]; ok {
+		if v, ok := lookupName[items[i].ID]; ok {
 			vv := v
 			items[i].RUName = &vv
+		}
+		if d, ok := lookupDesc[items[i].ID]; ok {
+			items[i].DescriptionRU = d
 		}
 	}
 	return nil
@@ -273,10 +313,14 @@ func hydrateAnimeRefsRU(animes []models.Anime) error {
 	genreIDs := make(map[int]struct{})
 	themeIDs := make(map[int]struct{})
 	kindNames := make(map[string]struct{})
+	ratingNames := make(map[string]struct{})
 
 	for _, a := range animes {
 		if a.Kind != "" {
 			kindNames[a.Kind] = struct{}{}
+		}
+		if a.Rating != "" {
+			ratingNames[a.Rating] = struct{}{}
 		}
 		if a.Status != nil {
 			statusIDs[a.Status.ID] = struct{}{}
@@ -312,13 +356,18 @@ func hydrateAnimeRefsRU(animes []models.Anime) error {
 	for k := range kindNames {
 		kindSlice = append(kindSlice, k)
 	}
+	ratingSlice := make([]string, 0, len(ratingNames))
+	for r := range ratingNames {
+		ratingSlice = append(ratingSlice, r)
+	}
 
 	statusRU := map[int]string{}
 	sourceRU := map[int]string{}
 	studioRU := map[int]string{}
-	genreRU := map[int]string{}
-	themeRU := map[int]string{}
+	genreRU := map[int]models.GenreTranslation{}
+	themeRU := map[int]models.ThemeTranslation{}
 	kindRU := map[string]*string{}
+	ratingDesc := map[string]models.RatingOption{}
 
 	if len(statusSlice) > 0 {
 		var trs []models.StatusTranslation
@@ -353,7 +402,7 @@ func hydrateAnimeRefsRU(animes []models.Anime) error {
 			return err
 		}
 		for _, tr := range trs {
-			genreRU[tr.GenreID] = tr.Name
+			genreRU[tr.GenreID] = tr
 		}
 	}
 	if len(themeSlice) > 0 {
@@ -362,7 +411,14 @@ func hydrateAnimeRefsRU(animes []models.Anime) error {
 			return err
 		}
 		for _, tr := range trs {
-			themeRU[tr.ThemeID] = tr.Name
+			themeRU[tr.ThemeID] = tr
+		}
+	}
+	if len(ratingSlice) > 0 {
+		var opts []models.RatingOption
+		_ = app.DB.Select("name, description_en, description_ru").Where("name IN ?", ratingSlice).Find(&opts).Error
+		for _, o := range opts {
+			ratingDesc[o.Name] = o
 		}
 	}
 	if len(kindSlice) > 0 {
@@ -407,15 +463,27 @@ func hydrateAnimeRefsRU(animes []models.Anime) error {
 			}
 		}
 		for j := range a.Genres {
-			if v, ok := genreRU[a.Genres[j].ID]; ok {
-				vv := v
-				a.Genres[j].RUName = &vv
+			if tr, ok := genreRU[a.Genres[j].ID]; ok {
+				if tr.Name != "" {
+					vv := tr.Name
+					a.Genres[j].RUName = &vv
+				}
+				a.Genres[j].DescriptionRU = tr.Description
 			}
 		}
 		for j := range a.Themes {
-			if v, ok := themeRU[a.Themes[j].ID]; ok {
-				vv := v
-				a.Themes[j].RUName = &vv
+			if tr, ok := themeRU[a.Themes[j].ID]; ok {
+				if tr.Name != "" {
+					vv := tr.Name
+					a.Themes[j].RUName = &vv
+				}
+				a.Themes[j].DescriptionRU = tr.Description
+			}
+		}
+		if a.Rating != "" {
+			if o, ok := ratingDesc[a.Rating]; ok {
+				a.RatingDescriptionEN = o.DescriptionEN
+				a.RatingDescriptionRU = o.DescriptionRU
 			}
 		}
 	}

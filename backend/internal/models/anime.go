@@ -24,6 +24,8 @@ type Anime struct {
 	URL             string          `gorm:"unique;not null;type:varchar(255)" json:"url"`
 	Duration        int             `json:"duration"`
 	Rating          string          `gorm:"type:varchar(50)" json:"rating"`
+	RatingDescriptionEN *string    `gorm:"-" json:"rating_description_en,omitempty"`
+	RatingDescriptionRU *string    `gorm:"-" json:"rating_description_ru,omitempty"`
 	ImageURL        string          `gorm:"column:image;type:varchar(500)" json:"image_url"`
 	BackgroundURL   string          `gorm:"type:varchar(500);default:''" json:"background_url"`
 	TrailerURL      string          `gorm:"type:varchar(1000)" json:"trailer_url"`

@@ -8,12 +8,16 @@ export interface Genre {
   id: number
   name: string
   ru_name?: string | null
+	description_en?: string | null
+	description_ru?: string | null
 }
 
 export interface Theme {
   id: number
   name: string
   ru_name?: string | null
+	description_en?: string | null
+	description_ru?: string | null
 }
 
 export interface Producer {
@@ -83,6 +87,8 @@ export interface KindOption {
 export interface RatingOption {
   id: number
   name: string
+	description_en?: string | null
+	description_ru?: string | null
 }
 
 export interface Status {
@@ -205,6 +211,8 @@ export interface Anime {
   url: string
   duration: number
   rating: string
+	rating_description_en?: string | null
+	rating_description_ru?: string | null
   image_url: string
   image?: string
 	background_url?: string
@@ -1931,6 +1939,8 @@ async function adminListMetaItem<T>(path: string): Promise<T[]> {
 type AdminMetaPayload = {
   name: string
   ru_name?: string | null
+	description_en?: string | null
+	description_ru?: string | null
 }
 
 async function adminCreateMetaItem<T>(path: string, payload: AdminMetaPayload): Promise<T> {
@@ -1989,9 +1999,10 @@ export const adminDeleteKind = (p: { id: number }) => adminDeleteMetaItem("kinds
 
 // Ratings
 export const adminListRatings = (p: { }) => adminListMetaItem<RatingOption>("ratings")
-export const adminCreateRating = (p: { name: string }) => adminCreateMetaItem<RatingOption>("ratings", { name: p.name })
-export const adminUpdateRating = (p: { id: number; name: string }) =>
-  adminUpdateMetaItem<RatingOption>("ratings", p.id, { name: p.name })
+export const adminCreateRating = (p: { name: string; description_en?: string | null; description_ru?: string | null }) =>
+  adminCreateMetaItem<RatingOption>("ratings", { name: p.name, description_en: p.description_en ?? null, description_ru: p.description_ru ?? null })
+export const adminUpdateRating = (p: { id: number; name: string; description_en?: string | null; description_ru?: string | null }) =>
+  adminUpdateMetaItem<RatingOption>("ratings", p.id, { name: p.name, description_en: p.description_en ?? null, description_ru: p.description_ru ?? null })
 export const adminDeleteRating = (p: { id: number }) => adminDeleteMetaItem("ratings", p.id)
 
 // Statuses
@@ -2020,17 +2031,17 @@ export const adminDeleteSource = (p: { id: number }) => adminDeleteMetaItem("sou
 
 // Genres
 export const adminListGenres = (p: { }) => adminListMetaItem<Genre>("genres")
-export const adminCreateGenre = (p: { name: string; ru_name?: string | null }) =>
-  adminCreateMetaItem<Genre>("genres", { name: p.name, ru_name: p.ru_name ?? null })
-export const adminUpdateGenre = (p: { id: number; name: string; ru_name?: string | null }) =>
-  adminUpdateMetaItem<Genre>("genres", p.id, { name: p.name, ru_name: p.ru_name ?? null })
+export const adminCreateGenre = (p: { name: string; ru_name?: string | null; description_en?: string | null; description_ru?: string | null }) =>
+  adminCreateMetaItem<Genre>("genres", { name: p.name, ru_name: p.ru_name ?? null, description_en: p.description_en ?? null, description_ru: p.description_ru ?? null })
+export const adminUpdateGenre = (p: { id: number; name: string; ru_name?: string | null; description_en?: string | null; description_ru?: string | null }) =>
+  adminUpdateMetaItem<Genre>("genres", p.id, { name: p.name, ru_name: p.ru_name ?? null, description_en: p.description_en ?? null, description_ru: p.description_ru ?? null })
 export const adminDeleteGenre = (p: { id: number }) => adminDeleteMetaItem("genres", p.id)
 
 export const adminListThemes = (p: { }) => adminListMetaItem<Theme>("themes")
-export const adminCreateTheme = (p: { name: string; ru_name?: string | null }) =>
-  adminCreateMetaItem<Theme>("themes", { name: p.name, ru_name: p.ru_name ?? null })
-export const adminUpdateTheme = (p: { id: number; name: string; ru_name?: string | null }) =>
-  adminUpdateMetaItem<Theme>("themes", p.id, { name: p.name, ru_name: p.ru_name ?? null })
+export const adminCreateTheme = (p: { name: string; ru_name?: string | null; description_en?: string | null; description_ru?: string | null }) =>
+  adminCreateMetaItem<Theme>("themes", { name: p.name, ru_name: p.ru_name ?? null, description_en: p.description_en ?? null, description_ru: p.description_ru ?? null })
+export const adminUpdateTheme = (p: { id: number; name: string; ru_name?: string | null; description_en?: string | null; description_ru?: string | null }) =>
+  adminUpdateMetaItem<Theme>("themes", p.id, { name: p.name, ru_name: p.ru_name ?? null, description_en: p.description_en ?? null, description_ru: p.description_ru ?? null })
 export const adminDeleteTheme = (p: { id: number }) => adminDeleteMetaItem("themes", p.id)
 
 export const adminListProducers = (p: { }) => adminListMetaItem<Producer>("producers")

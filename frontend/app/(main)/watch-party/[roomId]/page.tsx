@@ -787,7 +787,7 @@
 												setShowAllVoiceGroups(false)
 												applyOwnerSelection({ selected_type: "dubbed", selected_voice_group_id: null, selected_source_id: null, selected_episode_number: null })
 											}}
-											className={`h-10 px-4 rounded-full text-sm font-semibold ${contentUi.selected_type !== "subbed" ? "bg-primary text-primary-foreground" : "bg-gray-800 hover:bg-gray-700"}`}
+									className={`text-sm ${contentUi.selected_type !== "subbed" ? "h-10 px-4 rounded-full font-semibold bg-primary text-primary-foreground" : "accent-pill"}`}
 										>
 											Озвучка
 										</button>
@@ -798,7 +798,7 @@
 												setShowAllVoiceGroups(false)
 												applyOwnerSelection({ selected_type: "subbed", selected_voice_group_id: null, selected_source_id: null, selected_episode_number: null })
 											}}
-											className={`h-10 px-4 rounded-full text-sm font-semibold ${contentUi.selected_type === "subbed" ? "bg-primary text-primary-foreground" : "bg-gray-800 hover:bg-gray-700"}`}
+									className={`text-sm ${contentUi.selected_type === "subbed" ? "h-10 px-4 rounded-full font-semibold bg-primary text-primary-foreground" : "accent-pill"}`}
 										>
 											Субтитры
 										</button>

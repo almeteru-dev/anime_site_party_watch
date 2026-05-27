@@ -10,8 +10,10 @@ import (
 )
 
 type NameInput struct {
-	Name   string  `json:"name"`
-	RUName *string `json:"ru_name"`
+	Name          string  `json:"name"`
+	RUName        *string `json:"ru_name"`
+	DescriptionEN *string `json:"description_en"`
+	DescriptionRU *string `json:"description_ru"`
 }
 
 func AdminListKinds(c *gin.Context) {
@@ -96,7 +98,9 @@ func AdminCreateRating(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Name is required"})
 		return
 	}
-	item := models.RatingOption{Name: name}
+	descEn := normalizeOptionalName(input.DescriptionEN)
+	descRu := normalizeOptionalName(input.DescriptionRU)
+	item := models.RatingOption{Name: name, DescriptionEN: descEn, DescriptionRU: descRu}
 	if err := app.DB.Create(&item).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to create rating"})
 		return
@@ -121,6 +125,8 @@ func AdminUpdateRating(c *gin.Context) {
 		return
 	}
 	item.Name = name
+	item.DescriptionEN = normalizeOptionalName(input.DescriptionEN)
+	item.DescriptionRU = normalizeOptionalName(input.DescriptionRU)
 	if err := app.DB.Save(&item).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to update rating"})
 		return

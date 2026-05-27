@@ -30,12 +30,16 @@ type Genre struct {
 	ID     int     `gorm:"primaryKey;autoIncrement" json:"id"`
 	Name   string  `gorm:"not null;type:varchar(255)" json:"name"`
 	RUName *string `gorm:"-" json:"ru_name,omitempty"`
+	DescriptionEN *string `gorm:"column:description_en;type:text" json:"description_en,omitempty"`
+	DescriptionRU *string `gorm:"-" json:"description_ru,omitempty"`
 }
 
 type Theme struct {
 	ID     int     `gorm:"primaryKey;autoIncrement" json:"id"`
 	Name   string  `gorm:"not null;type:varchar(255)" json:"name"`
 	RUName *string `gorm:"-" json:"ru_name,omitempty"`
+	DescriptionEN *string `gorm:"column:description_en;type:text" json:"description_en,omitempty"`
+	DescriptionRU *string `gorm:"-" json:"description_ru,omitempty"`
 }
 
 type Producer struct {

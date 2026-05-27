@@ -32,6 +32,7 @@ type GenreTranslation struct {
 	GenreID    int      `gorm:"not null" json:"genre_id"`
 	LanguageID int      `gorm:"not null" json:"language_id"`
 	Name       string   `gorm:"not null;type:varchar(255)" json:"name"`
+	Description *string `gorm:"type:text" json:"-"`
 	Genre      Genre    `gorm:"foreignKey:GenreID" json:"-"`
 	Language   Language `gorm:"foreignKey:LanguageID" json:"-"`
 }
@@ -41,6 +42,7 @@ type ThemeTranslation struct {
 	ThemeID    int      `gorm:"not null" json:"theme_id"`
 	LanguageID int      `gorm:"not null" json:"language_id"`
 	Name       string   `gorm:"not null;type:varchar(255)" json:"name"`
+	Description *string `gorm:"type:text" json:"-"`
 	Theme      Theme    `gorm:"foreignKey:ThemeID" json:"-"`
 	Language   Language `gorm:"foreignKey:LanguageID" json:"-"`
 }

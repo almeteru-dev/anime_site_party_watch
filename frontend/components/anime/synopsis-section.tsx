@@ -3,6 +3,7 @@
 import { Info, Languages, Tv } from "lucide-react"
 import { type Anime, getLocalizedDescription } from "@/lib/api"
 import { useLanguage } from "@/contexts/language-context"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface SynopsisSectionProps {
   anime: Anime
@@ -75,6 +76,11 @@ export function SynopsisSection({ anime }: SynopsisSectionProps) {
     rating: anime.rating || t.common.na,
   }
 
+	const ratingDescription =
+		locale === "ru"
+			? (anime.rating_description_ru || "")
+			: (anime.rating_description_en || "")
+
   const labels = {
     synopsis: locale === "ru" ? "Описание" : "Synopsis",
     genres: locale === "ru" ? "Жанры" : "Genres",
@@ -115,12 +121,25 @@ export function SynopsisSection({ anime }: SynopsisSectionProps) {
 				  <div className="text-sm font-semibold text-foreground mb-2">{labels.genres}</div>
 				  <div className="flex flex-wrap gap-2">
 					{(anime.genres || []).map((g) => (
-					  <span
-						key={g.id}
-						className="inline-flex items-center gap-2 rounded-lg border border-border bg-background-tertiary px-3 py-1.5 text-sm text-foreground-muted"
-					  >
-						<span className="truncate max-w-[180px]">{locale === "ru" ? g.ru_name || g.name : g.name}</span>
-					  </span>
+						(() => {
+							const label = locale === "ru" ? g.ru_name || g.name : g.name
+							const desc = locale === "ru" ? g.description_ru || "" : g.description_en || ""
+							const chip = <span className="meta-chip text-sm"><span className="truncate max-w-[180px]">{label}</span></span>
+							if (!desc) return <span key={g.id}>{chip}</span>
+							return (
+								<Tooltip key={g.id}>
+									<TooltipTrigger asChild>
+										<span className="inline-flex">{chip}</span>
+									</TooltipTrigger>
+									<TooltipContent
+										sideOffset={8}
+										className="max-w-sm !bg-card !text-foreground border border-border shadow-lg px-4 py-3 text-sm leading-relaxed"
+									>
+										{desc}
+									</TooltipContent>
+								</Tooltip>
+							)
+						})()
 					))}
 				  </div>
 				</div>
@@ -131,13 +150,50 @@ export function SynopsisSection({ anime }: SynopsisSectionProps) {
 				  <div className="text-sm font-semibold text-foreground mb-2">{labels.themes}</div>
 				  <div className="flex flex-wrap gap-2">
 					{(anime.themes || []).map((th) => (
-					  <span
-						key={th.id}
-						className="inline-flex items-center gap-2 rounded-lg border border-border bg-background-tertiary px-3 py-1.5 text-sm text-foreground-muted"
-					  >
-						<span className="truncate max-w-[180px]">{locale === "ru" ? th.ru_name || th.name : th.name}</span>
-					  </span>
+						(() => {
+							const label = locale === "ru" ? th.ru_name || th.name : th.name
+							const desc = locale === "ru" ? th.description_ru || "" : th.description_en || ""
+							const chip = <span className="meta-chip text-sm"><span className="truncate max-w-[180px]">{label}</span></span>
+							if (!desc) return <span key={th.id}>{chip}</span>
+							return (
+								<Tooltip key={th.id}>
+									<TooltipTrigger asChild>
+										<span className="inline-flex">{chip}</span>
+									</TooltipTrigger>
+									<TooltipContent
+										sideOffset={8}
+										className="max-w-sm !bg-card !text-foreground border border-border shadow-lg px-4 py-3 text-sm leading-relaxed"
+									>
+										{desc}
+									</TooltipContent>
+								</Tooltip>
+							)
+						})()
 					))}
+				  </div>
+				</div>
+			  ) : null}
+
+			  {details.rating !== t.common.na ? (
+				<div className="mt-4">
+				  <div className="text-sm font-semibold text-foreground mb-2">{labels.rating}</div>
+				  <div className="flex flex-wrap gap-2">
+					{ratingDescription ? (
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<span className="meta-chip text-sm">
+									<span className="truncate max-w-[180px]">{details.rating}</span>
+								</span>
+							</TooltipTrigger>
+							<TooltipContent sideOffset={8} className="max-w-sm !bg-card !text-foreground border border-border shadow-lg px-4 py-3 text-sm leading-relaxed">
+								{ratingDescription}
+							</TooltipContent>
+						</Tooltip>
+					) : (
+						<span className="meta-chip text-sm">
+							<span className="truncate max-w-[180px]">{details.rating}</span>
+						</span>
+					)}
 				  </div>
 				</div>
 			  ) : null}
@@ -198,7 +254,6 @@ export function SynopsisSection({ anime }: SynopsisSectionProps) {
                 {details.releasedOn !== t.common.na ? <DetailRow label={labels.releasedOn} value={details.releasedOn} /> : null}
                 {details.episodes !== t.common.na ? <DetailRow label={labels.episodes} value={details.episodes} /> : null}
                 {details.duration !== t.common.na ? <DetailRow label={labels.duration} value={details.duration} /> : null}
-                {details.rating !== t.common.na ? <DetailRow label={labels.rating} value={details.rating} /> : null}
               </div>
             </div>
           </div>

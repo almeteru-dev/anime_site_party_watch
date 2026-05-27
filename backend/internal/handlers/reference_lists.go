@@ -351,15 +351,21 @@ func AdminCreateGenre(c *gin.Context) {
 		return
 	}
 	item := models.Genre{Name: name}
+	item.DescriptionEN = normalizeOptionalName(input.DescriptionEN)
 	if err := app.DB.Create(&item).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to create genre"})
 		return
 	}
-	if err := setGenreRUName(item.ID, input.RUName); err != nil {
+	if err := setGenreRUName(item.ID, input.RUName, input.DescriptionRU); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save russian name"})
 		return
 	}
 	item.RUName = normalizeOptionalName(input.RUName)
+	item.DescriptionRU = normalizeOptionalName(input.DescriptionRU)
+	if item.RUName == nil && item.DescriptionRU != nil {
+		v := item.Name
+		item.RUName = &v
+	}
 	c.JSON(http.StatusCreated, item)
 }
 
@@ -380,15 +386,21 @@ func AdminUpdateGenre(c *gin.Context) {
 		return
 	}
 	item.Name = name
+	item.DescriptionEN = normalizeOptionalName(input.DescriptionEN)
 	if err := app.DB.Save(&item).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to update genre"})
 		return
 	}
-	if err := setGenreRUName(item.ID, input.RUName); err != nil {
+	if err := setGenreRUName(item.ID, input.RUName, input.DescriptionRU); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save russian name"})
 		return
 	}
 	item.RUName = normalizeOptionalName(input.RUName)
+	item.DescriptionRU = normalizeOptionalName(input.DescriptionRU)
+	if item.RUName == nil && item.DescriptionRU != nil {
+		v := item.Name
+		item.RUName = &v
+	}
 	c.JSON(http.StatusOK, item)
 }
 
@@ -428,15 +440,21 @@ func AdminCreateTheme(c *gin.Context) {
 		return
 	}
 	item := models.Theme{Name: name}
+	item.DescriptionEN = normalizeOptionalName(input.DescriptionEN)
 	if err := app.DB.Create(&item).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to create theme"})
 		return
 	}
-	if err := setThemeRUName(item.ID, input.RUName); err != nil {
+	if err := setThemeRUName(item.ID, input.RUName, input.DescriptionRU); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save russian name"})
 		return
 	}
 	item.RUName = normalizeOptionalName(input.RUName)
+	item.DescriptionRU = normalizeOptionalName(input.DescriptionRU)
+	if item.RUName == nil && item.DescriptionRU != nil {
+		v := item.Name
+		item.RUName = &v
+	}
 	c.JSON(http.StatusCreated, item)
 }
 
@@ -457,15 +475,21 @@ func AdminUpdateTheme(c *gin.Context) {
 		return
 	}
 	item.Name = name
+	item.DescriptionEN = normalizeOptionalName(input.DescriptionEN)
 	if err := app.DB.Save(&item).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to update theme"})
 		return
 	}
-	if err := setThemeRUName(item.ID, input.RUName); err != nil {
+	if err := setThemeRUName(item.ID, input.RUName, input.DescriptionRU); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save russian name"})
 		return
 	}
 	item.RUName = normalizeOptionalName(input.RUName)
+	item.DescriptionRU = normalizeOptionalName(input.DescriptionRU)
+	if item.RUName == nil && item.DescriptionRU != nil {
+		v := item.Name
+		item.RUName = &v
+	}
 	c.JSON(http.StatusOK, item)
 }
 

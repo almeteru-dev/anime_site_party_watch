@@ -80,25 +80,33 @@ func AdminGetMeta(c *gin.Context) {
 	if err := app.DB.Where("code = ?", "ru").First(&ru).Error; err == nil {
 		var genreTrs []models.GenreTranslation
 		app.DB.Where("language_id = ?", ru.ID).Find(&genreTrs)
-		genreMap := make(map[int]string)
+		genreMap := make(map[int]models.GenreTranslation)
 		for _, tr := range genreTrs {
-			genreMap[tr.GenreID] = tr.Name
+			genreMap[tr.GenreID] = tr
 		}
 		for i := range genres {
-			if ruName, ok := genreMap[genres[i].ID]; ok {
-				genres[i].RUName = &ruName
+			if tr, ok := genreMap[genres[i].ID]; ok {
+				if tr.Name != "" {
+					ruName := tr.Name
+					genres[i].RUName = &ruName
+				}
+				genres[i].DescriptionRU = tr.Description
 			}
 		}
 
 		var themeTrs []models.ThemeTranslation
 		app.DB.Where("language_id = ?", ru.ID).Find(&themeTrs)
-		themeMap := make(map[int]string)
+		themeMap := make(map[int]models.ThemeTranslation)
 		for _, tr := range themeTrs {
-			themeMap[tr.ThemeID] = tr.Name
+			themeMap[tr.ThemeID] = tr
 		}
 		for i := range themes {
-			if ruName, ok := themeMap[themes[i].ID]; ok {
-				themes[i].RUName = &ruName
+			if tr, ok := themeMap[themes[i].ID]; ok {
+				if tr.Name != "" {
+					ruName := tr.Name
+					themes[i].RUName = &ruName
+				}
+				themes[i].DescriptionRU = tr.Description
 			}
 		}
 
