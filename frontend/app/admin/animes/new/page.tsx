@@ -17,6 +17,8 @@ import {
 	adminJikanGetAnime,
 	adminShikimoriGetAnime,
 	adminShikimoriSearch,
+	searchAnimes,
+	type AnimeSearchItem,
 	type AdminCreateAnimeInput,
 	type AdminMeta,
 	type ShikimoriAnimeSearchItem,
@@ -38,6 +40,9 @@ export default function AdminAddAnimePage() {
 	const [shikiQuery, setShikiQuery] = useState("")
 	const [shikiLoading, setShikiLoading] = useState(false)
 	const [shikiFillLoading, setShikiFillLoading] = useState(false)
+	const [firstSeasonQuery, setFirstSeasonQuery] = useState("")
+	const [firstSeasonResults, setFirstSeasonResults] = useState<AnimeSearchItem[]>([])
+	const [firstSeasonSelected, setFirstSeasonSelected] = useState<AnimeSearchItem | null>(null)
 	const [shikiFillReport, setShikiFillReport] = useState<string | null>(null)
 	type ShikiState = { items: ShikimoriAnimeSearchItem[]; error: string | null }
 	const [shiki, setShiki] = useState<ShikiState>({ items: [], error: null })
@@ -94,6 +99,8 @@ export default function AdminAddAnimePage() {
     aired_on: "",
     released_on: "",
 		duration: 0,
+		season_number: 1,
+		first_season_id: null,
   })
 
 	const runShikiSearch = async () => {
@@ -406,8 +413,11 @@ export default function AdminAddAnimePage() {
   }, [form.title_en_romaji])
 
   const canSubmit = useMemo(() => {
-    return !!form.url.trim() && !!form.title_ru.trim() && !!form.title_en.trim() && !!form.title_en_romaji.trim()
-  }, [form.title_en, form.title_en_romaji, form.title_ru, form.url])
+		if (!form.url.trim() || !form.title_ru.trim() || !form.title_en.trim() || !form.title_en_romaji.trim()) return false
+		if (!form.season_number || form.season_number <= 0) return false
+		if (form.season_number === 1) return form.first_season_id == null
+		return form.first_season_id != null
+	}, [form.first_season_id, form.season_number, form.title_en, form.title_en_romaji, form.title_ru, form.url])
 
   const toggleGenre = (id: number) => {
     setForm((prev) => {
@@ -487,6 +497,18 @@ export default function AdminAddAnimePage() {
       setError("Title (RU), Title (EN) and Title (Romaji) are required")
       return
     }
+		if (!form.season_number || form.season_number <= 0) {
+			setError("Number Season is required")
+			return
+		}
+		if (form.season_number === 1 && form.first_season_id != null) {
+			setError("First season must be empty when Number Season = 1")
+			return
+		}
+		if (form.season_number > 1 && form.first_season_id == null) {
+			setError("First season is required when Number Season > 1")
+			return
+		}
     if (!canSubmit) return
 
     setIsLoading(true)
@@ -713,6 +735,110 @@ export default function AdminAddAnimePage() {
                 )}
               />
             </div>
+
+			<div className="space-y-2">
+				<label className="text-xs font-semibold text-foreground-muted">Number Season *</label>
+				<input
+					type="number"
+					min={1}
+					value={form.season_number || 1}
+					onChange={(e) => {
+						const v = Number(e.target.value)
+						setForm((p) => ({ ...p, season_number: Number.isFinite(v) ? v : 0 }))
+						if (v === 1) {
+							setFirstSeasonSelected(null)
+							setFirstSeasonResults([])
+							setFirstSeasonQuery("")
+							setForm((p) => ({ ...p, first_season_id: null }))
+						}
+					}}
+					required
+					aria-invalid={attemptedSubmit && (!form.season_number || form.season_number <= 0)}
+					className={cn(
+						"w-full h-11 rounded-xl bg-background border px-4 text-sm text-foreground outline-none focus:border-primary/50",
+						attemptedSubmit && (!form.season_number || form.season_number <= 0) ? "border-red-500/60" : "border-border/60"
+					)}
+				/>
+			</div>
+
+			<div className="space-y-2 lg:col-span-2">
+				<label className="text-xs font-semibold text-foreground-muted">First season *</label>
+				{form.season_number === 1 ? (
+					<div className="h-11 rounded-xl border border-border/60 bg-background px-4 flex items-center text-sm text-foreground-muted">
+						This anime is the first season
+					</div>
+				) : (
+					<>
+						<input
+							value={firstSeasonQuery}
+							onChange={async (e) => {
+								const v = e.target.value
+								setFirstSeasonQuery(v)
+								const t = v.trim()
+								if (t.length < 2) {
+									setFirstSeasonResults([])
+									return
+								}
+								try {
+									const r = await searchAnimes({ q: t })
+									setFirstSeasonResults(r.slice(0, 10))
+								} catch {
+									setFirstSeasonResults([])
+								}
+							}}
+							placeholder="Search first season anime..."
+							className={cn(
+								"w-full h-11 rounded-xl bg-background border border-border/60 px-4 text-sm text-foreground outline-none focus:border-primary/50",
+								attemptedSubmit && form.season_number > 1 && form.first_season_id == null ? "border-red-500/60" : ""
+							)}
+						/>
+						{firstSeasonSelected ? (
+							<div className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-background-secondary/30 px-4 py-3">
+								<div className="min-w-0">
+									<div className="text-sm font-semibold truncate">{firstSeasonSelected.title_en || firstSeasonSelected.title_ru}</div>
+									<div className="text-xs text-foreground-muted truncate">{firstSeasonSelected.title_ru}</div>
+								</div>
+								<button
+									type="button"
+									onClick={() => {
+										setFirstSeasonSelected(null)
+										setForm((p) => ({ ...p, first_season_id: null }))
+									}}
+									className="text-xs font-semibold text-foreground-muted hover:text-foreground"
+								>
+									Clear
+								</button>
+							</div>
+						) : null}
+						{firstSeasonResults.length > 0 ? (
+							<div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+								{firstSeasonResults.map((a) => (
+									<button
+										key={a.id}
+										type="button"
+										onClick={() => {
+											setFirstSeasonSelected(a)
+											setForm((p) => ({ ...p, first_season_id: a.id }))
+										}}
+										className={cn(
+											"flex items-center gap-3 rounded-xl border px-3 py-2 text-left transition-colors",
+											form.first_season_id === a.id ? "border-primary/40 bg-primary/10" : "border-border/60 bg-background hover:bg-background-tertiary/30"
+										)}
+									>
+										<div className="w-10 h-14 rounded-lg overflow-hidden bg-background-tertiary/40 shrink-0">
+											{a.image_url ? <img src={a.image_url} alt="" className="w-full h-full object-cover" /> : null}
+										</div>
+										<div className="min-w-0">
+											<div className="text-sm font-semibold truncate">{a.title_en || a.title_ru}</div>
+											<div className="text-xs text-foreground-muted truncate">{a.title_ru}</div>
+										</div>
+									</button>
+								))}
+							</div>
+						) : null}
+					</>
+				)}
+			</div>
 
 			<div className="space-y-2 lg:col-span-2">
 				<div className="flex items-center justify-between gap-3">

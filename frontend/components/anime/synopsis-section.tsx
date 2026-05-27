@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import { Info, Languages, Tv } from "lucide-react"
-import { type Anime, getLocalizedDescription } from "@/lib/api"
+import { useMemo, useState } from "react"
+import { type Anime, getLocalizedDescription, getLocalizedTitle } from "@/lib/api"
 import { useLanguage } from "@/contexts/language-context"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
@@ -12,8 +13,9 @@ interface SynopsisSectionProps {
 
 export function SynopsisSection({ anime }: SynopsisSectionProps) {
   const { locale, t } = useLanguage()
+	const dateLocale = locale === "ru" ? "ru-RU" : "en-US"
 
-  const dateLocale = locale === "ru" ? "ru-RU" : "en-US"
+	const [showAllNames, setShowAllNames] = useState(false)
   
   const alternativeTitles = {
 		romaji: anime.name,
@@ -112,7 +114,20 @@ export function SynopsisSection({ anime }: SynopsisSectionProps) {
     romaji: locale === "ru" ? "Ромадзи" : "Romaji",
 		english: locale === "ru" ? "Английский" : "English",
     russian: locale === "ru" ? "Русский" : "Russian",
+		seasons: locale === "ru" ? "Сезоны" : "Seasons",
   }
+	const showAllNamesLabel = locale === "ru" ? "Показать полностью" : "Show full"
+	const showLessNamesLabel = locale === "ru" ? "Свернуть" : "Show less"
+
+	const seasonsSorted = useMemo(() => {
+		const seasons = Array.isArray((anime as any).seasons) ? ((anime as any).seasons as Anime[]) : []
+		return seasons
+			.slice()
+			.filter((s) => s && typeof (s as any).id === "number")
+			.sort((a, b) => ((a.season_number || 0) - (b.season_number || 0)) || ((a.id || 0) - (b.id || 0)))
+	}, [anime])
+
+	const shouldShowToggle = otherAltTitles.some((x) => x.length > 32) || seasonsSorted.some((s) => (getLocalizedTitle(s, locale) || "").length > 32)
 
   return (
     <section className="py-12 px-4">
@@ -224,27 +239,38 @@ export function SynopsisSection({ anime }: SynopsisSectionProps) {
 
             {/* Alternative Titles */}
             <div className="bg-card rounded-xl p-6 border border-card-border shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <Languages className="w-5 h-5 text-primary" />
-                <h3 className="text-lg font-semibold text-foreground">{labels.altTitles}</h3>
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <Languages className="w-5 h-5 text-primary" />
+                  <h3 className="text-lg font-semibold text-foreground">{labels.altTitles}</h3>
+                </div>
+				{shouldShowToggle ? (
+					<button
+						type="button"
+						onClick={() => setShowAllNames((v) => !v)}
+						className="text-xs font-semibold text-primary hover:text-primary/80"
+					>
+						{showAllNames ? showLessNamesLabel : showAllNamesLabel}
+					</button>
+				) : null}
               </div>
               <div className="space-y-2">
                 {alternativeTitles.romaji && (
                   <div className="flex gap-2">
                     <span className="text-foreground-subtle font-medium min-w-[80px]">{labels.romaji}:</span>
-                    <span className="text-foreground-muted">{alternativeTitles.romaji}</span>
+					<span className="text-foreground-muted break-words">{alternativeTitles.romaji}</span>
                   </div>
                 )}
 				{alternativeTitles.english && (
 				  <div className="flex gap-2">
 					<span className="text-foreground-subtle font-medium min-w-[80px]">{labels.english}:</span>
-					<span className="text-foreground-muted">{alternativeTitles.english}</span>
+					<span className="text-foreground-muted break-words">{alternativeTitles.english}</span>
 				  </div>
 				)}
                 {alternativeTitles.russian && (
                   <div className="flex gap-2">
                     <span className="text-foreground-subtle font-medium min-w-[80px]">{labels.russian}:</span>
-                    <span className="text-foreground-muted">{alternativeTitles.russian}</span>
+					<span className="text-foreground-muted break-words">{alternativeTitles.russian}</span>
                   </div>
                 )}
 				{otherAltTitles.length > 0 ? (
@@ -256,9 +282,36 @@ export function SynopsisSection({ anime }: SynopsisSectionProps) {
 									key={name}
 									className="inline-flex items-center rounded-lg border border-border bg-background-tertiary px-3 py-1.5 text-sm text-foreground-muted"
 								>
-									<span className="truncate max-w-[220px]">{name}</span>
+									<span className={showAllNames ? "whitespace-normal break-words" : "truncate max-w-[220px]"}>{name}</span>
 								</span>
 							))}
+						</div>
+					</div>
+				) : null}
+				{seasonsSorted.length > 1 ? (
+					<div className="pt-4">
+						<div className="text-xs font-semibold text-foreground-muted mb-2">{labels.seasons}:</div>
+						<div className="flex flex-wrap gap-2">
+							{seasonsSorted.map((s) => {
+								const n = typeof s.season_number === "number" && s.season_number > 0 ? s.season_number : null
+								const prefix = n ? (locale === "ru" ? `${n} сезон` : `S${n}`) : (locale === "ru" ? "Сезон" : "Season")
+								const label = `${prefix}: ${getLocalizedTitle(s, locale)}`
+								const active = s.id === anime.id
+								return (
+									<Link
+										key={s.id}
+										href={`/anime/${s.url}`}
+										className={
+											"inline-flex items-center rounded-lg border px-3 py-1.5 text-sm transition-colors " +
+											(active
+												? "border-primary/40 bg-primary/10 text-primary font-semibold"
+												: "border-border bg-background-tertiary text-foreground-muted hover:text-foreground hover:bg-background")
+										}
+									>
+										<span className={showAllNames ? "whitespace-normal break-words" : "truncate max-w-[260px]"}>{label}</span>
+									</Link>
+								)
+							})}
 						</div>
 					</div>
 				) : null}

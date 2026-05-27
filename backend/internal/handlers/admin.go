@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -190,6 +191,8 @@ type AdminCreateAnimeInput struct {
 	TitleRU         string    `json:"title_ru" binding:"required"`
 	TitleEN         string    `json:"title_en" binding:"required"`
 	TitleENRomaji   string    `json:"title_en_romaji" binding:"required"`
+	SeasonNumber    int       `json:"season_number" binding:"required"`
+	FirstSeasonID   *int64    `json:"first_season_id"`
 	DescriptionRU   string    `json:"description_ru"`
 	DescriptionEN   string    `json:"description_en"`
 	AltTitles       []string  `json:"alt_titles"`
@@ -199,6 +202,10 @@ type AdminCreateAnimeInput struct {
 func AdminCreateAnime(c *gin.Context) {
 	var input AdminCreateAnimeInput
 	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := validateAnimeSeasonFields(input.SeasonNumber, input.FirstSeasonID, nil); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -283,6 +290,8 @@ func AdminCreateAnime(c *gin.Context) {
 	}
 
 	anime := models.Anime{
+		SeasonNumber:    input.SeasonNumber,
+		FirstSeasonID:   input.FirstSeasonID,
 		Name:            input.TitleENRomaji,
 		URL:             slug,
 		Kind:            input.Kind,
@@ -445,6 +454,8 @@ type AdminUpdateAnimeInput struct {
 	TitleRU         string    `json:"title_ru" binding:"required"`
 	TitleEN         string    `json:"title_en" binding:"required"`
 	TitleENRomaji   string    `json:"title_en_romaji" binding:"required"`
+	SeasonNumber    int       `json:"season_number" binding:"required"`
+	FirstSeasonID   *int64    `json:"first_season_id"`
 	DescriptionRU   string    `json:"description_ru"`
 	DescriptionEN   string    `json:"description_en"`
 	AltTitles       []string  `json:"alt_titles"`
@@ -456,6 +467,11 @@ func AdminUpdateAnime(c *gin.Context) {
 
 	var input AdminUpdateAnimeInput
 	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	animeID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err := validateAnimeSeasonFields(input.SeasonNumber, input.FirstSeasonID, &animeID); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -531,6 +547,8 @@ func AdminUpdateAnime(c *gin.Context) {
 		return
 	}
 	anime.Score = input.Score
+	anime.SeasonNumber = input.SeasonNumber
+	anime.FirstSeasonID = input.FirstSeasonID
 	anime.Episodes = input.Episodes
 	anime.StudioID = input.StudioID
 	anime.ProducerID = input.ProducerID

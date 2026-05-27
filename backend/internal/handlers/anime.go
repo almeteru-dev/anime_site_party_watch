@@ -235,6 +235,9 @@ func GetAnimeByID(c *gin.Context) {
 		c.JSON(http.StatusOK, anime)
 		return
 	}
+	if seasons, err := buildSeasonsForAnime(anime); err == nil {
+		anime.Seasons = seasons
+	}
 
 	var episodes []models.Episode
 	_ = app.DB.Where("anime_id = ?", anime.ID).

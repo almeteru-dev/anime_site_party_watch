@@ -837,6 +837,7 @@ func upsertAnimeFromShiki(a shikiAnimeFull, malID int, enrich *jikanEnrichment) 
 			slug = fmt.Sprintf("shiki-%d", a.ID)
 		}
 		anime := models.Anime{
+			SeasonNumber:    1,
 			Name:            titleRomaji,
 			URL:             slug,
 			Kind:            strings.TrimSpace(a.Kind),

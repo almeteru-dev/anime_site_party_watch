@@ -234,6 +234,9 @@ export interface Anime {
   translations: AnimeTranslation[] | null
 	alt_titles?: { id: number; title: string }[] | null
 	gallery_images?: { id: number; url: string; sort_order: number }[] | null
+	season_number?: number
+	first_season_id?: number | null
+	seasons?: Anime[] | null
 }
 
 function resolveSiteOrigin(): string {
@@ -1707,6 +1710,8 @@ export interface AdminCreateAnimeInput {
   title_ru: string
 	title_en: string
   title_en_romaji: string
+	season_number: number
+	first_season_id: number | null
   description_ru?: string
   description_en?: string
 	alt_titles?: string[]
