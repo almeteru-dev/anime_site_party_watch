@@ -188,6 +188,7 @@ type AdminCreateAnimeInput struct {
 	GenreIDs        []int     `json:"genre_ids"`
 	ThemeIDs        []int     `json:"theme_ids"`
 	TitleRU         string    `json:"title_ru" binding:"required"`
+	TitleEN         string    `json:"title_en" binding:"required"`
 	TitleENRomaji   string    `json:"title_en_romaji" binding:"required"`
 	DescriptionRU   string    `json:"description_ru"`
 	DescriptionEN   string    `json:"description_en"`
@@ -402,7 +403,7 @@ func AdminCreateAnime(c *gin.Context) {
 	_ = app.DB.Create(&models.AnimeTranslation{
 		AnimeID:     anime.ID,
 		LanguageID:  en.ID,
-		Title:       input.TitleENRomaji,
+		Title:       input.TitleEN,
 		Description: input.DescriptionEN,
 	}).Error
 
@@ -442,6 +443,7 @@ type AdminUpdateAnimeInput struct {
 	GenreIDs        []int     `json:"genre_ids"`
 	ThemeIDs        []int     `json:"theme_ids"`
 	TitleRU         string    `json:"title_ru" binding:"required"`
+	TitleEN         string    `json:"title_en" binding:"required"`
 	TitleENRomaji   string    `json:"title_en_romaji" binding:"required"`
 	DescriptionRU   string    `json:"description_ru"`
 	DescriptionEN   string    `json:"description_en"`
@@ -648,7 +650,7 @@ func AdminUpdateAnime(c *gin.Context) {
 	var tEN models.AnimeTranslation
 	_ = tx.Where("anime_id = ? AND language_id = ?", anime.ID, en.ID).
 		FirstOrCreate(&tEN, models.AnimeTranslation{AnimeID: anime.ID, LanguageID: en.ID})
-	tEN.Title = input.TitleENRomaji
+	tEN.Title = input.TitleEN
 	tEN.Description = input.DescriptionEN
 	if err := tx.Save(&tEN).Error; err != nil {
 		tx.Rollback()

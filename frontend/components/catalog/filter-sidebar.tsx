@@ -91,6 +91,12 @@ export function FilterSidebar({
 }: FilterSidebarProps) {
   const { locale, t } = useLanguage()
 	const producersTitle = locale === "ru" ? "Продюсеры" : "Producers"
+	const showAllLabel = locale === "ru" ? "Показать все" : "Show all"
+	const showLessLabel = locale === "ru" ? "Свернуть" : "Show less"
+	const limit = 10
+	const [showAllGenres, setShowAllGenres] = useState(false)
+	const [showAllThemes, setShowAllThemes] = useState(false)
+	const [showAllProducers, setShowAllProducers] = useState(false)
 
   const getItemLabel = (item: { name: string; ru_name?: string | null }, fallbackRu?: string) => {
     if (locale !== "ru") return item.name
@@ -166,6 +172,14 @@ export function FilterSidebar({
     return getItemLabel(kind, map[kind.name])
   }
 
+	const sliceWithSelected = <T extends { name: string }>(opts: T[], selected: string[], showAll: boolean) => {
+		if (showAll || opts.length <= limit) return opts
+		const head = opts.slice(0, limit)
+		const headSet = new Set(head.map((x) => x.name))
+		const selectedExtras = opts.filter((x) => selected.includes(x.name) && !headSet.has(x.name))
+		return [...head, ...selectedExtras]
+	}
+
   return (
     <aside className="w-full lg:w-72 shrink-0">
       <div className="sticky top-20 rounded-xl border border-border/50 bg-background-secondary/50 backdrop-blur-sm card-shadow">
@@ -192,7 +206,7 @@ export function FilterSidebar({
           {/* Genres */}
           <FilterSection title={t.catalog.filters.genres}>
             <div className="flex flex-wrap gap-2">
-              {genreOptions.map((genre) => (
+					{sliceWithSelected(genreOptions, filters.genres, showAllGenres).map((genre) => (
                 <button
                   key={genre.id}
                   onClick={() => toggleGenre(genre.name)}
@@ -207,6 +221,15 @@ export function FilterSidebar({
                 </button>
               ))}
             </div>
+				{genreOptions.length > limit ? (
+					<button
+						type="button"
+						onClick={() => setShowAllGenres((v) => !v)}
+						className="mt-3 text-xs font-semibold text-primary hover:text-primary/80"
+					>
+						{showAllGenres ? showLessLabel : showAllLabel}
+					</button>
+				) : null}
           </FilterSection>
 
           {/* Status */}
@@ -265,7 +288,7 @@ export function FilterSidebar({
           {/* Themes */}
           <FilterSection title={t.catalog.filters.themes || "Themes"}>
             <div className="flex flex-wrap gap-2">
-              {themeOptions.map((theme) => (
+					{sliceWithSelected(themeOptions, filters.themes, showAllThemes).map((theme) => (
                 <button
                   key={theme.id}
                   onClick={() => toggleTheme(theme.name)}
@@ -280,12 +303,21 @@ export function FilterSidebar({
                 </button>
               ))}
             </div>
+				{themeOptions.length > limit ? (
+					<button
+						type="button"
+						onClick={() => setShowAllThemes((v) => !v)}
+						className="mt-3 text-xs font-semibold text-primary hover:text-primary/80"
+					>
+						{showAllThemes ? showLessLabel : showAllLabel}
+					</button>
+				) : null}
           </FilterSection>
 
 			{/* Producers */}
 			<FilterSection title={producersTitle}>
 				<div className="flex flex-wrap gap-2">
-					{producerOptions.map((p) => (
+					{sliceWithSelected(producerOptions, filters.producers, showAllProducers).map((p) => (
 						<button
 							key={p.id}
 							onClick={() => toggleProducer(p.name)}
@@ -300,6 +332,15 @@ export function FilterSidebar({
 						</button>
 					))}
 				</div>
+				{producerOptions.length > limit ? (
+					<button
+						type="button"
+						onClick={() => setShowAllProducers((v) => !v)}
+						className="mt-3 text-xs font-semibold text-primary hover:text-primary/80"
+					>
+						{showAllProducers ? showLessLabel : showAllLabel}
+					</button>
+				) : null}
 			</FilterSection>
 
           {/* Type */}
@@ -403,7 +444,7 @@ export function FilterSidebar({
                 <option value="">{t.catalog.filters.all}</option>
                 {ratingOptions.map((r) => (
                   <option key={r} value={r}>
-                    {r}
+						{r.toUpperCase()}
                   </option>
                 ))}
               </select>

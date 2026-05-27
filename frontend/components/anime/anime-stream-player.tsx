@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { ArtVideoPlayer, type ArtVideoPlayerHandle } from "@/components/anime/art-video-player"
 import { AddToUserList } from "@/components/anime/add-to-user-list"
@@ -8,7 +9,9 @@ import { AnimeRating } from "@/components/anime/anime-rating"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import type { Anime, EpisodesByServer, WatchPartyContentState, WatchlistStatus, VideoSource, UserListStatus } from "@/lib/api"
-import { addToMyCollection, getMyAnimeWatchProgress, getMyCollection, getPublicSettings, setMyAnimeWatchProgress } from "@/lib/api"
+import { addToMyCollection, createWatchPartyRoom, getMyAnimeWatchProgress, getMyCollection, getPublicSettings, setMyAnimeWatchProgress } from "@/lib/api"
+import { Button } from "@/components/ui/button"
+import { toast } from "@/hooks/use-toast"
 
 type StreamType = "dubbed" | "subbed"
 
@@ -119,8 +122,9 @@ export function AnimeStreamPlayer({
   startWatchingNonce: number
   sync?: WatchPartySync
 }) {
+  const router = useRouter()
   const { user } = useAuth()
-  const { locale } = useLanguage()
+  const { locale, t } = useLanguage()
   const wrapperRef = useRef<HTMLDivElement | null>(null)
   const artRef = useRef<ArtVideoPlayerHandle | null>(null)
   const lastSelectionSentRef = useRef<string>("")
@@ -143,6 +147,7 @@ export function AnimeStreamPlayer({
 	const [showAllVoiceGroupsDub, setShowAllVoiceGroupsDub] = useState(false)
 	const [showAllVoiceGroupsSub, setShowAllVoiceGroupsSub] = useState(false)
 	const [episodesVisibleCount, setEpisodesVisibleCount] = useState(30)
+	const [creatingRoom, setCreatingRoom] = useState(false)
 
   const syncEnabled = Boolean(sync?.enabled)
   const canControl = Boolean(sync?.canControl)
@@ -1012,11 +1017,50 @@ export function AnimeStreamPlayer({
             )}
           </div>
 
-          <AddToUserList 
-            animeId={String(anime.id)} 
-            onUpdate={handleUpdateList} 
-            initialStatus={initialListStatus}
-          />
+				<div className="flex flex-wrap items-center gap-2">
+					<Button
+						disabled={creatingRoom}
+						variant="outline"
+						onClick={async () => {
+							if (!anime.url) return
+							if (!user) {
+								router.push(`/login?next=${encodeURIComponent(`/anime/${anime.url}`)}`)
+								return
+							}
+							try {
+								setCreatingRoom(true)
+								const resp = await createWatchPartyRoom({
+									is_public: true,
+									password: "",
+									content: {
+										anime_slug: anime.url,
+										selected_type: "dubbed",
+										selected_episode_number: 1,
+										selected_voice_group_id: null,
+										selected_server_label: "",
+										selected_source_id: null,
+									},
+								})
+								router.push(`/watch-party/${resp.room_id}`)
+							} catch (e: any) {
+								toast({
+									variant: "destructive",
+									title: locale === "ru" ? "Не удалось создать комнату" : "Failed to create room",
+									description: e?.message || "",
+								})
+							} finally {
+								setCreatingRoom(false)
+							}
+						}}
+					>
+						{creatingRoom ? (locale === "ru" ? "Создание…" : "Creating…") : t.nav.watchParty}
+					</Button>
+					<AddToUserList
+						animeId={String(anime.id)}
+						onUpdate={handleUpdateList}
+						initialStatus={initialListStatus}
+					/>
+				</div>
         </div>
 
         <div className="mt-4 grid grid-cols-1 gap-4">

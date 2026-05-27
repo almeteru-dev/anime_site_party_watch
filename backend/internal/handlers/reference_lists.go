@@ -1,13 +1,23 @@
 package handlers
 
 import (
+	"encoding/json"
+	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/seva/animevista/internal/app"
 	"github.com/seva/animevista/internal/models"
 )
+
+type shikiGenreItem struct {
+	Name      string `json:"name"`
+	Russian   string `json:"russian"`
+	Kind      string `json:"kind"`
+	EntryType string `json:"entry_type"`
+}
 
 func mapDeleteRefError(entity string, err error) string {
 	if err == nil {
@@ -499,6 +509,85 @@ func AdminDeleteTheme(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Deleted"})
+}
+
+func AdminTranslateThemesFromShikimori(c *gin.Context) {
+	client := &http.Client{Timeout: 18 * time.Second}
+	req, err := http.NewRequest(http.MethodGet, "https://shikimori.one/api/genres", nil)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to build request"})
+		return
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", "LycorisLib")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": "failed to fetch shikimori genres"})
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		b, _ := io.ReadAll(resp.Body)
+		c.JSON(http.StatusBadGateway, gin.H{"error": "shikimori returned non-200", "details": string(b)})
+		return
+	}
+
+	var items []shikiGenreItem
+	if err := json.NewDecoder(resp.Body).Decode(&items); err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": "failed to parse shikimori response"})
+		return
+	}
+	lookup := map[string]string{}
+	for _, it := range items {
+		en := strings.ToLower(strings.TrimSpace(it.Name))
+		ru := strings.TrimSpace(it.Russian)
+		if en == "" || ru == "" {
+			continue
+		}
+		if _, exists := lookup[en]; exists {
+			continue
+		}
+		lookup[en] = ru
+	}
+
+	var themes []models.Theme
+	if err := app.DB.Order("name asc").Find(&themes).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch themes"})
+		return
+	}
+	_ = applyThemeRU(themes)
+
+	updated := 0
+	skipped := 0
+	notFound := 0
+	for _, th := range themes {
+		cur := ""
+		if th.RUName != nil {
+			cur = strings.TrimSpace(*th.RUName)
+		}
+		if cur != "" {
+			skipped++
+			continue
+		}
+		ru, ok := lookup[strings.ToLower(strings.TrimSpace(th.Name))]
+		if !ok {
+			notFound++
+			continue
+		}
+		ruCopy := ru
+		if err := setThemeRUName(th.ID, &ruCopy, nil); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save russian name"})
+			return
+		}
+		updated++
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"updated":   updated,
+		"skipped":   skipped,
+		"not_found": notFound,
+	})
 }
 
 func AdminListProducers(c *gin.Context) {

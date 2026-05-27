@@ -31,8 +31,14 @@ function parseNumber(value: string | undefined): number | undefined {
   return Number.isFinite(n) ? n : undefined
 }
 
-function buildQuery(filters: FilterState, search: string, page: number): string {
+function buildQuery(filters: FilterState, search: string, page: number, extra?: Record<string, string | undefined>): string {
   const sp = new URLSearchParams()
+
+  if (extra) {
+    for (const [k, v] of Object.entries(extra)) {
+      if (v) sp.set(k, v)
+    }
+  }
 
   if (search.trim()) sp.set('q', search.trim())
   if (filters.genres.length) sp.set('genres', filters.genres.join(','))
@@ -119,9 +125,11 @@ interface CatalogClientProps {
   initialAnimes: Anime[]
   meta: CatalogMeta
   initialSearchParams: Record<string, string | string[] | undefined>
+	basePath?: string
+	extraQuery?: Record<string, string | undefined>
 }
 
-export function CatalogClient({ initialAnimes, meta, initialSearchParams }: CatalogClientProps) {
+export function CatalogClient({ initialAnimes, meta, initialSearchParams, basePath = "/catalog", extraQuery }: CatalogClientProps) {
   const { user } = useAuth()
   const router = useRouter()
 
@@ -191,10 +199,10 @@ export function CatalogClient({ initialAnimes, meta, initialSearchParams }: Cata
 
   const navigate = useCallback(
     (nextFilters: FilterState, nextSearch: string, nextPage: number) => {
-      const qs = buildQuery(nextFilters, nextSearch, nextPage)
-      router.replace(`/catalog${qs}`)
+      const qs = buildQuery(nextFilters, nextSearch, nextPage, extraQuery)
+      router.replace(`${basePath}${qs}`)
     },
-    [router]
+    [basePath, extraQuery, router]
   )
 
   const handleResetFilters = useCallback(() => {

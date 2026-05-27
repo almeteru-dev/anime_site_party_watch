@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { Info, Languages, Tv } from "lucide-react"
 import { type Anime, getLocalizedDescription } from "@/lib/api"
 import { useLanguage } from "@/contexts/language-context"
@@ -15,12 +16,13 @@ export function SynopsisSection({ anime }: SynopsisSectionProps) {
   const dateLocale = locale === "ru" ? "ru-RU" : "en-US"
   
   const alternativeTitles = {
-    romaji: anime.translations?.find(t => t.language.code === "en")?.title,
-    russian: anime.translations?.find(t => t.language.code === "ru")?.title,
+		romaji: anime.name,
+		english: anime.translations?.find((t) => t.language.code === "en")?.title,
+		russian: anime.translations?.find((t) => t.language.code === "ru")?.title,
   }
 
 	const otherAltTitles = (() => {
-		const base = [alternativeTitles.romaji, alternativeTitles.russian]
+		const base = [alternativeTitles.romaji, alternativeTitles.english, alternativeTitles.russian]
 		const seen = new Set(base.map((s) => String(s || '').trim().toLowerCase()).filter(Boolean))
 		const out: string[] = []
 		for (const it of anime.alt_titles || []) {
@@ -73,7 +75,7 @@ export function SynopsisSection({ anime }: SynopsisSectionProps) {
           : `${anime.episodes_aired ?? 0} of ${anime.episodes}`
         : t.common.na,
     duration: `${anime.duration} ${t.common.minShort} ${t.common.perEp}`,
-    rating: anime.rating || t.common.na,
+		rating: anime.rating ? anime.rating.toUpperCase() : t.common.na,
   }
 
 	const ratingDescription =
@@ -81,11 +83,21 @@ export function SynopsisSection({ anime }: SynopsisSectionProps) {
 			? (anime.rating_description_ru || "")
 			: (anime.rating_description_en || "")
 
+	const buildCollectionHref = (p: { kind: "genre" | "theme" | "rating"; value: string }) => {
+		const sp = new URLSearchParams()
+		sp.set("kind", p.kind)
+		sp.set("value", p.value)
+		if (p.kind === "genre") sp.set("genres", p.value)
+		if (p.kind === "theme") sp.set("themes", p.value)
+		if (p.kind === "rating") sp.set("ratings", p.value)
+		return `/collection?${sp.toString()}`
+	}
+
   const labels = {
     synopsis: locale === "ru" ? "Описание" : "Synopsis",
     genres: locale === "ru" ? "Жанры" : "Genres",
 		themes: locale === "ru" ? "Темы" : "Themes",
-    altTitles: locale === "ru" ? "Альтернативные названия" : "Alternative Titles",
+		altTitles: locale === "ru" ? "Названия" : "Titles",
     details: locale === "ru" ? "Детали" : "Details",
     type: locale === "ru" ? "Тип" : "Type",
     status: locale === "ru" ? "Статус" : "Status",
@@ -98,6 +110,7 @@ export function SynopsisSection({ anime }: SynopsisSectionProps) {
     duration: locale === "ru" ? "Длительность" : "Duration",
     rating: locale === "ru" ? "Рейтинг" : "Rating",
     romaji: locale === "ru" ? "Ромадзи" : "Romaji",
+		english: locale === "ru" ? "Английский" : "English",
     russian: locale === "ru" ? "Русский" : "Russian",
   }
 
@@ -124,7 +137,12 @@ export function SynopsisSection({ anime }: SynopsisSectionProps) {
 						(() => {
 							const label = locale === "ru" ? g.ru_name || g.name : g.name
 							const desc = locale === "ru" ? g.description_ru || "" : g.description_en || ""
-							const chip = <span className="meta-chip text-sm"><span className="truncate max-w-[180px]">{label}</span></span>
+							const href = buildCollectionHref({ kind: "genre", value: g.name })
+							const chip = (
+								<Link href={href} className="meta-chip text-sm">
+									<span className="truncate max-w-[180px]">{label}</span>
+								</Link>
+							)
 							if (!desc) return <span key={g.id}>{chip}</span>
 							return (
 								<Tooltip key={g.id}>
@@ -153,7 +171,12 @@ export function SynopsisSection({ anime }: SynopsisSectionProps) {
 						(() => {
 							const label = locale === "ru" ? th.ru_name || th.name : th.name
 							const desc = locale === "ru" ? th.description_ru || "" : th.description_en || ""
-							const chip = <span className="meta-chip text-sm"><span className="truncate max-w-[180px]">{label}</span></span>
+							const href = buildCollectionHref({ kind: "theme", value: th.name })
+							const chip = (
+								<Link href={href} className="meta-chip text-sm">
+									<span className="truncate max-w-[180px]">{label}</span>
+								</Link>
+							)
 							if (!desc) return <span key={th.id}>{chip}</span>
 							return (
 								<Tooltip key={th.id}>
@@ -181,18 +204,18 @@ export function SynopsisSection({ anime }: SynopsisSectionProps) {
 					{ratingDescription ? (
 						<Tooltip>
 							<TooltipTrigger asChild>
-								<span className="meta-chip text-sm">
+								<Link href={buildCollectionHref({ kind: "rating", value: anime.rating })} className="meta-chip text-sm">
 									<span className="truncate max-w-[180px]">{details.rating}</span>
-								</span>
+								</Link>
 							</TooltipTrigger>
 							<TooltipContent sideOffset={8} className="max-w-sm !bg-card !text-foreground border border-border shadow-lg px-4 py-3 text-sm leading-relaxed">
 								{ratingDescription}
 							</TooltipContent>
 						</Tooltip>
 					) : (
-						<span className="meta-chip text-sm">
+						<Link href={buildCollectionHref({ kind: "rating", value: anime.rating })} className="meta-chip text-sm">
 							<span className="truncate max-w-[180px]">{details.rating}</span>
-						</span>
+						</Link>
 					)}
 				  </div>
 				</div>
@@ -212,6 +235,12 @@ export function SynopsisSection({ anime }: SynopsisSectionProps) {
                     <span className="text-foreground-muted">{alternativeTitles.romaji}</span>
                   </div>
                 )}
+				{alternativeTitles.english && (
+				  <div className="flex gap-2">
+					<span className="text-foreground-subtle font-medium min-w-[80px]">{labels.english}:</span>
+					<span className="text-foreground-muted">{alternativeTitles.english}</span>
+				  </div>
+				)}
                 {alternativeTitles.russian && (
                   <div className="flex gap-2">
                     <span className="text-foreground-subtle font-medium min-w-[80px]">{labels.russian}:</span>

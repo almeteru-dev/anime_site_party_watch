@@ -140,6 +140,7 @@ export default function AdminEditAnimePage() {
 
   const [form, setForm] = useState({
     title_ru: "",
+		title_en: "",
     title_en_romaji: "",
     alt_titles: [] as string[],
     description_ru: "",
@@ -273,7 +274,12 @@ export default function AdminEditAnimePage() {
 			const ratingMap: Record<string, string> = { pg_13: "pg-13", r_17: "r-17+", r_plus: "r+" }
 			const next = { ...form }
 			if (!next.title_ru.trim() && typeof a?.russian === "string") next.title_ru = a.russian
+			if (!next.title_en.trim() && Array.isArray(a?.english) && a.english.length) {
+				const v = String(a.english[0] || "").trim()
+				if (v) next.title_en = v
+			}
 			if (!next.title_en_romaji.trim() && typeof a?.name === "string") next.title_en_romaji = a.name
+			if (!next.title_en.trim() && typeof a?.name === "string") next.title_en = a.name
 			if ((!next.kind || !next.kind.trim()) && typeof a?.kind === "string") next.kind = a.kind
 			if (typeof next.kind === "string" && next.kind.trim()) {
 				try {
@@ -302,6 +308,19 @@ export default function AdminEditAnimePage() {
 				try {
 					const j: any = await adminJikanGetAnime({ id: next.mal_id })
 					const data: any = j?.data
+						const posterWebp =
+							data?.images?.webp?.large_image_url ||
+							data?.images?.webp?.image_url ||
+							data?.images?.jpg?.large_image_url ||
+							data?.images?.jpg?.image_url
+						if ((!next.poster_url || !next.poster_url.trim()) && typeof posterWebp === "string" && posterWebp.trim()) {
+							next.poster_url = posterWebp.trim()
+						}
+						if ((!next.background_url || !next.background_url.trim()) && next.poster_url) next.background_url = next.poster_url
+						const tr = data?.trailer?.embed_url || data?.trailer?.url
+						if ((!next.trailer_url || !next.trailer_url.trim()) && typeof tr === "string" && tr.trim()) {
+							next.trailer_url = String(tr).trim().replace(/^http:\/\//, "https://")
+						}
 					if ((!next.description_en || !next.description_en.trim()) && typeof data?.synopsis === "string" && data.synopsis.trim()) {
 						next.description_en = data.synopsis
 					}
@@ -350,7 +369,9 @@ export default function AdminEditAnimePage() {
 			}
 			if (!next.poster_url && typeof a?.image?.original === "string") {
 				const src = a.image.original
-				next.poster_url = /^https?:\/\//.test(src) ? src : `https://shikimori.one${src}`
+				if (!String(src).includes("/assets/globals/missing_")) {
+					next.poster_url = /^https?:\/\//.test(src) ? src : `https://shikimori.one${src}`
+				}
 			}
 			if ((!next.background_url || !next.background_url.trim()) && next.poster_url) next.background_url = next.poster_url
 				if ((!next.description_ru || !next.description_ru.trim()) && typeof a?.description === "string") {
@@ -388,7 +409,7 @@ export default function AdminEditAnimePage() {
 						...(Array.isArray(a?.japanese) ? a.japanese : []),
 						...(Array.isArray(a?.synonyms) ? a.synonyms : []),
 					])
-					const filtered = titles.filter((t) => t.toLowerCase() !== next.title_en_romaji.toLowerCase() && t.toLowerCase() !== next.title_ru.toLowerCase())
+					const filtered = titles.filter((t) => t.toLowerCase() !== next.title_en_romaji.toLowerCase() && t.toLowerCase() !== next.title_ru.toLowerCase() && t.toLowerCase() !== next.title_en.toLowerCase())
 					if (filtered.length) next.alt_titles = filtered
 				}
 			if ((next.genre_ids || []).length === 0 && Array.isArray(a?.genres)) {
@@ -460,7 +481,8 @@ export default function AdminEditAnimePage() {
         const en = pickTranslation(a, "en")
         setForm({
           title_ru: ru?.title || "",
-          title_en_romaji: en?.title || a.name,
+			title_en: en?.title || "",
+			title_en_romaji: a.name,
 			  alt_titles: (a.alt_titles || []).map((x) => x.title),
           description_ru: ru?.description || "",
           description_en: en?.description || "",
@@ -849,8 +871,8 @@ export default function AdminEditAnimePage() {
   }
 
   const canSubmit = useMemo(() => {
-    return !!form.title_ru.trim() && !!form.title_en_romaji.trim() && !!slug
-  }, [form.title_en_romaji, form.title_ru, slug])
+    return !!form.title_ru.trim() && !!form.title_en.trim() && !!form.title_en_romaji.trim() && !!slug
+  }, [form.title_en, form.title_en_romaji, form.title_ru, slug])
 
   const allGenres = meta?.genres || []
   const allThemes = meta?.themes || []
@@ -934,6 +956,7 @@ export default function AdminEditAnimePage() {
           genre_ids: form.genre_ids,
           theme_ids: form.theme_ids,
           title_ru: form.title_ru,
+			title_en: form.title_en,
           title_en_romaji: form.title_en_romaji,
           alt_titles: form.alt_titles,
           gallery_urls: form.gallery_urls,
@@ -1082,6 +1105,15 @@ export default function AdminEditAnimePage() {
                 className="w-full h-11 rounded-xl bg-background border border-border/60 px-4 text-sm text-foreground outline-none focus:border-primary/50"
               />
             </div>
+
+			<div className="space-y-2">
+				<label className="text-xs font-semibold text-foreground-muted">Title (EN)</label>
+				<input
+					value={form.title_en}
+					onChange={(e) => setForm((p) => ({ ...p, title_en: e.target.value }))}
+					className="w-full h-11 rounded-xl bg-background border border-border/60 px-4 text-sm text-foreground outline-none focus:border-primary/50"
+				/>
+			</div>
 
             <div className="space-y-2">
               <label className="text-xs font-semibold text-foreground-muted">Title (Romaji)</label>

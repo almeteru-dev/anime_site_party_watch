@@ -3,9 +3,21 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { cn } from "@/lib/utils"
-import { adminCreateSchedule, adminDeleteSchedule, adminListOngoingAnimes, adminListSchedule, adminUpdateSchedule, getPublicSettings, type OngoingAnimeItem, type ScheduleItem } from "@/lib/api"
+import {
+	adminCreateSchedule,
+	adminDeleteSchedule,
+	adminListOngoingAnimes,
+	adminListSchedule,
+	adminGetAnimeSyncStatus,
+	adminSyncAnimeSchedule,
+	adminUpdateSchedule,
+	getPublicSettings,
+	type OngoingAnimeItem,
+	type ScheduleItem,
+} from "@/lib/api"
 import { WeekdayPicker } from "@/components/admin/schedule/WeekdayPicker"
 import { addDays, formatDateTimeInTimeZone, formatYMDInTimeZone, getDatePartsInTimeZone, weekdayIndexInTimeZone } from "@/lib/timezone"
+import { toast } from "@/hooks/use-toast"
 
 function toYMD(d: Date): string {
   const y = d.getFullYear()
@@ -43,6 +55,8 @@ export default function AdminSchedulePage() {
   const [items, setItems] = useState<ScheduleItem[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+	const [syncing, setSyncing] = useState(false)
+	const syncPollRef = useRef<number | null>(null)
 
   const [animeQuery, setAnimeQuery] = useState("")
   const [animeOptions, setAnimeOptions] = useState<OngoingAnimeItem[]>([])
@@ -118,6 +132,12 @@ export default function AdminSchedulePage() {
       if (searchTimer.current) window.clearTimeout(searchTimer.current)
     }
   }, [animeQuery, canAccess])
+
+	useEffect(() => {
+		return () => {
+			if (syncPollRef.current) window.clearInterval(syncPollRef.current)
+		}
+	}, [])
 
   useEffect(() => {
     let mounted = true
@@ -246,21 +266,74 @@ export default function AdminSchedulePage() {
         <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</div>
       ) : null}
 
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={openCreate}
-          disabled={!canAccess}
-          className={cn(
-            "h-11 rounded-xl px-4 text-sm font-semibold",
-            !canAccess
-              ? "bg-primary/40 text-primary-foreground/70 cursor-not-allowed"
-              : "bg-primary text-primary-foreground hover:bg-primary/90"
-          )}
-        >
-          Add to Schedule
-        </button>
-      </div>
+		<div className="flex flex-wrap items-center justify-end gap-2">
+			<button
+				type="button"
+				disabled={!canAccess || syncing}
+				onClick={async () => {
+					try {
+						setSyncing(true)
+						const started = await adminSyncAnimeSchedule()
+						toast({
+							title: "Синхронизация запущена",
+							description: "Процесс выполняется в фоне. Статус обновится автоматически.",
+						})
+
+						if (syncPollRef.current) window.clearInterval(syncPollRef.current)
+						syncPollRef.current = window.setInterval(async () => {
+							try {
+								const st = await adminGetAnimeSyncStatus()
+								if (st.status !== "running") {
+									if (syncPollRef.current) window.clearInterval(syncPollRef.current)
+									syncPollRef.current = null
+									const r = st.last_result
+									if (r) {
+										const hasErrors = Array.isArray(r.errors) && r.errors.length > 0
+										toast({
+											variant: hasErrors ? "destructive" : "default",
+											title: hasErrors ? "Синхронизация завершена с ошибками" : "Синхронизация завершена",
+											description: `Обработано: ${r.processed}. Новых аниме: ${r.created_anime}. Обновлено: ${r.updated_anime}. Записей расписания: ${r.upserted_schedules}.`,
+										})
+									}
+									const data = await adminListSchedule({ from: range.from, to: range.to })
+									setItems(data)
+								}
+							} catch {
+								;
+							}
+						}, 2000)
+						void started
+					} catch (e: any) {
+						toast({
+							variant: "destructive",
+							title: "Ошибка синхронизации",
+							description: e?.message || "Не удалось синхронизировать",
+						})
+					} finally {
+						setSyncing(false)
+					}
+				}}
+				className={cn(
+					"h-11 rounded-xl px-4 text-sm font-semibold border border-border/60 bg-background hover:bg-background-tertiary/40",
+					(!canAccess || syncing) && "opacity-60 cursor-not-allowed"
+				)}
+			>
+				{syncing ? "Синхронизация…" : "Синхронизировать расписание"}
+			</button>
+			<button
+				type="button"
+				onClick={openCreate}
+				disabled={!canAccess}
+				className={cn(
+					"h-11 rounded-xl px-4 text-sm font-semibold",
+					!canAccess
+						? "bg-primary/40 text-primary-foreground/70 cursor-not-allowed"
+						: "bg-primary text-primary-foreground hover:bg-primary/90"
+				)}
+			>
+				Add to Schedule
+			</button>
+		</div>
 
 		<div className="rounded-2xl border border-border/60 bg-background-secondary/40 p-5">
 			<div className="text-sm font-semibold text-foreground">Weekday view</div>

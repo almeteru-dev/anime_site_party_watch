@@ -639,6 +639,8 @@ export type ScheduleItem = {
 	anime: {
 		id: number
 		name: string
+		russian?: string
+		english?: string
 		url: string
 		image: string
 	}
@@ -726,6 +728,46 @@ export async function adminDeleteSchedule(params: { id: number }): Promise<void>
 		maybeForceLogout(data)
 		throw new Error(data.error || "Failed to delete schedule entry")
 	}
+}
+
+export async function adminSyncAnimeSchedule(): Promise<{
+	status: string
+	started_at?: string
+}> {
+	const res = await fetch(`${API_URL}/admin/anime/sync`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		credentials: "include",
+		body: JSON.stringify({}),
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Sync failed")
+	}
+	return data
+}
+
+export async function adminGetAnimeSyncStatus(): Promise<{
+	status: "idle" | "running" | "finished"
+	started_at?: string
+	finished_at?: string
+	last_result?: {
+		processed: number
+		created_anime: number
+		updated_anime: number
+		upserted_schedules: number
+		skipped_no_broadcast: number
+		errors: string[]
+	}
+}> {
+	const res = await fetch(`${API_URL}/admin/anime/sync/status`, { credentials: "include", cache: "no-store" })
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to get sync status")
+	}
+	return data
 }
 
 export async function adminUpdateSchedule(params: {
@@ -1663,6 +1705,7 @@ export interface AdminCreateAnimeInput {
   genre_ids: number[]
   theme_ids: number[]
   title_ru: string
+	title_en: string
   title_en_romaji: string
   description_ru?: string
   description_en?: string
@@ -2038,6 +2081,20 @@ export const adminUpdateGenre = (p: { id: number; name: string; ru_name?: string
 export const adminDeleteGenre = (p: { id: number }) => adminDeleteMetaItem("genres", p.id)
 
 export const adminListThemes = (p: { }) => adminListMetaItem<Theme>("themes")
+
+export async function adminTranslateThemesFromShikimori(): Promise<{ updated: number; skipped: number; not_found: number }> {
+	const res = await fetch(`${API_URL}/admin/themes/translate-from-en`, {
+		method: "POST",
+		credentials: "include",
+		cache: "no-store",
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error((data as any)?.error || "Failed to translate themes")
+	}
+	return data as { updated: number; skipped: number; not_found: number }
+}
 export const adminCreateTheme = (p: { name: string; ru_name?: string | null; description_en?: string | null; description_ru?: string | null }) =>
   adminCreateMetaItem<Theme>("themes", { name: p.name, ru_name: p.ru_name ?? null, description_en: p.description_en ?? null, description_ru: p.description_ru ?? null })
 export const adminUpdateTheme = (p: { id: number; name: string; ru_name?: string | null; description_en?: string | null; description_ru?: string | null }) =>

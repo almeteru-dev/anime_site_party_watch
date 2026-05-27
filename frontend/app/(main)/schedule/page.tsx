@@ -80,11 +80,12 @@ export default function ReleasesPage() {
     const list = (items || []).filter((x) => formatYMDInTimeZone(new Date(x.release_datetime), scheduleTimezone) === selectedKey)
     return list.map((x) => {
       const dt = new Date(x.release_datetime)
+			const title = locale === "ru" ? (x.anime?.russian || x.anime?.name) : (x.anime?.english || x.anime?.name)
       return {
         time: formatTimeInTimeZone(dt, locale, scheduleTimezone),
-        title: x.anime?.name || (locale === "ru" ? "Аниме" : "Anime"),
+        title: title || (locale === "ru" ? "Аниме" : "Anime"),
         episode: x.episode_number,
-        posterUrl: x.anime?.image || `https://placehold.co/112x160/F1F5F9/00D2FF?text=${encodeURIComponent(x.anime?.name || "Anime")}`,
+        posterUrl: x.anime?.image || `https://placehold.co/112x160/F1F5F9/00D2FF?text=${encodeURIComponent(title || "Anime")}`,
         slug: x.anime?.url || "",
       }
     })

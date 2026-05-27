@@ -24,6 +24,8 @@ type ScheduleItemDTO struct {
 	Anime           struct {
 		ID    int64  `json:"id"`
 		Name  string `json:"name"`
+		Russian string `json:"russian"`
+		English string `json:"english"`
 		URL   string `json:"url"`
 		Image string `json:"image"`
 	} `json:"anime"`
@@ -128,7 +130,14 @@ func AdminCreateSchedule(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, mapScheduleItem(withAnime))
+	if withAnime.Edges.Anime != nil {
+		c.JSON(http.StatusCreated, mapScheduleItem(withAnime,
+			map[int64]string{withAnime.Edges.Anime.ID: getAnimeTitleByCode(withAnime.Edges.Anime.ID, "ru")},
+			map[int64]string{withAnime.Edges.Anime.ID: getAnimeTitleByCode(withAnime.Edges.Anime.ID, "en")},
+		))
+		return
+	}
+	c.JSON(http.StatusCreated, mapScheduleItem(withAnime, nil, nil))
 }
 
 func AdminUpdateSchedule(c *gin.Context) {
@@ -196,7 +205,35 @@ func AdminUpdateSchedule(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, mapScheduleItem(withAnime))
+	if withAnime.Edges.Anime != nil {
+		c.JSON(http.StatusOK, mapScheduleItem(withAnime,
+			map[int64]string{withAnime.Edges.Anime.ID: getAnimeTitleByCode(withAnime.Edges.Anime.ID, "ru")},
+			map[int64]string{withAnime.Edges.Anime.ID: getAnimeTitleByCode(withAnime.Edges.Anime.ID, "en")},
+		))
+		return
+	}
+	c.JSON(http.StatusOK, mapScheduleItem(withAnime, nil, nil))
+}
+
+func getAnimeTitleByCode(animeID int64, code string) string {
+	if animeID <= 0 {
+		return ""
+	}
+	code = strings.TrimSpace(code)
+	if code == "" {
+		return ""
+	}
+	type row struct {
+		Title string `gorm:"column:title"`
+	}
+	var out row
+	_ = app.DB.Table("anime_translations as at").
+		Select("at.title").
+		Joins("join languages l on l.id = at.language_id").
+		Where("l.code = ? AND at.anime_id = ?", code, animeID).
+		Limit(1).
+		Scan(&out).Error
+	return out.Title
 }
 
 func AdminDeleteSchedule(c *gin.Context) {
@@ -270,14 +307,49 @@ func queryScheduleRange(ctx context.Context, client *ent.Client, from time.Time,
 		return nil, err
 	}
 
+	ruTitles := map[int64]string{}
+	enTitles := map[int64]string{}
+	animeIDs := make([]int64, 0, len(rows))
+	seen := map[int64]struct{}{}
+	for _, r := range rows {
+		if r.Edges.Anime != nil {
+			id := r.Edges.Anime.ID
+			if _, ok := seen[id]; !ok {
+				seen[id] = struct{}{}
+				animeIDs = append(animeIDs, id)
+			}
+		}
+	}
+	if len(animeIDs) > 0 {
+		type row struct {
+			AnimeID int64  `gorm:"column:anime_id"`
+			Title   string `gorm:"column:title"`
+			Code    string `gorm:"column:code"`
+		}
+		var trs []row
+		_ = app.DB.Table("anime_translations as at").
+			Select("at.anime_id, at.title, l.code as code").
+			Joins("join languages l on l.id = at.language_id").
+			Where("l.code IN ('ru','en') AND at.anime_id IN ?", animeIDs).
+			Scan(&trs).Error
+		for _, trow := range trs {
+			if trow.Code == "ru" {
+				ruTitles[trow.AnimeID] = trow.Title
+			}
+			if trow.Code == "en" {
+				enTitles[trow.AnimeID] = trow.Title
+			}
+		}
+	}
+
 	items := make([]ScheduleItemDTO, 0, len(rows))
 	for _, r := range rows {
-		items = append(items, mapScheduleItem(r))
+		items = append(items, mapScheduleItem(r, ruTitles, enTitles))
 	}
 	return items, nil
 }
 
-func mapScheduleItem(s *ent.Schedule) ScheduleItemDTO {
+func mapScheduleItem(s *ent.Schedule, ruTitles map[int64]string, enTitles map[int64]string) ScheduleItemDTO {
 	var dto ScheduleItemDTO
 	dto.ID = s.ID
 	dto.ReleaseDatetime = s.ReleaseDatetime.UTC().Truncate(time.Minute)
@@ -285,6 +357,16 @@ func mapScheduleItem(s *ent.Schedule) ScheduleItemDTO {
 	if s.Edges.Anime != nil {
 		dto.Anime.ID = s.Edges.Anime.ID
 		dto.Anime.Name = s.Edges.Anime.Name
+		if ruTitles != nil {
+			if v, ok := ruTitles[s.Edges.Anime.ID]; ok {
+				dto.Anime.Russian = v
+			}
+		}
+		if enTitles != nil {
+			if v, ok := enTitles[s.Edges.Anime.ID]; ok {
+				dto.Anime.English = v
+			}
+		}
 		dto.Anime.URL = s.Edges.Anime.URL
 		dto.Anime.Image = s.Edges.Anime.Image
 	}

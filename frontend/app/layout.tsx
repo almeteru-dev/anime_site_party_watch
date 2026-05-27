@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { LanguageProvider } from '@/contexts/language-context'
 import { AuthProvider } from '@/contexts/auth-context'
 import CookieConsent from '@/components/CookieConsent'
+import { Toaster } from '@/components/ui/toaster'
 import './globals.css'
 
 const inter = Inter({ 
@@ -49,6 +50,7 @@ export default function RootLayout({
           <AuthProvider>
             <LanguageProvider>
               {children}
+              <Toaster />
               <CookieConsent />
             </LanguageProvider>
           </AuthProvider>

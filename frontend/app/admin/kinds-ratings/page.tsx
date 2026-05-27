@@ -48,6 +48,7 @@ import {
   adminSetAnimeThemes,
   type Theme,
   type Producer,
+	adminTranslateThemesFromShikimori,
 } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
@@ -70,6 +71,8 @@ export default function AdminKindsRatingsPage() {
   const [selectedThemeId, setSelectedThemeId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+	const [translatingThemes, setTranslatingThemes] = useState(false)
+	const [translateReport, setTranslateReport] = useState<string | null>(null)
 
   const [newName, setNewName] = useState("")
   const [newRuName, setNewRuName] = useState("")
@@ -161,6 +164,22 @@ export default function AdminKindsRatingsPage() {
 		setEditingDescriptionEn("")
 		setEditingDescriptionRu("")
   }
+
+	const translateThemesFromEn = async () => {
+		setTranslatingThemes(true)
+		setError(null)
+		setTranslateReport(null)
+		try {
+			const res = await adminTranslateThemesFromShikimori()
+			const th = await adminListThemes({})
+			setThemes(th)
+			setTranslateReport(`Updated: ${res.updated}, Skipped: ${res.skipped}, Not found: ${res.not_found}`)
+		} catch (e: any) {
+			setError(e?.message || "Failed to translate")
+		} finally {
+			setTranslatingThemes(false)
+		}
+	}
 
   const saveEdit = async () => {
     const name = editingName.trim()
@@ -634,9 +653,27 @@ export default function AdminKindsRatingsPage() {
         </div>
 
         <div className="rounded-2xl border border-border/60 bg-background p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-4">
-            Existing {tab === "kinds" ? "Kinds" : tab === "ratings" ? "Ratings" : tab === "genres" ? "Genres" : tab === "themes" ? "Themes" : tab === "statuses" ? "Statuses" : tab === "studios" ? "Studios" : tab === "producers" ? "Producers" : "Sources"}
-          </h3>
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <h3 className="text-sm font-semibold text-foreground">
+              Existing {tab === "kinds" ? "Kinds" : tab === "ratings" ? "Ratings" : tab === "genres" ? "Genres" : tab === "themes" ? "Themes" : tab === "statuses" ? "Statuses" : tab === "studios" ? "Studios" : tab === "producers" ? "Producers" : "Sources"}
+            </h3>
+            {tab === "themes" ? (
+              <button
+                type="button"
+                disabled={translatingThemes}
+                onClick={translateThemesFromEn}
+                className={cn(
+                  "h-9 rounded-xl px-3 text-xs font-semibold transition-colors",
+                  translatingThemes
+                    ? "bg-background-tertiary/30 text-foreground-muted"
+                    : "bg-primary text-primary-foreground hover:bg-primary/90"
+                )}
+              >
+                {translatingThemes ? "Translating…" : "Translate from EN"}
+              </button>
+            ) : null}
+          </div>
+          {tab === "themes" && translateReport ? <div className="mb-3 text-xs text-foreground-subtle">{translateReport}</div> : null}
           {activeList === null ? (
             <div className="text-sm text-foreground-muted">Loading…</div>
           ) : activeList.length === 0 ? (

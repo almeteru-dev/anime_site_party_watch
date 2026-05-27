@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/robfig/cron/v3"
 	"github.com/seva/animevista/internal/app"
 	"github.com/seva/animevista/internal/config"
 	"github.com/seva/animevista/internal/handlers"
@@ -168,6 +171,7 @@ func main() {
 
 					adminAdmin.GET("/themes", handlers.AdminListThemes)
 					adminAdmin.POST("/themes", handlers.AdminCreateTheme)
+					adminAdmin.POST("/themes/translate-from-en", handlers.AdminTranslateThemesFromShikimori)
 					adminAdmin.PUT("/themes/:id", handlers.AdminUpdateTheme)
 					adminAdmin.DELETE("/themes/:id", handlers.AdminDeleteTheme)
 
@@ -221,11 +225,26 @@ func main() {
 					adminAdmin.PUT("/settings/kodik-player", middleware.RootOnly(), handlers.AdminSetKodikPlayerSettings)
 					adminAdmin.PUT("/settings/schedule-timezone", middleware.RootOnly(), handlers.AdminSetScheduleTimezone)
 					adminAdmin.POST("/schedule/purge-old", middleware.RootOnly(), handlers.AdminPurgeOldSchedules)
+					adminAdmin.POST("/anime/sync", handlers.AdminAnimeSyncSchedule)
+					adminAdmin.GET("/anime/sync/status", handlers.AdminAnimeSyncStatus)
 					adminAdmin.POST("/root/transfer", handlers.AdminTransferRoot)
 					adminAdmin.POST("/email/test-verification", middleware.RootOnly(), handlers.AdminTestVerificationEmail)
 				}
 			}
 		}
+
+		jpLoc, err := time.LoadLocation("Asia/Tokyo")
+		if err != nil {
+			log.Printf("cron: failed to load Asia/Tokyo timezone: %v", err)
+			jpLoc = time.FixedZone("JST", 9*3600)
+		}
+		c := cron.New(cron.WithLocation(jpLoc))
+		_, _ = c.AddFunc("0 1,13 * * *", func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 20*time.Minute)
+			defer cancel()
+			_ = handlers.SyncScheduleFromJikanAndShikimori(ctx)
+		})
+		c.Start()
 	}
 
 	// Get port from config
