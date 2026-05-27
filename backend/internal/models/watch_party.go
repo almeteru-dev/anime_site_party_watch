@@ -25,6 +25,7 @@ type InMemoryRoom struct {
 	CreatedAt  time.Time
 	ExpiresAt  time.Time
 	CurrentState PlayerState
+	OwnerAdPlaying bool
 	Chat       []InMemoryChatMessage
 }
 

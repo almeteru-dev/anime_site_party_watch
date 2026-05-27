@@ -9,8 +9,6 @@ import { cn } from "@/lib/utils"
 export default function WatchPartyNewPage() {
 	const router = useRouter()
 	const { user, isLoading: authLoading } = useAuth()
-	const [isPublic, setIsPublic] = useState(true)
-	const [password, setPassword] = useState("")
 	const [q, setQ] = useState("")
 	const [results, setResults] = useState<AnimeSearchItem[]>([])
 	const [selected, setSelected] = useState<AnimeSearchItem | null>(null)
@@ -24,21 +22,20 @@ export default function WatchPartyNewPage() {
 
 	const canCreate = useMemo(() => {
 		if (!selected) return false
-		if (!isPublic && password.trim().length < 4) return false
 		return true
-	}, [isPublic, password, selected])
+	}, [selected])
 
 	return (
 		<div className="pt-20">
 			<main className="max-w-[1200px] mx-auto p-4 md:p-6 pb-10">
 			<div className="mb-6">
-				<div className="text-2xl font-semibold">Create Watch Party</div>
-				<div className="mt-1 text-sm text-foreground-muted">Create a room and invite others to watch in sync.</div>
+				<div className="text-2xl font-semibold">Создать комнату совместного просмотра</div>
+				<div className="mt-1 text-sm text-foreground-muted">Создайте комнату и пригласите других смотреть синхронно.</div>
 			</div>
 
 			<div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4">
 				<div className="rounded-2xl border border-border/60 bg-background p-4">
-					<div className="text-sm font-semibold">Content selection</div>
+					<div className="text-sm font-semibold">Выбор аниме</div>
 					<div className="mt-3">
 						<input
 							value={q}
@@ -57,7 +54,7 @@ export default function WatchPartyNewPage() {
 									setResults([])
 								}
 							}}
-							placeholder="Search anime…"
+							placeholder="Найти аниме..."
 							className="w-full h-11 rounded-xl bg-background border border-border/60 px-4 text-sm text-foreground outline-none focus:border-primary/50"
 						/>
 					</div>
@@ -88,43 +85,8 @@ export default function WatchPartyNewPage() {
 
 				<div className="rounded-2xl border border-border/60 bg-background p-4 space-y-4">
 					<div>
-						<div className="text-sm font-semibold">Room settings</div>
-						<div className="mt-2 text-xs text-foreground-muted">Max duration: 12 hours. Room ends if owner leaves.</div>
-					</div>
-
-					<div className="space-y-2">
-						<div className="text-xs font-semibold text-foreground-muted">Privacy</div>
-						<div className="flex items-center gap-2">
-							<button
-								type="button"
-								onClick={() => setIsPublic(true)}
-								className={cn(
-									"h-10 px-4 rounded-xl text-sm font-semibold border transition-colors",
-									isPublic ? "bg-primary text-primary-foreground border-primary/40" : "bg-background border-border/60 hover:bg-background-tertiary/30"
-								)}
-							>
-								Public
-							</button>
-							<button
-								type="button"
-								onClick={() => setIsPublic(false)}
-								className={cn(
-									"h-10 px-4 rounded-xl text-sm font-semibold border transition-colors",
-									!isPublic ? "bg-primary text-primary-foreground border-primary/40" : "bg-background border-border/60 hover:bg-background-tertiary/30"
-								)}
-							>
-								Password
-							</button>
-						</div>
-						{!isPublic ? (
-							<input
-								value={password}
-								onChange={(e) => setPassword(e.target.value)}
-								placeholder="Room password (min 4 chars)"
-								type="password"
-								className="w-full h-11 rounded-xl bg-background border border-border/60 px-4 text-sm text-foreground outline-none focus:border-primary/50"
-							/>
-						) : null}
+						<div className="text-sm font-semibold">Настройки комнаты</div>
+						<div className="mt-2 text-xs text-foreground-muted">Доступ в комнату только по ссылке. Максимальная длительность: 12 часов. Комната удаляется, если в ней не остается участников.</div>
 					</div>
 
 					{error ? <div className="text-sm text-red-300">{error}</div> : null}
@@ -138,8 +100,8 @@ export default function WatchPartyNewPage() {
 							setError(null)
 							try {
 								const resp = await createWatchPartyRoom({
-									is_public: isPublic,
-									password: isPublic ? "" : password,
+									is_public: true,
+									password: "",
 									content: {
 										anime_slug: selected.url,
 										selected_type: "dubbed",
@@ -151,7 +113,7 @@ export default function WatchPartyNewPage() {
 								})
 								router.push(`/watch-party/${resp.room_id}`)
 							} catch (e: any) {
-								setError(e?.message || "Failed to create")
+								setError(e?.message || "Не удалось создать комнату")
 							} finally {
 								setCreating(false)
 							}
@@ -163,7 +125,7 @@ export default function WatchPartyNewPage() {
 								: "bg-background-tertiary/30 text-foreground-muted"
 						)}
 					>
-						{creating ? "Creating…" : "Create room"}
+						{creating ? "Создание..." : "Создать комнату"}
 					</button>
 				</div>
 			</div>

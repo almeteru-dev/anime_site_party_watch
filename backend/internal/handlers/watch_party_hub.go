@@ -318,6 +318,62 @@ func (h *WatchPartyHub) sendToClients(clients []*models.InMemoryUser, msg models
 	}
 }
 
+func (h *WatchPartyHub) GetRoomStateSnapshot(roomID string) (models.PlayerState, bool) {
+	h.mu.RLock()
+	room := h.rooms[roomID]
+	if room == nil {
+		h.mu.RUnlock()
+		return models.PlayerState{}, false
+	}
+	st := room.CurrentState
+	h.mu.RUnlock()
+	return st, true
+}
+
+func (h *WatchPartyHub) SetOwnerAdPlaying(roomID string, isAdPlaying bool) {
+	h.mu.Lock()
+	room := h.rooms[roomID]
+	if room != nil {
+		room.OwnerAdPlaying = isAdPlaying
+	}
+	h.mu.Unlock()
+}
+
+func (h *WatchPartyHub) UpdateOwnerTime(roomID string, seconds float64, force bool) {
+	h.mu.Lock()
+	room := h.rooms[roomID]
+	if room != nil {
+		if force || !room.OwnerAdPlaying {
+			room.CurrentState.Time = seconds
+		}
+	}
+	h.mu.Unlock()
+}
+
+func (h *WatchPartyHub) UpdateRoomPlaying(roomID string, isPlaying bool) {
+	h.mu.Lock()
+	room := h.rooms[roomID]
+	if room != nil {
+		room.CurrentState.IsPlaying = isPlaying
+	}
+	h.mu.Unlock()
+}
+
+func (h *WatchPartyHub) UpdateRoomEpisode(roomID string, season, episode, translationID int) {
+	h.mu.Lock()
+	room := h.rooms[roomID]
+	if room != nil {
+		if season > 0 {
+			room.CurrentState.Season = season
+		}
+		if episode > 0 {
+			room.CurrentState.Episode = episode
+		}
+		room.CurrentState.TranslationID = translationID
+	}
+	h.mu.Unlock()
+}
+
 // TransferOwnership передает права владения другому пользователю
 func (h *WatchPartyHub) TransferOwnership(roomID string, currentOwner *models.InMemoryUser, newOwnerID string) error {
 	h.mu.Lock()

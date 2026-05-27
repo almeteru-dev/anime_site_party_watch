@@ -113,6 +113,11 @@
 		const selfIdRef = useRef<string | null>(null)
 		const isOwnerRef = useRef(false)
 		const suppressUntilRef = useRef(0)
+		const isAdPlayingRef = useRef(true)
+		const adStartedRef = useRef(false)
+		const initialTimeRef = useRef<number | null>(null)
+		const initReceivedAtRef = useRef<number>(0)
+		const didInitialSeekRef = useRef(false)
 		const currentStateRef = useRef<PlayerState>({
 			isPlaying: false,
 			time: 0,
@@ -146,6 +151,12 @@
 
 		const wsUrl = useMemo(() => (roomId ? getWatchPartyWsUrl(roomId) : ""), [roomId])
 		const pageTitle = roomId ? roomId.slice(0, 8) : "…"
+
+		useEffect(() => {
+			isAdPlayingRef.current = true
+			adStartedRef.current = false
+			didInitialSeekRef.current = false
+		}, [iframeSrc])
 
 		useEffect(() => {
 			iframeSrcRef.current = iframeSrc
@@ -282,7 +293,9 @@
 			const iframeWin = playerWindowRef.current
 			if (!iframeWin) return
 			suppressUntilRef.current = Date.now() + 1500
-			postToPlayer(iframeWin, { method: "seek", seconds: currentStateRef.current.time })
+			if (!(adStartedRef.current && isAdPlayingRef.current)) {
+				postToPlayer(iframeWin, { method: "seek", seconds: currentStateRef.current.time })
+			}
 			if (currentStateRef.current.isPlaying) {
 				postToPlayer(iframeWin, { method: "play" })
 			} else {
@@ -422,6 +435,8 @@
 						episode: Number.isFinite(data.payload.state.episode) ? data.payload.state.episode : null,
 						translationId: Number.isFinite((data.payload.state as any).translationId) ? (data.payload.state as any).translationId : null,
 					}
+					initialTimeRef.current = currentStateRef.current.time
+					initReceivedAtRef.current = Date.now()
 					const incomingChat = Array.isArray((data as any).payload?.chat) ? ((data as any).payload.chat as any[]) : []
 					if (incomingChat.length) {
 						setChat(() => {
@@ -438,6 +453,9 @@
 					}
 
 					if (!iframeWin) return
+					if (!isOwnerRef.current) {
+						return
+					}
 					suppressUntilRef.current = Date.now() + 1200
 					postToPlayer(iframeWin, { method: "seek", seconds: currentStateRef.current.time })
 					return
@@ -448,15 +466,19 @@
 					return
 				}
 
-				suppressUntilRef.current = Date.now() + 900
-
 				if (data.type === "play") {
 					currentStateRef.current.isPlaying = true
+					initReceivedAtRef.current = Date.now()
+					if (!isOwnerRef.current && adStartedRef.current && isAdPlayingRef.current) return
+					suppressUntilRef.current = Date.now() + 900
 					postToPlayer(iframeWin, { method: "play" })
 					return
 				}
 				if (data.type === "pause") {
 					currentStateRef.current.isPlaying = false
+					initReceivedAtRef.current = Date.now()
+					if (!isOwnerRef.current && adStartedRef.current && isAdPlayingRef.current) return
+					suppressUntilRef.current = Date.now() + 900
 					postToPlayer(iframeWin, { method: "pause" })
 					return
 				}
@@ -467,6 +489,7 @@
 					currentStateRef.current.season = nextSeason
 					currentStateRef.current.episode = nextEpisode
 					if (nextEpisode !== null) {
+						suppressUntilRef.current = Date.now() + 900
 						postToPlayer(iframeWin, { method: "change_episode", season: nextSeason ?? undefined, episode: nextEpisode })
 					}
 					return
@@ -474,11 +497,15 @@
 				if (data.type === "seek" || data.type === "time") {
 					const serverTime = Number(data.payload?.time)
 					if (!Number.isFinite(serverTime)) return
-					const clientTime = currentStateRef.current.time
-					if (Math.abs(serverTime - clientTime) > 3) {
+					const prevTime = currentStateRef.current.time
+					currentStateRef.current.time = serverTime
+					initialTimeRef.current = serverTime
+					initReceivedAtRef.current = Date.now()
+					if (!isOwnerRef.current && adStartedRef.current && isAdPlayingRef.current) return
+					if (Math.abs(serverTime - prevTime) > 3) {
+						suppressUntilRef.current = Date.now() + 900
 						postToPlayer(iframeWin, { method: "seek", seconds: serverTime })
 					}
-					currentStateRef.current.time = serverTime
 					return
 				}
 			}
@@ -487,10 +514,63 @@
 				const iframeWin = playerWindowRef.current
 				const wsNow = socketRef.current
 				if (!iframeWin || event.source !== iframeWin) return
+				if (!event.data || typeof event.data.key !== "string") return
+
+				if (event.data.key === "kodik_player_ad_started") {
+					adStartedRef.current = true
+					isAdPlayingRef.current = true
+					if (isOwnerRef.current && wsNow && wsNow.readyState === WebSocket.OPEN) {
+						wsNow.send(JSON.stringify({ type: "ad_state", payload: { is_ad_playing: true } }))
+					}
+					return
+				}
+
+				if (event.data.key === "kodik_player_ad_ended" || event.data.key === "kodik_player_video_started") {
+					isAdPlayingRef.current = false
+					if (isOwnerRef.current && wsNow && wsNow.readyState === WebSocket.OPEN) {
+						wsNow.send(JSON.stringify({ type: "ad_state", payload: { is_ad_playing: false } }))
+					}
+					if (!isOwnerRef.current && joinedRef.current && !didInitialSeekRef.current) {
+						const t0 = initialTimeRef.current
+						if (typeof t0 === "number" && Number.isFinite(t0)) {
+							const dt = currentStateRef.current.isPlaying ? Math.max(0, (Date.now() - initReceivedAtRef.current) / 1000) : 0
+							const target = t0 + dt
+							didInitialSeekRef.current = true
+							suppressUntilRef.current = Date.now() + 1200
+							postToPlayer(iframeWin, { method: "seek", seconds: target })
+							if (currentStateRef.current.isPlaying) {
+								postToPlayer(iframeWin, { method: "play" })
+							} else {
+								postToPlayer(iframeWin, { method: "pause" })
+							}
+						}
+					}
+					return
+				}
+
+				if (event.data.key === "kodik_player_time_update" && !isOwnerRef.current) {
+					isAdPlayingRef.current = false
+					if (joinedRef.current && !didInitialSeekRef.current) {
+						const t0 = initialTimeRef.current
+						if (typeof t0 === "number" && Number.isFinite(t0)) {
+							const dt = currentStateRef.current.isPlaying ? Math.max(0, (Date.now() - initReceivedAtRef.current) / 1000) : 0
+							const target = t0 + dt
+							didInitialSeekRef.current = true
+							suppressUntilRef.current = Date.now() + 1200
+							postToPlayer(iframeWin, { method: "seek", seconds: target })
+							if (currentStateRef.current.isPlaying) {
+								postToPlayer(iframeWin, { method: "play" })
+							} else {
+								postToPlayer(iframeWin, { method: "pause" })
+							}
+						}
+					}
+					return
+				}
+
 				if (!wsNow || wsNow.readyState !== WebSocket.OPEN) return
 				if (!isOwnerRef.current) return
 				if (Date.now() < suppressUntilRef.current) return
-				if (!event.data || typeof event.data.key !== "string") return
 
 				try {
 					switch (event.data.key) {
@@ -511,7 +591,7 @@
 							const t = Number(event.data.value)
 							if (!Number.isFinite(t)) return
 							currentStateRef.current.time = t
-							wsNow.send(JSON.stringify({ type: "time", payload: { seconds: t } }))
+							wsNow.send(JSON.stringify({ type: "time_update", payload: { time: t } }))
 							break
 						}
 						case "kodik_player_current_episode": {
@@ -555,9 +635,9 @@
         {/* Основная колонка с плеером */}
         <div className="flex-1">
           {/* Заголовок комнаты */}
-          <div className="mb-4 flex items-center justify-between">
-				<h1 className="text-2xl font-bold">Watch Party #{pageTitle}</h1>
-							<div className="flex items-center gap-2">
+          <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+				<h1 className="text-xl sm:text-2xl font-bold break-all leading-tight">Watch Party #{pageTitle}</h1>
+							<div className="flex flex-wrap items-center gap-2">
 								<button
 									type="button"
 									onClick={copyInvite}

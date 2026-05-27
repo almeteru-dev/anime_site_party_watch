@@ -36,6 +36,14 @@ type watchPartySeekPayload struct {
 	Time    *float64 `json:"time"`
 }
 
+type watchPartyTimeUpdatePayload struct {
+	Time float64 `json:"time"`
+}
+
+type watchPartyAdStatePayload struct {
+	IsAdPlaying bool `json:"is_ad_playing"`
+}
+
 type watchPartyEpisodePayload struct {
 	Season        *int `json:"season"`
 	Episode       *int `json:"episode"`
@@ -214,6 +222,9 @@ func (h *WatchPartyHub) RoomWS(c *gin.Context) {
 		Episode:       dbRoom.CurrentEpisode,
 		TranslationID: dbRoom.CurrentTranslationID,
 	}
+	if st, ok := h.GetRoomStateSnapshot(roomID); ok {
+		initState = st
+	}
 	chat := h.GetChatSnapshot(roomID)
 	_ = conn.WriteJSON(models.WSMessage{Type: "init_state", Payload: gin.H{"self_id": inMemUserID, "is_owner": user.IsOwner, "state": initState, "chat": chat}})
 
@@ -240,6 +251,7 @@ func (h *WatchPartyHub) RoomWS(c *gin.Context) {
 			_ = h.db.Model(&models.DBWatchPartyRoom{}).Where("id = ?", roomID).Updates(map[string]any{
 				"current_is_playing": true,
 			}).Error
+			h.UpdateRoomPlaying(roomID, true)
 			_ = h.BroadcastExcept(roomID, user, models.WSMessage{Type: "play"})
 		case "pause":
 			if !user.IsOwner {
@@ -248,8 +260,9 @@ func (h *WatchPartyHub) RoomWS(c *gin.Context) {
 			_ = h.db.Model(&models.DBWatchPartyRoom{}).Where("id = ?", roomID).Updates(map[string]any{
 				"current_is_playing": false,
 			}).Error
+			h.UpdateRoomPlaying(roomID, false)
 			_ = h.BroadcastExcept(roomID, user, models.WSMessage{Type: "pause"})
-		case "seek", "time":
+		case "seek":
 			if !user.IsOwner {
 				continue
 			}
@@ -266,7 +279,43 @@ func (h *WatchPartyHub) RoomWS(c *gin.Context) {
 			_ = h.db.Model(&models.DBWatchPartyRoom{}).Where("id = ?", roomID).Updates(map[string]any{
 				"current_time_sec": t,
 			}).Error
-			_ = h.BroadcastExcept(roomID, user, models.WSMessage{Type: in.Type, Payload: gin.H{"time": t}})
+			h.UpdateOwnerTime(roomID, t, true)
+			_ = h.BroadcastExcept(roomID, user, models.WSMessage{Type: "seek", Payload: gin.H{"time": t}})
+		case "time":
+			if !user.IsOwner {
+				continue
+			}
+			var p watchPartySeekPayload
+			_ = json.Unmarshal(in.Payload, &p)
+			var t float64
+			if p.Seconds != nil {
+				t = *p.Seconds
+			} else if p.Time != nil {
+				t = *p.Time
+			} else {
+				continue
+			}
+			if t <= 0 {
+				continue
+			}
+			h.UpdateOwnerTime(roomID, t, false)
+		case "time_update":
+			if !user.IsOwner {
+				continue
+			}
+			var p watchPartyTimeUpdatePayload
+			_ = json.Unmarshal(in.Payload, &p)
+			if p.Time <= 0 {
+				continue
+			}
+			h.UpdateOwnerTime(roomID, p.Time, false)
+		case "ad_state":
+			if !user.IsOwner {
+				continue
+			}
+			var p watchPartyAdStatePayload
+			_ = json.Unmarshal(in.Payload, &p)
+			h.SetOwnerAdPlaying(roomID, p.IsAdPlaying)
 		case "change_episode":
 			if !user.IsOwner {
 				continue
@@ -291,6 +340,11 @@ func (h *WatchPartyHub) RoomWS(c *gin.Context) {
 				continue
 			}
 			_ = h.db.Model(&models.DBWatchPartyRoom{}).Where("id = ?", roomID).Updates(updates).Error
+			if season, ok := out["season"].(int); ok {
+				episode, _ := out["episode"].(int)
+				translationId, _ := out["translationId"].(int)
+				h.UpdateRoomEpisode(roomID, season, episode, translationId)
+			}
 			_ = h.BroadcastExcept(roomID, user, models.WSMessage{Type: "change_episode", Payload: out})
 		case "transfer_ownership":
 			if !user.IsOwner {
