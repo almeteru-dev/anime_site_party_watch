@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
+import { useLanguage } from "@/contexts/language-context"
 import { addToMyCollection, getMyCollection, type Anime, type Episode, type WatchlistStatus } from "@/lib/api"
 import { AddToUserList, type UserListStatus } from "@/components/anime/add-to-user-list"
 import { ArtVideoPlayer, type ArtVideoPlayerHandle } from "@/components/anime/art-video-player"
@@ -63,6 +64,7 @@ export function AnimePlayerContainer({
   startWatchingNonce?: number
 }) {
   const { user } = useAuth()
+	const { t } = useLanguage()
 	const [initialListStatus, setInitialListStatus] = useState<UserListStatus | null>(null)
 	const [initialEpisodesWatched, setInitialEpisodesWatched] = useState<number>(0)
 
@@ -97,6 +99,7 @@ export function AnimePlayerContainer({
   const artRef = useRef<ArtVideoPlayerHandle | null>(null)
   const [selectedServer, setSelectedServer] = useState("")
   const [selectedAudio, setSelectedAudio] = useState("Subbed")
+  const [activeTab, setActiveTab] = useState<"video" | "trailer">("video")
   const [resumeAt, setResumeAt] = useState<number>(0)
   const [resumePlay, setResumePlay] = useState(false)
   const [autoplay, setAutoplay] = useState(false)
@@ -107,7 +110,6 @@ export function AnimePlayerContainer({
   }, [episode, startWatchingNonce])
 
   const sources = useMemo<PlayerSource[]>(() => {
-    const trailerFallback = "https://www.youtube.com/watch?v=I1Pk4UUJQg4"
     const list: PlayerSource[] = []
 
     const vs = (episode?.video_sources || [])
@@ -136,13 +138,24 @@ export function AnimePlayerContainer({
     }
 
     if (list.length === 0) {
-      const baseUrl = ((anime.trailer_url || trailerFallback) + "").trim()
-      list.push({ id: "fallback_sub", server: "Trailer", audio: "Subbed", kind: guessKind(baseUrl), url: baseUrl })
-      list.push({ id: "fallback_dub", server: "Trailer", audio: "Dubbed", kind: guessKind(baseUrl), url: baseUrl })
+      list.push({ id: "no_source", server: "Video", audio: "Subbed", kind: "placeholder" })
     }
 
     return list
   }, [anime.trailer_url, episode?.video_sources])
+
+	const trailerUrl = useMemo(() => {
+		return (anime.trailer_url || "").trim()
+	}, [anime.trailer_url])
+
+	const trailerKind = useMemo(() => {
+		return guessKind(trailerUrl)
+	}, [trailerUrl])
+
+	const trailerIframeSrc = useMemo(() => {
+		if (trailerKind !== "iframe") return ""
+		return normalizeIFrameUrl(trailerUrl)
+	}, [trailerKind, trailerUrl])
 
   useEffect(() => {
     if (!sources.length) return
@@ -161,6 +174,10 @@ export function AnimePlayerContainer({
       sources[0]
     )
   }, [selectedAudio, selectedServer, sources])
+
+	const hasPlayableVideo = useMemo(() => {
+		return sources.some((s) => s.kind !== "placeholder")
+	}, [sources])
 
   const iframeSrc = useMemo(() => {
     if (active.kind !== "iframe") return ""
@@ -213,36 +230,80 @@ export function AnimePlayerContainer({
   return (
     <section className="py-6 px-4">
       <div className="container mx-auto max-w-5xl">
+        <div className="flex items-center gap-2 mb-3">
+				<button
+					type="button"
+					onClick={() => setActiveTab("video")}
+					className={
+						activeTab === "video"
+							? "h-9 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
+							: "h-9 rounded-xl border border-border/60 bg-background-secondary/40 px-4 text-sm font-semibold text-foreground-muted hover:text-foreground"
+					}
+				>
+					{t.anime.videoTab}
+				</button>
+				<button
+					type="button"
+					onClick={() => setActiveTab("trailer")}
+					disabled={!trailerUrl}
+					className={
+						!trailerUrl
+							? "h-9 rounded-xl border border-border/60 bg-background-secondary/20 px-4 text-sm font-semibold text-foreground-muted/60 cursor-not-allowed"
+							: activeTab === "trailer"
+								? "h-9 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
+								: "h-9 rounded-xl border border-border/60 bg-background-secondary/40 px-4 text-sm font-semibold text-foreground-muted hover:text-foreground"
+					}
+				>
+					{t.anime.trailerTab}
+				</button>
+			</div>
+
         <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-border bg-background-secondary">
-          {active.kind === "placeholder" ? (
-            <div className="w-full h-full flex items-center justify-center text-foreground-subtle">No source</div>
-          ) : active.kind === "iframe" ? (
-            <iframe
-              key={`${active.id}:${active.url || ""}`}
-              src={iframeSrc}
-              className="absolute inset-0 w-full h-full"
-              allow="autoplay *; fullscreen *; encrypted-media *; picture-in-picture *"
-              allowFullScreen
-            />
-          ) : (
-            <ArtVideoPlayer
-              key={`${active.id}:${active.url || ""}`}
-              ref={artRef}
-              url={active.url || ""}
-              initialTime={resumeAt}
-              autoPlay={resumePlay}
-            />
-          )}
+				{activeTab === "trailer" ? (
+					!trailerUrl ? (
+						<div className="w-full h-full flex items-center justify-center text-foreground-subtle">{t.anime.noTrailer}</div>
+					) : trailerKind === "iframe" ? (
+						<iframe
+							key={`trailer:${trailerUrl}`}
+							src={trailerIframeSrc}
+							className="absolute inset-0 w-full h-full"
+							allow="autoplay *; fullscreen *; encrypted-media *; picture-in-picture *"
+							allowFullScreen
+						/>
+					) : (
+						<ArtVideoPlayer key={`trailer:${trailerUrl}`} ref={artRef} url={trailerUrl} initialTime={0} autoPlay={false} />
+					)
+				) : active.kind === "placeholder" ? (
+					<div className="w-full h-full flex items-center justify-center text-foreground-subtle">No episodes yet. Trailer is available.</div>
+				) : active.kind === "iframe" ? (
+					<iframe
+						key={`${active.id}:${active.url || ""}`}
+						src={iframeSrc}
+						className="absolute inset-0 w-full h-full"
+						allow="autoplay *; fullscreen *; encrypted-media *; picture-in-picture *"
+						allowFullScreen
+					/>
+				) : (
+					<ArtVideoPlayer
+						key={`${active.id}:${active.url || ""}`}
+						ref={artRef}
+						url={active.url || ""}
+						initialTime={resumeAt}
+						autoPlay={resumePlay}
+					/>
+				)}
         </div>
 
         <div className="flex flex-wrap items-center gap-4 mt-4">
-          <SourceSelector
-            sources={sources}
-            selectedServer={selectedServer}
-            selectedAudio={selectedAudio}
-            onChangeServer={onChangeServer}
-            onChangeAudio={onChangeAudio}
-          />
+				{activeTab === "video" && hasPlayableVideo ? (
+					<SourceSelector
+						sources={sources}
+						selectedServer={selectedServer}
+						selectedAudio={selectedAudio}
+						onChangeServer={onChangeServer}
+						onChangeAudio={onChangeAudio}
+					/>
+				) : null}
 
           <AddToUserList
 				animeId={String(anime.id)}

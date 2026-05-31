@@ -2,8 +2,12 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -27,6 +31,9 @@ func main() {
 	// Initialize Database
 	app.InitDB()
 	watchPartyHub := handlers.NewWatchPartyHub(app.DB)
+
+	malStopCtx, malStop := context.WithCancel(context.Background())
+	defer malStop()
 
 	// Initialize Gin router
 	r := gin.Default()
@@ -94,6 +101,9 @@ func main() {
 		api.GET("/animes/:id", handlers.GetAnimeByID)
 		api.GET("/animes/:id/episodes", handlers.GetAnimeEpisodes)
 		api.GET("/anime/:id/rating", handlers.GetAnimeAverageRating)
+		api.GET("/anime/top", handlers.GetMALTopAnime)
+		api.GET("/anime/top/catalog", handlers.GetMALTopAnimeCatalog)
+		api.GET("/anime/random", handlers.GetRandomAnime)
 
 		// Protected routes
 		protected := api.Group("")
@@ -114,9 +124,9 @@ func main() {
 			protected.POST("/collections", handlers.AddToMyCollection)
 			protected.DELETE("/collections/:animeId", handlers.RemoveFromMyCollection)
 			protected.PATCH("/collections/:animeId/episodes-watched", handlers.UpdateMyCollectionEpisodesWatched)
-			protected.POST("/collections/import/shikimori", handlers.ImportShikimoriCollections)
+			protected.POST("/collections/import/shikimori", middleware.ShikiImportRateLimit(5*time.Minute), handlers.ImportShikimoriCollections)
 			protected.POST("/collections/clear", handlers.ClearMyCollections)
-			protected.POST("/collections/import/json", handlers.ImportCollectionsFromJSON)
+			protected.POST("/collections/import/json", middleware.ShikiImportRateLimit(5*time.Minute), handlers.ImportCollectionsFromJSON)
 			protected.GET("/collections/export/shikimori-json", handlers.ExportCollectionsToShikimoriJSON)
 
 			protected.GET("/users/:userId/collection", handlers.GetUserCollection)
@@ -228,6 +238,12 @@ func main() {
 					adminAdmin.PUT("/settings/registration-disabled", middleware.RootOnly(), handlers.AdminSetRegistrationDisabled)
 					adminAdmin.PUT("/settings/footer-links", middleware.RootOnly(), handlers.AdminSetFooterLinks)
 					adminAdmin.PUT("/settings/kodik-player", middleware.RootOnly(), handlers.AdminSetKodikPlayerSettings)
+					adminAdmin.POST("/kodik/bulk/start", middleware.RootOnly(), handlers.AdminKodikBulkStart)
+					adminAdmin.GET("/kodik/bulk/status", middleware.RootOnly(), handlers.AdminKodikBulkStatus)
+					adminAdmin.POST("/settings/sync-top-anime", middleware.RootOnly(), handlers.AdminSyncMALTopAnime)
+					adminAdmin.GET("/settings/mal-top", middleware.RootOnly(), handlers.AdminGetMALTopAnime)
+					adminAdmin.PUT("/settings/mal-top/:rank", middleware.RootOnly(), handlers.AdminUpsertMALTopAnime)
+					adminAdmin.DELETE("/settings/mal-top/:rank", middleware.RootOnly(), handlers.AdminDeleteMALTopAnime)
 					adminAdmin.PUT("/settings/schedule-timezone", middleware.RootOnly(), handlers.AdminSetScheduleTimezone)
 					adminAdmin.POST("/schedule/purge-old", middleware.RootOnly(), handlers.AdminPurgeOldSchedules)
 					adminAdmin.POST("/anime/sync", handlers.AdminAnimeSyncSchedule)
@@ -250,14 +266,56 @@ func main() {
 			_ = handlers.SyncScheduleFromJikanAndShikimori(ctx)
 		})
 		c.Start()
+
+		go func() {
+			syncOnce := func() {
+				ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+				defer cancel()
+				if err := handlers.SyncMALTopAnimeAndHydrate(ctx); err != nil {
+					log.Printf("MAL top sync failed: %v", err)
+				}
+			}
+			time.Sleep(5 * time.Second)
+			syncOnce()
+			ticker := time.NewTicker(24 * time.Hour)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-malStopCtx.Done():
+					return
+				case <-ticker.C:
+					syncOnce()
+				}
+			}
+		}()
 	}
 
 	// Get port from config
 	port := config.AppConfig.PORT
 
-	// Start server
-	log.Printf("Server starting on port %s", port)
-	if err := r.Run(":" + port); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+	srv := &http.Server{
+		Addr:              ":" + port,
+		Handler:           r,
+		ReadHeaderTimeout: 2 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
+
+	go func() {
+		log.Printf("Server starting on port %s", port)
+		err := srv.ListenAndServe()
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("Failed to start server: %v", err)
+		}
+	}()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+	<-stop
+	malStop()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	_ = srv.Shutdown(ctx)
 }

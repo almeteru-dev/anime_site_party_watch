@@ -309,7 +309,7 @@ export default function AdminKindsRatingsPage() {
     <div>
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Kinds & Ratings</h1>
+        <h1 className="text-3xl font-bold text-foreground">Anime metadata</h1>
           <p className="text-sm text-foreground-muted">Manage dropdown lists for anime metadata</p>
         </div>
       </div>

@@ -5,6 +5,8 @@ export const translations = {
     // Navbar
     nav: {
       catalog: "Catalog",
+      top100: "Top",
+      random: "Random",
       collections: "Collections",
       schedule: "Schedule",
 	  faq: "FAQ",
@@ -91,6 +93,9 @@ export const translations = {
       similarAnime: "Similar Anime",
 	  yourRating: "Your rating",
 	  onlyWatchedCanRate: "Only “Completed” or “Rewatching” can rate",
+		videoTab: "Video",
+		trailerTab: "Trailer",
+		noTrailer: "Trailer is not available",
     },
     cookieConsent: {
       text:
@@ -348,6 +353,8 @@ export const translations = {
     // Navbar
     nav: {
       catalog: "Каталог",
+      top100: "Топ",
+      random: "Случайное аниме",
       collections: "Коллекции",
       schedule: "Расписание",
 	  faq: "FAQ",
@@ -434,6 +441,9 @@ export const translations = {
       similarAnime: "Похожие аниме",
 	  yourRating: "Ваша оценка",
 	  onlyWatchedCanRate: "Оценка доступна только для статуса «Просмотрено» или «Пересматриваю»",
+		videoTab: "Видео",
+		trailerTab: "Трейлер",
+		noTrailer: "Трейлер недоступен",
     },
     cookieConsent: {
       text:

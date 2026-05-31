@@ -123,51 +123,60 @@ export function NavbarAnimeSearch() {
 
 	return (
 		<div ref={rootRef} className="relative">
-			<div
+			<button
+				onClick={() => setIsOpen((v) => !v)}
 				className={cn(
-					"flex items-center transition-all duration-300 overflow-hidden",
-					isOpen ? "w-56 lg:w-72" : "w-10"
+					"w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200",
+					isOpen ? "bg-muted" : "hover:bg-muted"
 				)}
+				aria-label={isOpen ? "Close search" : "Open search"}
 			>
 				{isOpen ? (
-					<input
-						ref={inputRef}
-						type="text"
-						value={query}
-						onChange={(e) => setQuery(e.target.value)}
-						onKeyDown={onKeyDown}
-						placeholder={t.nav.searchPlaceholder}
-						className="w-full h-10 pl-4 pr-10 bg-muted border border-border rounded-full text-foreground placeholder:text-foreground-muted/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-					/>
-				) : null}
-				<button
-					onClick={() => setIsOpen((v) => !v)}
-					className={cn(
-						"w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200",
-						isOpen ? "absolute right-0 hover:bg-transparent" : "hover:bg-muted"
-					)}
-					aria-label={isOpen ? "Close search" : "Open search"}
-				>
-					{isOpen ? (
-						<X className="w-5 h-5 text-foreground-muted" />
-					) : (
-						<Search className="w-5 h-5 text-foreground-muted hover:text-primary transition-colors" />
-					)}
-				</button>
-			</div>
+					<X className="w-5 h-5 text-foreground-muted" />
+				) : (
+					<Search className="w-5 h-5 text-foreground-muted hover:text-primary transition-colors" />
+				)}
+			</button>
 
 			{isOpen ? (
 				<div
 					className={cn(
-						"absolute right-0 mt-2 w-[min(24rem,calc(100vw-2rem))] rounded-2xl border border-border bg-background-secondary/95 backdrop-blur-xl shadow-xl overflow-hidden",
-						"max-h-[360px] overflow-y-auto"
+						"absolute right-0 top-full mt-2 w-[min(32rem,calc(100vw-2rem))] rounded-2xl border border-border bg-background-secondary/95 backdrop-blur-xl shadow-xl overflow-hidden",
+						"max-h-[420px] overflow-y-auto"
 					)}
 				>
-					{!canSearch ? (
-						<div className="px-4 py-3 text-sm text-foreground-muted">Type at least 2 characters.</div>
-					) : isLoading ? (
+					<div className="p-3 border-b border-border/60">
+						<div className="relative">
+							<input
+								ref={inputRef}
+								type="text"
+								value={query}
+								onChange={(e) => setQuery(e.target.value)}
+								onKeyDown={onKeyDown}
+								placeholder={t.nav.searchPlaceholder}
+								className="w-full h-10 pl-10 pr-10 bg-muted border border-border rounded-full text-foreground placeholder:text-foreground-muted/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+							/>
+							<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-muted" />
+							<button
+								type="button"
+								onClick={() => {
+									setIsOpen(false)
+									setQuery("")
+									setItems([])
+									setActiveIndex(-1)
+								}}
+								className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full hover:bg-background-secondary/60"
+								aria-label="Close"
+							>
+								<X className="w-4 h-4 text-foreground-muted" />
+							</button>
+						</div>
+						{!canSearch ? <div className="mt-2 text-xs text-foreground-muted">Type at least 2 characters.</div> : null}
+					</div>
+
+					{canSearch && isLoading ? (
 						<div className="px-4 py-3 text-sm text-foreground-muted">Searching…</div>
-					) : items.length === 0 ? (
+					) : canSearch && items.length === 0 ? (
 						<div className="px-4 py-3 text-sm text-foreground-muted">No matches.</div>
 					) : (
 						<div className="py-2">
@@ -186,9 +195,7 @@ export function NavbarAnimeSearch() {
 										)}
 									>
 										<div className="w-10 h-12 rounded-lg overflow-hidden bg-muted shrink-0">
-											{item.image_url ? (
-												<img src={item.image_url} alt="" className="w-full h-full object-cover" />
-											) : null}
+											{item.image_url ? <img src={item.image_url} alt="" className="w-full h-full object-cover" /> : null}
 										</div>
 										<div className="min-w-0">
 											<div className="text-sm font-semibold text-foreground truncate">{title}</div>
@@ -204,4 +211,3 @@ export function NavbarAnimeSearch() {
 		</div>
 	)
 }
-

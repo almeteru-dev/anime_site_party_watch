@@ -50,6 +50,14 @@ type adminKodikImportInput struct {
 	Mode string `json:"mode"` // "add" | "sync"
 }
 
+type kodikImportStats struct {
+	Mode           string `json:"mode"`
+	CreatedEpisodes int   `json:"created_episodes"`
+	CreatedSources  int   `json:"created_sources"`
+	UpdatedSources  int   `json:"updated_sources"`
+	Translations    int   `json:"translations"`
+}
+
 type epKey struct {
 	Season  int
 	Episode int
@@ -88,14 +96,43 @@ func AdminKodikImportEpisodes(c *gin.Context) {
 		return
 	}
 
-	resp, err := kodikSearchByShikimoriID(*anime.ShikimoriID)
+	st, err := kodikImportEpisodesForAnime(animeID, mode)
 	if err != nil {
-		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	c.JSON(http.StatusOK, st)
+}
+
+func kodikImportEpisodesForAnime(animeID int64, mode string) (kodikImportStats, error) {
+	if animeID <= 0 {
+		return kodikImportStats{}, fmt.Errorf("invalid anime id")
+	}
+	mode = strings.ToLower(strings.TrimSpace(mode))
+	if mode == "" {
+		mode = "sync"
+	}
+	if mode != "add" && mode != "sync" {
+		return kodikImportStats{}, fmt.Errorf("invalid mode")
+	}
+	if strings.TrimSpace(config.AppConfig.KODIK_API_KEY) == "" {
+		return kodikImportStats{}, fmt.Errorf("KODIK_API_KEY is not configured")
+	}
+
+	var anime models.Anime
+	if err := app.DB.First(&anime, animeID).Error; err != nil {
+		return kodikImportStats{}, fmt.Errorf("anime not found")
+	}
+	if anime.ShikimoriID == nil || *anime.ShikimoriID <= 0 {
+		return kodikImportStats{}, fmt.Errorf("anime has no shikimori_id")
+	}
+
+	resp, err := kodikSearchByShikimoriID(*anime.ShikimoriID)
+	if err != nil {
+		return kodikImportStats{}, err
+	}
 	if len(resp.Results) == 0 {
-		c.JSON(http.StatusOK, gin.H{"message": "No results from Kodik", "created_episodes": 0, "created_sources": 0, "updated_sources": 0})
-		return
+		return kodikImportStats{Mode: mode, CreatedEpisodes: 0, CreatedSources: 0, UpdatedSources: 0, Translations: 0}, nil
 	}
 
 	maxWanted := 0
@@ -150,25 +187,21 @@ func AdminKodikImportEpisodes(c *gin.Context) {
 	label, err := ensureVideoLabelTx(tx, "Kodik", true)
 	if err != nil {
 		tx.Rollback()
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		return kodikImportStats{}, err
 	}
 
 	if maxWanted > 0 && anime.Episodes < maxWanted {
 		if err := tx.Model(&models.Anime{}).Where("id = ?", anime.ID).Update("episodes", maxWanted).Error; err != nil {
 			tx.Rollback()
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
+			return kodikImportStats{}, err
 		}
 		anime.Episodes = maxWanted
 	}
 
-	// Load existing episodes + sources
 	var existingEpisodes []models.Episode
 	if err := tx.Preload("VideoSources").Where("anime_id = ?", animeID).Find(&existingEpisodes).Error; err != nil {
 		tx.Rollback()
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		return kodikImportStats{}, err
 	}
 
 	episodeByNumber := map[int]*models.Episode{}
@@ -177,7 +210,6 @@ func AdminKodikImportEpisodes(c *gin.Context) {
 		episodeByNumber[ep.Number] = ep
 	}
 
-	// Map existing sources by (episode_id, voice_group_id)
 	sourceByEpisodeVoice := map[string]*models.VideoSource{}
 	for i := range existingEpisodes {
 		ep := &existingEpisodes[i]
@@ -199,7 +231,6 @@ func AdminKodikImportEpisodes(c *gin.Context) {
 	updatedSources := 0
 	maxEpisodeNumber := 0
 
-	// Aggregate series per translation
 	for idx := range resp.Results {
 		item := resp.Results[idx]
 		trTitle := strings.TrimSpace(item.Translation.Title)
@@ -214,11 +245,9 @@ func AdminKodikImportEpisodes(c *gin.Context) {
 		vg, err := ensureVoiceGroupTx(tx, trTitle, vgType)
 		if err != nil {
 			tx.Rollback()
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
+			return kodikImportStats{}, err
 		}
 
-		// Flatten seasons/episodes to a stable sequential ordering
 		keys := make([]epKey, 0)
 		seasonSet := map[int]struct{}{}
 		for seasonStr, season := range item.Seasons {
@@ -268,8 +297,7 @@ func AdminKodikImportEpisodes(c *gin.Context) {
 				e := models.Episode{AnimeID: animeID, Number: number, Kind: "tv"}
 				if err := tx.Create(&e).Error; err != nil {
 					tx.Rollback()
-					c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-					return
+					return kodikImportStats{}, err
 				}
 				createdEpisodes++
 				existing = &e
@@ -283,8 +311,7 @@ func AdminKodikImportEpisodes(c *gin.Context) {
 					s.IsActive = true
 					if err := tx.Save(s).Error; err != nil {
 						tx.Rollback()
-						c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-						return
+						return kodikImportStats{}, err
 					}
 					updatedSources++
 				}
@@ -310,11 +337,9 @@ func AdminKodikImportEpisodes(c *gin.Context) {
 				VoiceGroupID:       &vgID,
 				Type:               models.VideoSourceTypeIframe,
 			}
-
 			if err := tx.Create(&src).Error; err != nil {
 				tx.Rollback()
-				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-				return
+				return kodikImportStats{}, err
 			}
 			createdSources++
 			sourceByEpisodeVoice[key] = &src
@@ -324,23 +349,21 @@ func AdminKodikImportEpisodes(c *gin.Context) {
 	if maxEpisodeNumber > 0 && anime.Episodes < maxEpisodeNumber {
 		if err := tx.Model(&models.Anime{}).Where("id = ?", anime.ID).Update("episodes", maxEpisodeNumber).Error; err != nil {
 			tx.Rollback()
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
+			return kodikImportStats{}, err
 		}
 	}
 
 	if err := tx.Commit().Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		return kodikImportStats{}, err
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"mode":            mode,
-		"created_episodes": createdEpisodes,
-		"created_sources":  createdSources,
-		"updated_sources":  updatedSources,
-		"translations":     len(resp.Results),
-	})
+	return kodikImportStats{
+		Mode:            mode,
+		CreatedEpisodes: createdEpisodes,
+		CreatedSources:  createdSources,
+		UpdatedSources:  updatedSources,
+		Translations:    len(resp.Results),
+	}, nil
 }
 
 func ensureVideoLabelTx(tx *gorm.DB, name string, isExternal bool) (*models.VideoLabel, error) {

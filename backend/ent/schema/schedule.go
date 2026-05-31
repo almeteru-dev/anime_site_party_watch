@@ -40,7 +40,8 @@ func (Schedule) Edges() []ent.Edge {
 
 func (Schedule) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("release_datetime").Unique(),
+		index.Fields("anime_id", "episode_number").Unique(),
 		index.Fields("anime_id"),
+		index.Fields("release_datetime"),
 	}
 }

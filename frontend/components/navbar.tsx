@@ -4,19 +4,23 @@ import { useState, useEffect } from "react"
 import { Menu, User, LogOut, Settings, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
 import { NavbarAnimeSearch } from "@/components/navbar-anime-search"
+import { getRandomAnimeUrl } from "@/lib/api"
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
+  const [isRandomLoading, setIsRandomLoading] = useState(false)
   const { user, logout } = useAuth()
   const isLoggedIn = !!user
   const { t } = useLanguage()
+  const router = useRouter()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -26,12 +30,23 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  const navLinks = [
-    { label: t.nav.catalog, href: "/catalog" },
-    { label: t.nav.schedule, href: "/schedule" },
-	{ label: t.nav.faq, href: "/faq" },
-    ...(isLoggedIn ? [{ label: t.nav.watchParty, href: "/watch-party/new" }] : []),
-  ]
+	const navLinks = [
+		{ label: t.nav.catalog, href: "/catalog" },
+		{ label: `${t.nav.top100} 100`, href: "/top" },
+		{ label: t.nav.schedule, href: "/schedule" },
+		...(isLoggedIn ? [{ label: t.nav.watchParty, href: "/watch-party/new" }] : []),
+	]
+
+	const goRandom = async () => {
+		if (isRandomLoading) return
+		setIsRandomLoading(true)
+		try {
+			const url = await getRandomAnimeUrl()
+			if (url) router.push(`/anime/${encodeURIComponent(url)}`)
+		} finally {
+			setIsRandomLoading(false)
+		}
+	}
 
   return (
     <nav
@@ -45,9 +60,9 @@ export function Navbar() {
       )}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 lg:h-20">
+        <div className="flex flex-wrap items-center gap-3 py-3 md:py-4 lg:py-0 lg:flex-nowrap lg:h-20">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
+          <Link href="/" className="flex items-center gap-2 group shrink-0 order-1">
             <div className="relative">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/20 flex items-center justify-center overflow-hidden">
                 <img src="/favicon.svg" alt="LycorisLib" className="w-6 h-6" />
@@ -61,20 +76,33 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Nav Links */}
-          <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                className="text-foreground-muted hover:text-primary transition-colors duration-200 font-medium"
+          <div className="hidden md:flex order-3 w-full items-center justify-center lg:order-2 lg:w-auto lg:flex-1 lg:min-w-0">
+            <div className="flex items-center gap-6 lg:gap-8 whitespace-nowrap">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  className="text-foreground-muted hover:text-primary transition-colors duration-200 font-medium"
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <button
+                type="button"
+                onClick={goRandom}
+                disabled={isRandomLoading}
+                className={cn(
+                  "text-foreground-muted hover:text-primary transition-colors duration-200 font-medium",
+                  isRandomLoading && "opacity-60 cursor-not-allowed"
+                )}
               >
-                {link.label}
-              </Link>
-            ))}
+                {t.nav.random}
+              </button>
+            </div>
           </div>
 
           {/* Right Side Actions */}
-          <div className="flex items-center gap-2 lg:gap-4">
+          <div className="flex items-center gap-2 lg:gap-4 shrink-0 order-2 ml-auto lg:order-3">
             <NavbarAnimeSearch />
 
             {/* Language Switcher - Desktop */}
@@ -189,6 +217,17 @@ export function Navbar() {
                   {link.label}
                 </Link>
               ))}
+				<button
+					type="button"
+					onClick={async () => {
+						setIsMobileMenuOpen(false)
+						await goRandom()
+					}}
+					className="text-left text-foreground-muted hover:text-primary transition-colors duration-200 font-medium py-2"
+					disabled={isRandomLoading}
+				>
+					{t.nav.random}
+				</button>
               
               {/* Mobile Language Switcher */}
               <div className="border-t border-border pt-4 mt-2">

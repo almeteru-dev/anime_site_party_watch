@@ -635,6 +635,129 @@ export async function adminPurgeOldSchedules(params: { }): Promise<{ deleted_cou
 	}
 }
 
+export async function adminSyncTopAnime(): Promise<void> {
+	const res = await fetch(`${API_URL}/admin/settings/sync-top-anime`, {
+		method: "POST",
+		credentials: "include",
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to sync MAL top anime")
+	}
+}
+
+export type AdminMALTopRow = {
+	rank: number
+	anime_id: number
+	title: string
+	image_url: string
+	updated_at: string
+}
+
+export async function adminGetMALTopAnime(): Promise<AdminMALTopRow[]> {
+	const res = await fetch(`${API_URL}/admin/settings/mal-top`, {
+		credentials: "include",
+		cache: "no-store",
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to fetch MAL top")
+	}
+	return data
+}
+
+export async function adminUpsertMALTopAnime(params: {
+	rank: number
+	animeId: number
+	title?: string
+	imageUrl?: string
+}): Promise<void> {
+	const res = await fetch(`${API_URL}/admin/settings/mal-top/${params.rank}`, {
+		method: "PUT",
+		headers: { "Content-Type": "application/json" },
+		credentials: "include",
+		body: JSON.stringify({
+			anime_id: params.animeId,
+			title: params.title || "",
+			image_url: params.imageUrl || "",
+		}),
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to upsert MAL top")
+	}
+}
+
+export async function adminDeleteMALTopAnime(rank: number): Promise<void> {
+	const res = await fetch(`${API_URL}/admin/settings/mal-top/${rank}`, {
+		method: "DELETE",
+		credentials: "include",
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to delete MAL top")
+	}
+}
+
+export type KodikBulkScope = "all" | "ongoing" | "range"
+export type KodikBulkMode = "add" | "sync"
+
+export type KodikBulkStatus = {
+	status: "idle" | "running" | "finished"
+	scope?: KodikBulkScope
+	mode?: KodikBulkMode
+	from_id?: number
+	to_id?: number
+	started_at?: string
+	finished_at?: string
+	total?: number
+	processed?: number
+	succeeded?: number
+	skipped?: number
+	created_episodes?: number
+	created_sources?: number
+	updated_sources?: number
+	errors?: string[]
+}
+
+export async function adminKodikBulkStart(params: {
+	scope: KodikBulkScope
+	mode: KodikBulkMode
+	fromId?: number
+	toId?: number
+}): Promise<void> {
+	const body: any = { scope: params.scope, mode: params.mode }
+	if (params.scope === "range") {
+		body.from_id = params.fromId
+		body.to_id = params.toId
+	}
+	const res = await fetch(`${API_URL}/admin/kodik/bulk/start`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		credentials: "include",
+		body: JSON.stringify(body),
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to start Kodik bulk")
+	}
+}
+
+export async function adminKodikBulkStatus(): Promise<KodikBulkStatus> {
+	const res = await fetch(`${API_URL}/admin/kodik/bulk/status`, { credentials: "include" })
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to fetch Kodik bulk status")
+	}
+	return data
+}
+
 export type ScheduleItem = {
 	id: number
 	release_datetime: string
@@ -928,6 +1051,23 @@ export async function getAnimes(params?: GetAnimesParams): Promise<Anime[]> {
     throw new Error("Failed to fetch animes")
   }
   return res.json()
+}
+
+export async function getMALTopAnimeCatalog(): Promise<Anime[]> {
+	const res = await fetch(`${API_URL}/anime/top/catalog`, { cache: "no-store" })
+	if (!res.ok) {
+		throw new Error("Failed to fetch top anime")
+	}
+	return res.json()
+}
+
+export async function getRandomAnimeUrl(): Promise<string> {
+	const res = await fetch(`${API_URL}/anime/random`, { cache: "no-store" })
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		throw new Error(data.error || "Failed to fetch random anime")
+	}
+	return String(data.url || "")
 }
 
 export async function searchAnimes(params: { q: string }): Promise<AnimeSearchItem[]> {
@@ -1334,9 +1474,9 @@ export async function importCollectionsFromJson(params: {
 	onExisting: ShikimoriImportMode
 }): Promise<JsonImportResult> {
 	const form = new FormData()
-	form.append("file", params.file)
 	form.append("on_existing", params.onExisting)
-	const res = await fetch(`${API_URL}/collections/import/json`, {
+	form.append("file", params.file)
+	const res = await fetch(`${API_URL}/collections/import/json?on_existing=${encodeURIComponent(params.onExisting)}`, {
 		method: "POST",
 		credentials: "include",
 		body: form,

@@ -115,7 +115,7 @@ func AdminCreateSchedule(c *gin.Context) {
 		Save(ctx)
 	if err != nil {
 		if isUniqueViolation(err) {
-			c.JSON(http.StatusConflict, gin.H{"error": "Schedule entry with this release_datetime already exists"})
+			c.JSON(http.StatusConflict, gin.H{"error": "Schedule entry with this anime and episode already exists"})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create schedule entry"})

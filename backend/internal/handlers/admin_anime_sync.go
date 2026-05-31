@@ -1110,6 +1110,19 @@ func upsertScheduleFutureOnly(animeID int64, episodeNumber int, releaseUTC time.
 		return false, false, errors.New("invalid schedule keys")
 	}
 	releaseUTC = releaseUTC.UTC().Truncate(time.Minute)
+	if !todayStartUTC.IsZero() {
+		_ = app.DB.Exec(
+			`DELETE FROM schedules
+			 WHERE anime_id = ?
+			   AND release_datetime = ?
+			   AND episode_number <> ?
+			   AND release_datetime >= ?`,
+			animeID,
+			releaseUTC,
+			episodeNumber,
+			todayStartUTC.UTC().Truncate(time.Minute),
+		).Error
+	}
 	var existing models.ScheduleItem
 	err = app.DB.Where("anime_id = ? AND episode_number = ?", animeID, episodeNumber).First(&existing).Error
 	if err != nil {

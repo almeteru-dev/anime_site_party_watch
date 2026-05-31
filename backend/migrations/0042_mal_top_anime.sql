@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS mal_top_anime (
+  rank INT PRIMARY KEY,
+  anime_id BIGINT NOT NULL,
+  title VARCHAR NOT NULL,
+  image_url VARCHAR,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

@@ -153,6 +153,7 @@ export function AnimeStreamPlayer({
 	const [showAllVoiceGroupsSub, setShowAllVoiceGroupsSub] = useState(false)
 	const [episodesVisibleCount, setEpisodesVisibleCount] = useState(30)
 	const [creatingRoom, setCreatingRoom] = useState(false)
+	const [playerTab, setPlayerTab] = useState<"video" | "trailer">("video")
 
   const syncEnabled = Boolean(sync?.enabled)
   const canControl = Boolean(sync?.canControl)
@@ -691,6 +692,12 @@ export function AnimeStreamPlayer({
 
   const fallbackTrailer = "https://www.youtube.com/watch?v=I1Pk4UUJQg4."
   const trailerUrl = anime.trailer_url || fallbackTrailer
+	const rawTrailerUrl = (anime.trailer_url || "").trim()
+	const hasTrailer = !!rawTrailerUrl
+	const trailerIframeSrc = useMemo(() => {
+		if (!rawTrailerUrl) return ""
+		return normalizeIFrameUrl(rawTrailerUrl)
+	}, [rawTrailerUrl])
 
   const activeUrl = selectedSource?.url || trailerUrl
   const kind = selectedSource ? selectedSource.type : "iframe"
@@ -895,8 +902,53 @@ export function AnimeStreamPlayer({
   return (
     <section className="py-6 px-4" ref={wrapperRef}>
       <div className="container mx-auto max-w-5xl">
+			<div className="flex items-center gap-2 mb-3">
+				<button
+					type="button"
+					onClick={() => setPlayerTab("video")}
+					disabled={controlsDisabled}
+					className={cn(
+						"h-9 rounded-xl px-4 text-sm font-semibold",
+						playerTab === "video"
+							? "bg-primary text-primary-foreground"
+							: "border border-border/60 bg-background-secondary/40 text-foreground-muted hover:text-foreground",
+						controlsDisabled && "opacity-60 cursor-not-allowed"
+					)}
+				>
+					{t.anime.videoTab}
+				</button>
+				<button
+					type="button"
+					onClick={() => setPlayerTab("trailer")}
+					disabled={controlsDisabled || !hasTrailer || syncEnabled}
+					className={cn(
+						"h-9 rounded-xl px-4 text-sm font-semibold",
+						playerTab === "trailer"
+							? "bg-primary text-primary-foreground"
+							: "border border-border/60 bg-background-secondary/40 text-foreground-muted hover:text-foreground",
+						(controlsDisabled || !hasTrailer || syncEnabled) && "opacity-60 cursor-not-allowed"
+					)}
+				>
+					{t.anime.trailerTab}
+				</button>
+			</div>
+
         <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-border bg-background-secondary">
-          {kind === "iframe" ? (
+				{playerTab === "trailer" ? (
+					hasTrailer ? (
+						<iframe
+							key={`trailer:${anime.id}:${rawTrailerUrl}`}
+							src={trailerIframeSrc}
+							className="absolute inset-0 w-full h-full"
+							allow="autoplay *; fullscreen *; encrypted-media *; picture-in-picture *"
+							allowFullScreen
+						/>
+					) : (
+						<div className="absolute inset-0 flex items-center justify-center text-sm text-foreground-muted">
+							{t.anime.noTrailer}
+						</div>
+					)
+				) : kind === "iframe" ? (
 				shouldDelayKodikRender ? (
 					<div className="absolute inset-0 flex items-center justify-center text-sm text-foreground-muted">
 						Загрузка плеера…
@@ -921,7 +973,7 @@ export function AnimeStreamPlayer({
 								) : null}
 							</>
 				)
-          ) : (
+				) : (
             <ArtVideoPlayer
 			  key={`${selectedType}:${selectedEpisodeNumber}:${selectedSourceId}:${activeUrl}`}
               ref={artRef}
@@ -945,7 +997,7 @@ export function AnimeStreamPlayer({
 				  })
 			  }}
             />
-          )}
+				)}
 		  {/* Оверлей с кнопкой "Войти в трансляцию" для обхода политики автоплея браузеров */}
 		  {syncEnabled && !broadcastJoined ? (
 			<div 

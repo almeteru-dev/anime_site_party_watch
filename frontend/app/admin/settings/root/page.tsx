@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react"
 import { Eye, EyeOff, Save, Trash2 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import {
+	adminKodikBulkStart,
+	adminKodikBulkStatus,
   adminPurgeOldSchedules,
   adminSetDefaultPassword,
   adminSetFooterLinks,
@@ -11,8 +13,14 @@ import {
   adminSetPrivateMode,
   adminSetRegistrationDisabled,
   adminSetScheduleTimezone,
+	adminSyncTopAnime,
+	adminDeleteMALTopAnime,
+	adminGetMALTopAnime,
+	adminUpsertMALTopAnime,
   getPublicSettings,
+	type AdminMALTopRow,
   type FooterSocialLinks,
+	type KodikBulkStatus,
 } from "@/lib/api"
 import { PasswordChecklist } from "@/components/password-checklist"
 import { cn } from "@/lib/utils"
@@ -52,6 +60,16 @@ export default function RootSettingsPage() {
 	const [kodikHideSelectors, setKodikHideSelectors] = useState<boolean>(false)
 	const [kodikSkipEnabled, setKodikSkipEnabled] = useState<boolean>(false)
 	const [kodikSkipValue, setKodikSkipValue] = useState<string>("")
+	const [kodikBulkState, setKodikBulkState] = useState<KodikBulkStatus | null>(null)
+	const [kodikRangeFrom, setKodikRangeFrom] = useState<string>("")
+	const [kodikRangeTo, setKodikRangeTo] = useState<string>("")
+	const [kodikBulkError, setKodikBulkError] = useState<string | null>(null)
+	const [malTopRows, setMalTopRows] = useState<AdminMALTopRow[]>([])
+	const [malTopRank, setMalTopRank] = useState<string>("")
+	const [malTopAnimeId, setMalTopAnimeId] = useState<string>("")
+	const [malTopTitle, setMalTopTitle] = useState<string>("")
+	const [malTopImageUrl, setMalTopImageUrl] = useState<string>("")
+	const [malTopError, setMalTopError] = useState<string | null>(null)
 
   const pwError = useMemo(() => (pw.trim() ? clientPasswordError(pw) : null), [pw])
 
@@ -85,6 +103,45 @@ export default function RootSettingsPage() {
       mounted = false
     }
   }, [])
+
+	useEffect(() => {
+		let mounted = true
+		let timer: any
+		const poll = async () => {
+			try {
+				const st = await adminKodikBulkStatus()
+				if (!mounted) return
+				setKodikBulkState(st)
+				if (st?.status === "running") {
+					timer = window.setTimeout(poll, 2000)
+				}
+			} catch {
+				if (!mounted) return
+			}
+		}
+		poll()
+		return () => {
+			mounted = false
+			if (timer) window.clearTimeout(timer)
+		}
+	}, [])
+
+	useEffect(() => {
+		let mounted = true
+		if (me?.role !== "root") return
+		;(async () => {
+			try {
+				const rows = await adminGetMALTopAnime()
+				if (!mounted) return
+				setMalTopRows(rows)
+			} catch {
+				if (!mounted) return
+			}
+		})()
+		return () => {
+			mounted = false
+		}
+	}, [me?.role])
 
   const onSaveDefaultPassword = async () => {
     if (me?.role !== "root") {
@@ -273,6 +330,116 @@ export default function RootSettingsPage() {
 			setNotice(`Deleted ${res.deleted_count} schedules older than 1 month.`)
 		} catch (e: any) {
 			setError(e?.message || "Failed to purge schedules")
+		} finally {
+			setIsBusy(false)
+		}
+	}
+
+	const onSyncTopAnime = async () => {
+		if (me?.role !== "root") {
+			setError("Root access required")
+			return
+		}
+		setError(null)
+		setNotice(null)
+		setIsBusy(true)
+		try {
+			await adminSyncTopAnime()
+			setNotice("MAL Top 100 anime synced")
+		} catch (e: any) {
+			setError(e?.message || "Failed to sync MAL top")
+		} finally {
+			setIsBusy(false)
+		}
+	}
+
+	const reloadMalTop = async () => {
+		if (me?.role !== "root") return
+		try {
+			const rows = await adminGetMALTopAnime()
+			setMalTopRows(rows)
+		} catch (e: any) {
+			setMalTopError(e?.message || "Failed")
+		}
+	}
+
+	const onUpsertMalTop = async () => {
+		if (me?.role !== "root") {
+			setError("Root access required")
+			return
+		}
+		setMalTopError(null)
+		setError(null)
+		setNotice(null)
+		const rank = Number(malTopRank)
+		const animeId = Number(malTopAnimeId)
+		if (!Number.isFinite(rank) || rank <= 0 || rank > 100) {
+			setMalTopError("Rank must be 1..100")
+			return
+		}
+		if (!Number.isFinite(animeId) || animeId <= 0) {
+			setMalTopError("anime_id must be > 0")
+			return
+		}
+		setIsBusy(true)
+		try {
+			await adminUpsertMALTopAnime({
+				rank,
+				animeId,
+				title: malTopTitle,
+				imageUrl: malTopImageUrl,
+			})
+			setNotice("MAL Top row saved")
+			await reloadMalTop()
+		} catch (e: any) {
+			setMalTopError(e?.message || "Failed")
+		} finally {
+			setIsBusy(false)
+		}
+	}
+
+	const onDeleteMalTop = async (rank: number) => {
+		if (me?.role !== "root") {
+			setError("Root access required")
+			return
+		}
+		setMalTopError(null)
+		setError(null)
+		setNotice(null)
+		setIsBusy(true)
+		try {
+			await adminDeleteMALTopAnime(rank)
+			setNotice("MAL Top row deleted")
+			await reloadMalTop()
+		} catch (e: any) {
+			setMalTopError(e?.message || "Failed")
+		} finally {
+			setIsBusy(false)
+		}
+	}
+
+	const startKodikBulk = async (scope: "all" | "ongoing" | "range", mode: "add" | "sync") => {
+		if (me?.role !== "root") {
+			setError("Root access required")
+			return
+		}
+		setError(null)
+		setNotice(null)
+		setKodikBulkError(null)
+		setIsBusy(true)
+		try {
+			if (scope === "range") {
+				const fromId = Number(kodikRangeFrom)
+				const toId = Number(kodikRangeTo)
+				await adminKodikBulkStart({ scope: "range", mode, fromId, toId })
+			} else {
+				await adminKodikBulkStart({ scope, mode })
+			}
+			const st = await adminKodikBulkStatus()
+			setKodikBulkState(st)
+			setNotice("Kodik bulk job started")
+		} catch (e: any) {
+			setKodikBulkError(e?.message || "Failed")
 		} finally {
 			setIsBusy(false)
 		}
@@ -635,6 +802,276 @@ export default function RootSettingsPage() {
 						<Save className="w-4 h-4" />
 						Save
 					</button>
+				</div>
+			</div>
+
+			<div className="rounded-2xl border border-border/60 bg-background-secondary/40 p-5">
+				<div className="text-sm font-semibold text-foreground">Kodik bulk</div>
+				<div className="mt-1 text-xs text-foreground-muted">
+					Run Kodik Add/Sync for many animes. Use with care (root only).
+				</div>
+
+				<div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+					<button
+						type="button"
+						onClick={() => startKodikBulk("all", "add")}
+						disabled={isBusy}
+						className={cn(
+							"rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90",
+							isBusy && "opacity-60 cursor-not-allowed"
+						)}
+					>
+						For all anime Add kodik
+					</button>
+					<button
+						type="button"
+						onClick={() => startKodikBulk("all", "sync")}
+						disabled={isBusy}
+						className={cn(
+							"rounded-xl border border-border/60 bg-background px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-background-secondary/40",
+							isBusy && "opacity-60 cursor-not-allowed"
+						)}
+					>
+						For all anime Sync kodik
+					</button>
+					<button
+						type="button"
+						onClick={() => startKodikBulk("ongoing", "add")}
+						disabled={isBusy}
+						className={cn(
+							"rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90",
+							isBusy && "opacity-60 cursor-not-allowed"
+						)}
+					>
+						For ongoing anime Add kodik
+					</button>
+					<button
+						type="button"
+						onClick={() => startKodikBulk("ongoing", "sync")}
+						disabled={isBusy}
+						className={cn(
+							"rounded-xl border border-border/60 bg-background px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-background-secondary/40",
+							isBusy && "opacity-60 cursor-not-allowed"
+						)}
+					>
+						For ongoing anime Sync kodik
+					</button>
+				</div>
+
+				<div className="mt-4 grid grid-cols-1 lg:grid-cols-[1fr_1fr_auto_auto] gap-2 items-end">
+					<div className="space-y-2">
+						<label className="text-xs font-semibold text-foreground-muted">From anime id</label>
+						<input
+							value={kodikRangeFrom}
+							onChange={(e) => setKodikRangeFrom(e.target.value)}
+							disabled={isBusy}
+							placeholder="130"
+							className="w-full h-11 rounded-xl bg-background border border-border/60 px-4 text-sm text-foreground outline-none focus:border-primary/50"
+						/>
+					</div>
+					<div className="space-y-2">
+						<label className="text-xs font-semibold text-foreground-muted">To anime id</label>
+						<input
+							value={kodikRangeTo}
+							onChange={(e) => setKodikRangeTo(e.target.value)}
+							disabled={isBusy}
+							placeholder="230"
+							className="w-full h-11 rounded-xl bg-background border border-border/60 px-4 text-sm text-foreground outline-none focus:border-primary/50"
+						/>
+					</div>
+					<button
+						type="button"
+						onClick={() => startKodikBulk("range", "add")}
+						disabled={isBusy}
+						className={cn(
+							"h-11 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90",
+							isBusy && "opacity-60 cursor-not-allowed"
+						)}
+					>
+						Add kodik by id range
+					</button>
+					<button
+						type="button"
+						onClick={() => startKodikBulk("range", "sync")}
+						disabled={isBusy}
+						className={cn(
+							"h-11 rounded-xl border border-border/60 bg-background px-4 text-sm font-semibold text-foreground hover:bg-background-secondary/40",
+							isBusy && "opacity-60 cursor-not-allowed"
+						)}
+					>
+						Sync kodik by id range
+					</button>
+				</div>
+				<div className="mt-1 text-xs text-foreground-muted">Range size must be 100 or less.</div>
+
+				{kodikBulkError ? <div className="mt-3 text-sm text-red-300">{kodikBulkError}</div> : null}
+				{kodikBulkState ? (
+					<div className="mt-3 rounded-xl border border-border/60 bg-background/40 px-4 py-3 text-sm text-foreground">
+						<div className="flex flex-wrap gap-x-4 gap-y-1">
+							<div>
+								<span className="font-semibold">Status:</span> {kodikBulkState.status}
+							</div>
+							{kodikBulkState.scope ? (
+								<div>
+									<span className="font-semibold">Scope:</span> {kodikBulkState.scope}
+								</div>
+							) : null}
+							{kodikBulkState.mode ? (
+								<div>
+									<span className="font-semibold">Mode:</span> {kodikBulkState.mode}
+								</div>
+							) : null}
+							{typeof kodikBulkState.processed === "number" && typeof kodikBulkState.total === "number" ? (
+								<div>
+									<span className="font-semibold">Progress:</span> {kodikBulkState.processed}/{kodikBulkState.total}
+								</div>
+							) : null}
+							{typeof kodikBulkState.created_sources === "number" ? (
+								<div>
+									<span className="font-semibold">Sources:</span> +{kodikBulkState.created_sources} / ~{kodikBulkState.updated_sources || 0}
+								</div>
+							) : null}
+						</div>
+						{kodikBulkState.errors?.length ? (
+							<div className="mt-2 max-h-28 overflow-auto text-xs text-foreground-muted">
+								{kodikBulkState.errors.slice(0, 20).map((e, i) => (
+									<div key={i}>{e}</div>
+								))}
+								{kodikBulkState.errors.length > 20 ? <div>…</div> : null}
+							</div>
+						) : null}
+					</div>
+				) : null}
+			</div>
+
+			<div className="rounded-2xl border border-border/60 bg-background-secondary/40 p-5">
+				<div className="text-sm font-semibold text-foreground">MAL Top 100</div>
+				<div className="mt-1 text-xs text-foreground-muted">Manually refresh cached Top 100 anime list.</div>
+				<div className="mt-4 flex justify-end">
+					<button
+						type="button"
+						onClick={onSyncTopAnime}
+						disabled={isBusy}
+						className={cn(
+							"inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90",
+							isBusy && "opacity-60 cursor-not-allowed"
+						)}
+					>
+						<Save className="w-4 h-4" />
+						Update top 100 anime
+					</button>
+				</div>
+			</div>
+
+			<div className="rounded-2xl border border-border/60 bg-background-secondary/40 p-5">
+				<div className="text-sm font-semibold text-foreground">MAL Top 100 (manual)</div>
+				<div className="mt-1 text-xs text-foreground-muted">Add or edit cached ranking rows by rank (1..100).</div>
+
+				<div className="mt-4 grid grid-cols-1 lg:grid-cols-[120px_160px_1fr_1fr_auto] gap-2 items-end">
+					<div className="space-y-2">
+						<label className="text-xs font-semibold text-foreground-muted">Rank</label>
+						<input
+							value={malTopRank}
+							onChange={(e) => setMalTopRank(e.target.value)}
+							disabled={isBusy}
+							placeholder="1"
+							className="w-full h-11 rounded-xl bg-background border border-border/60 px-4 text-sm text-foreground outline-none focus:border-primary/50"
+						/>
+					</div>
+					<div className="space-y-2">
+						<label className="text-xs font-semibold text-foreground-muted">MAL anime_id</label>
+						<input
+							value={malTopAnimeId}
+							onChange={(e) => setMalTopAnimeId(e.target.value)}
+							disabled={isBusy}
+							placeholder="5114"
+							className="w-full h-11 rounded-xl bg-background border border-border/60 px-4 text-sm text-foreground outline-none focus:border-primary/50"
+						/>
+					</div>
+					<div className="space-y-2">
+						<label className="text-xs font-semibold text-foreground-muted">Title (optional)</label>
+						<input
+							value={malTopTitle}
+							onChange={(e) => setMalTopTitle(e.target.value)}
+							disabled={isBusy}
+							placeholder="Leave empty to auto-fill"
+							className="w-full h-11 rounded-xl bg-background border border-border/60 px-4 text-sm text-foreground outline-none focus:border-primary/50"
+						/>
+					</div>
+					<div className="space-y-2">
+						<label className="text-xs font-semibold text-foreground-muted">Image URL (optional)</label>
+						<input
+							value={malTopImageUrl}
+							onChange={(e) => setMalTopImageUrl(e.target.value)}
+							disabled={isBusy}
+							placeholder=""
+							className="w-full h-11 rounded-xl bg-background border border-border/60 px-4 text-sm text-foreground outline-none focus:border-primary/50"
+						/>
+					</div>
+					<button
+						type="button"
+						onClick={onUpsertMalTop}
+						disabled={isBusy}
+						className={cn(
+							"h-11 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90",
+							isBusy && "opacity-60 cursor-not-allowed"
+						)}
+					>
+						Save
+					</button>
+				</div>
+
+				{malTopError ? <div className="mt-3 text-sm text-red-300">{malTopError}</div> : null}
+
+				<div className="mt-4 rounded-xl border border-border/60 bg-background/40 overflow-hidden">
+					<div className="max-h-64 overflow-auto">
+						<table className="w-full text-sm">
+							<thead className="text-xs text-foreground-muted border-b border-border/60">
+								<tr>
+									<th className="px-3 py-2 text-left">Rank</th>
+									<th className="px-3 py-2 text-left">MAL ID</th>
+									<th className="px-3 py-2 text-left">Title</th>
+									<th className="px-3 py-2 text-right">Actions</th>
+								</tr>
+							</thead>
+							<tbody>
+								{malTopRows.map((r) => (
+									<tr key={r.rank} className="border-b border-border/40 last:border-0">
+										<td className="px-3 py-2">{r.rank}</td>
+										<td className="px-3 py-2">{r.anime_id}</td>
+										<td className="px-3 py-2 truncate max-w-[420px]">{r.title}</td>
+										<td className="px-3 py-2">
+											<div className="flex justify-end gap-2">
+												<button
+													type="button"
+													onClick={() => {
+														setMalTopRank(String(r.rank))
+														setMalTopAnimeId(String(r.anime_id))
+														setMalTopTitle(r.title)
+														setMalTopImageUrl(r.image_url || "")
+													}}
+													className="h-9 rounded-xl border border-border/60 bg-background px-3 text-xs font-semibold text-foreground hover:bg-background-secondary/40"
+												>
+													Edit
+												</button>
+												<button
+													type="button"
+													onClick={() => onDeleteMalTop(r.rank)}
+													disabled={isBusy}
+													className={cn(
+														"h-9 rounded-xl border border-red-500/40 bg-red-500/10 px-3 text-xs font-semibold text-red-300 hover:bg-red-500/15",
+														isBusy && "opacity-60 cursor-not-allowed"
+													)}
+												>
+													Delete
+												</button>
+											</div>
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
 				</div>
 			</div>
 

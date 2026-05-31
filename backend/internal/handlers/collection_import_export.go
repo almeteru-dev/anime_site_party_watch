@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -14,9 +14,7 @@ import (
 	"github.com/seva/animevista/internal/models"
 )
 
-type ImportCollectionsFromJSONForm struct {
-	OnExisting string `form:"on_existing"` // replace | skip
-}
+const maxImportJSONBytes int64 = 2 << 20
 
 type shikiJSONItem struct {
 	TargetID   int    `json:"target_id"`
@@ -111,9 +109,7 @@ func ImportCollectionsFromJSON(c *gin.Context) {
 		return
 	}
 
-	var form ImportCollectionsFromJSONForm
-	_ = c.ShouldBind(&form)
-	onExisting := strings.ToLower(strings.TrimSpace(form.OnExisting))
+	onExisting := strings.ToLower(strings.TrimSpace(c.Query("on_existing")))
 	if onExisting == "" {
 		onExisting = "replace"
 	}
@@ -122,22 +118,42 @@ func ImportCollectionsFromJSON(c *gin.Context) {
 		return
 	}
 
-	fileHeader, err := c.FormFile("file")
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxImportJSONBytes)
+	mr, err := c.Request.MultipartReader()
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "file is required"})
-		return
-	}
-	if fileHeader.Size <= 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "empty file"})
+		if strings.Contains(err.Error(), "http: request body too large") {
+			c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "File too large"})
+			return
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid multipart"})
 		return
 	}
 
-	f, err := fileHeader.Open()
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read file"})
+	var filePart io.ReadCloser
+	for {
+		p, err := mr.NextPart()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			if strings.Contains(err.Error(), "http: request body too large") {
+				c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "File too large"})
+				return
+			}
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid multipart"})
+			return
+		}
+		if p.FormName() == "file" {
+			filePart = p
+			break
+		}
+		_ = p.Close()
+	}
+	if filePart == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "file is required"})
 		return
 	}
-	defer f.Close()
+	defer filePart.Close()
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 75*time.Second)
 	defer cancel()
@@ -154,10 +170,17 @@ func ImportCollectionsFromJSON(c *gin.Context) {
 		ctByName[strings.ToLower(strings.TrimSpace(ct.Name))] = ct.ID
 	}
 
-	dec := json.NewDecoder(bufio.NewReader(f))
-	dec.UseNumber()
+	dec := json.NewDecoder(filePart)
 	var items []shikiJSONItem
 	if err := dec.Decode(&items); err != nil {
+		if strings.Contains(err.Error(), "http: request body too large") {
+			c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "File too large"})
+			return
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
+		return
+	}
+	if err := dec.Decode(&struct{}{}); err != io.EOF {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
 		return
 	}

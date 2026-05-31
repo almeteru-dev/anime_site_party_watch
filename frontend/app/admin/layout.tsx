@@ -43,7 +43,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/animes", label: "Anime", icon: List },
     { href: "/admin/animes/new", label: "Add Anime", icon: PlusCircle },
     { href: "/admin/schedule", label: "Schedule", icon: Sliders },
-    { href: "/admin/kinds-ratings", label: "Kinds & Ratings", icon: Sliders },
+    { href: "/admin/kinds-ratings", label: "Anime metadata", icon: Sliders },
     { href: "/admin/video-labels", label: "Video Labels", icon: Tags },
     { href: "/admin/faq", label: "FAQ", icon: HelpCircle },
     { href: "/admin/users", label: "Users", icon: Users },
