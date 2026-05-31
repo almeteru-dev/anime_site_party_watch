@@ -1,11 +1,11 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Check, Clock, XCircle, Play, PauseCircle, Plus, ChevronDown, Trash2 } from "lucide-react"
+import { Check, Clock, XCircle, Play, PauseCircle, Repeat2, Plus, ChevronDown, Trash2 } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import { cn } from "@/lib/utils"
 
-export type AnimeStatus = "watching" | "planned" | "completed" | "on_hold" | "dropped" | null
+export type AnimeStatus = "watching" | "planned" | "rewatching" | "completed" | "on_hold" | "dropped" | null
 
 interface AnimeStatusManagerProps {
   animeId: string
@@ -13,6 +13,7 @@ interface AnimeStatusManagerProps {
   onStatusChange: (animeId: string, newStatus: AnimeStatus) => Promise<void>
   onRemove?: (animeId: string) => Promise<void>
   showDelete?: boolean
+  isReleased?: boolean
   variant?: "default" | "compact" | "icon"
   className?: string
 }
@@ -31,6 +32,13 @@ const statusConfig = {
     textColor: "text-amber-700 dark:text-amber-400",
     borderColor: "border-amber-500/50",
     hoverBg: "hover:bg-amber-500/20",
+  },
+  rewatching: {
+    icon: Repeat2,
+    color: "bg-purple-500",
+    textColor: "text-purple-700 dark:text-purple-300",
+    borderColor: "border-purple-500/50",
+    hoverBg: "hover:bg-purple-500/20",
   },
   on_hold: {
     icon: PauseCircle,
@@ -61,6 +69,7 @@ export function AnimeStatusManager({
   onStatusChange,
   onRemove,
   showDelete = false,
+  isReleased = true,
   variant = "default",
   className,
 }: AnimeStatusManagerProps) {
@@ -124,6 +133,7 @@ export function AnimeStatusManager({
   const statusOptions: { id: AnimeStatus; label: string }[] = [
     { id: "watching", label: t.status.watching },
     { id: "planned", label: t.status.planned },
+    { id: "rewatching", label: t.status.rewatching },
     { id: "completed", label: t.status.completed },
     { id: "on_hold", label: t.status.onHold },
     { id: "dropped", label: t.status.dropped },
@@ -231,13 +241,18 @@ export function AnimeStatusManager({
               const config = option.id ? statusConfig[option.id] : null
               const Icon = config?.icon || Plus
               const isActive = option.id === currentStatus
+              const isDisabled = !isReleased && (option.id === "completed" || option.id === "rewatching")
 
               return (
                 <button
                   key={option.id}
-                  onClick={() => handleStatusChange(option.id)}
+                  onClick={() => {
+						if (isDisabled) return
+						handleStatusChange(option.id)
+					}}
                   className={cn(
                     "flex items-center gap-3 w-full px-4 py-2.5 text-sm transition-all duration-200",
+                    isDisabled && "opacity-50 cursor-not-allowed",
                     isActive
                       ? cn(config?.textColor, "bg-background-tertiary")
                       : "text-foreground-muted hover:text-foreground hover:bg-background-tertiary"

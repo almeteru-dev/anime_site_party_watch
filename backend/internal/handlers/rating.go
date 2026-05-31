@@ -87,14 +87,14 @@ func RateAnime(c *gin.Context) {
 	var watchedCount int64
 	err := app.DB.Model(&models.UserCollection{}).
 		Joins("JOIN collection_types ct ON ct.id = user_collections.collection_type_id").
-		Where("user_collections.user_id = ? AND user_collections.anime_id = ? AND ct.name = ?", uid, input.AnimeID, "completed").
+		Where("user_collections.user_id = ? AND user_collections.anime_id = ? AND ct.name IN ?", uid, input.AnimeID, []string{"completed", "rewatching"}).
 		Count(&watchedCount).Error
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to validate watch status"})
 		return
 	}
 	if watchedCount == 0 {
-		c.JSON(http.StatusForbidden, gin.H{"error": "You can only rate anime in your Watched list"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "You can only rate anime in your Completed or Rewatching list"})
 		return
 	}
 

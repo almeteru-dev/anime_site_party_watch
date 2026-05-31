@@ -17,6 +17,7 @@ interface UserCollectionCardProps {
   episodes: number
   currentEpisode?: number
   status: AnimeStatus
+  isReleased?: boolean
   showDelete?: boolean
   onStatusChange: (animeId: string, newStatus: AnimeStatus) => Promise<void>
   onRemove?: (animeId: string) => Promise<void>
@@ -31,6 +32,7 @@ export function UserCollectionCard({
   episodes,
   currentEpisode,
   status,
+  isReleased = true,
   showDelete = false,
   onStatusChange,
   onRemove,
@@ -41,13 +43,19 @@ export function UserCollectionCard({
 
   const statusColors = {
     completed: "bg-emerald-500",
+    rewatching: "bg-purple-500",
     planned: "bg-amber-500",
     dropped: "bg-red-500",
     on_hold: "bg-slate-500",
     watching: "bg-primary",
   }
 
-  const progress = currentEpisode ? (currentEpisode / episodes) * 100 : 0
+  const showProgress =
+    !!status &&
+    (status === "watching" || status === "rewatching" || status === "on_hold" || status === "dropped") &&
+    typeof currentEpisode === "number" &&
+    episodes > 0
+  const progress = showProgress ? Math.min(100, Math.max(0, (currentEpisode / episodes) * 100)) : 0
 
   return (
     <div
@@ -89,8 +97,8 @@ export function UserCollectionCard({
           <span className="text-xs font-semibold text-primary">{rating.toFixed(1)}</span>
         </div>
 
-        {/* Progress Bar for In Progress */}
-        {status === "watching" && currentEpisode && (
+        {/* Progress Bar */}
+        {showProgress ? (
           <div className="absolute bottom-2 left-2 right-2">
             <div className="bg-background/80 backdrop-blur-sm rounded-md px-2 py-1.5">
               <div className="flex justify-between text-xs text-foreground-muted mb-1">
@@ -107,7 +115,7 @@ export function UserCollectionCard({
               </div>
             </div>
           </div>
-        )}
+        ) : null}
 
         {/* Play Overlay */}
         <Link
@@ -139,6 +147,7 @@ export function UserCollectionCard({
             onStatusChange={onStatusChange}
             onRemove={onRemove}
             showDelete={showDelete}
+            isReleased={isReleased}
             variant="compact"
           />
         </div>

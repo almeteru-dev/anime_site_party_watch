@@ -30,7 +30,7 @@ export function AnimeRating({ animeId }: { animeId: number }) {
         const items = await itemsPromise
         const myRating = await ratingPromise
         const entry = items.find((x) => x.anime_id === animeId)
-        if (mounted) setIsWatched(entry?.collection_type?.name === "completed")
+        if (mounted) setIsWatched(entry?.collection_type?.name === "completed" || entry?.collection_type?.name === "rewatching")
         if (mounted && !didInitValue.current) {
           if (typeof myRating === "number" && Number.isFinite(myRating)) {
             const n = Math.trunc(myRating)

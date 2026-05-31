@@ -70,10 +70,11 @@ func Seed(db *gorm.DB) {
 		RUName string
 		ENName string
 	}{
-		{Name: "watching", RUName: "Смотрю", ENName: "Watching"},
-		{Name: "planned", RUName: "Запланировано", ENName: "Planned"},
+		{Name: "watching", RUName: "Смотрю", ENName: "Currently Watching"},
+		{Name: "planned", RUName: "Запланировано", ENName: "Plan to Watch"},
+		{Name: "rewatching", RUName: "Пересматриваю", ENName: "Rewatching"},
 		{Name: "completed", RUName: "Просмотрено", ENName: "Completed"},
-		{Name: "on_hold", RUName: "На паузе", ENName: "On Hold"},
+		{Name: "on_hold", RUName: "Отложено", ENName: "On Hold"},
 		{Name: "dropped", RUName: "Брошено", ENName: "Dropped"},
 	}
 	for _, ct := range collectionTypes {

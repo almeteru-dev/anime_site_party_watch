@@ -113,6 +113,11 @@ func main() {
 			protected.GET("/collections", handlers.GetMyCollections)
 			protected.POST("/collections", handlers.AddToMyCollection)
 			protected.DELETE("/collections/:animeId", handlers.RemoveFromMyCollection)
+			protected.PATCH("/collections/:animeId/episodes-watched", handlers.UpdateMyCollectionEpisodesWatched)
+			protected.POST("/collections/import/shikimori", handlers.ImportShikimoriCollections)
+			protected.POST("/collections/clear", handlers.ClearMyCollections)
+			protected.POST("/collections/import/json", handlers.ImportCollectionsFromJSON)
+			protected.GET("/collections/export/shikimori-json", handlers.ExportCollectionsToShikimoriJSON)
 
 			protected.GET("/users/:userId/collection", handlers.GetUserCollection)
 			protected.POST("/collection", handlers.UpdateCollectionEntry)

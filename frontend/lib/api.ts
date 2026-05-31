@@ -1180,7 +1180,7 @@ export async function getMe(): Promise<User> {
   return res.json()
 }
 
-export type WatchlistStatus = "watching" | "planned" | "completed" | "on_hold" | "dropped"
+export type WatchlistStatus = "watching" | "planned" | "rewatching" | "completed" | "on_hold" | "dropped"
 
 export type UserListStatus = WatchlistStatus
 
@@ -1248,6 +1248,120 @@ export async function getMyCollection(): Promise<UserCollectionEntry[]> {
   }
 
   return res.json()
+}
+
+export async function updateMyCollectionEpisodesWatched(params: {
+	animeId: string
+	episodesWatched: number
+}): Promise<number> {
+	const res = await fetch(`${API_URL}/collections/${params.animeId}/episodes-watched`, {
+		method: "PATCH",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		credentials: "include",
+		body: JSON.stringify({ episodes_watched: params.episodesWatched }),
+	})
+
+	if (!res.ok) {
+		const data = await res.json().catch(() => ({}))
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to update episodes")
+	}
+
+	const data = await res.json().catch(() => ({}))
+	return Number(data.episodes_watched) || 0
+}
+
+export type ShikimoriImportMode = "replace" | "skip"
+
+export interface ShikimoriImportResult {
+	shikimori_user_id: number
+	shikimori_username: string
+	on_existing: ShikimoriImportMode
+	imported: number
+	updated: number
+	skipped_existing: number
+	created_anime: number
+	ratings_imported: number
+}
+
+export async function importShikimoriCollections(params: {
+	onExisting: ShikimoriImportMode
+}): Promise<ShikimoriImportResult> {
+	const res = await fetch(`${API_URL}/collections/import/shikimori`, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		credentials: "include",
+		body: JSON.stringify({ on_existing: params.onExisting }),
+	})
+
+	if (!res.ok) {
+		const data = await res.json().catch(() => ({}))
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to import from Shikimori")
+	}
+
+	return res.json()
+}
+
+export async function clearMyCollections(): Promise<void> {
+	const res = await fetch(`${API_URL}/collections/clear`, {
+		method: "POST",
+		credentials: "include",
+	})
+
+	if (!res.ok) {
+		const data = await res.json().catch(() => ({}))
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to clear collections")
+	}
+}
+
+export interface JsonImportResult {
+	on_existing: ShikimoriImportMode
+	imported: number
+	updated: number
+	skipped_existing: number
+	created_anime: number
+	ratings_imported: number
+}
+
+export async function importCollectionsFromJson(params: {
+	file: File
+	onExisting: ShikimoriImportMode
+}): Promise<JsonImportResult> {
+	const form = new FormData()
+	form.append("file", params.file)
+	form.append("on_existing", params.onExisting)
+	const res = await fetch(`${API_URL}/collections/import/json`, {
+		method: "POST",
+		credentials: "include",
+		body: form,
+	})
+
+	if (!res.ok) {
+		const data = await res.json().catch(() => ({}))
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to import JSON")
+	}
+
+	return res.json()
+}
+
+export async function downloadShikimoriExport(): Promise<Blob> {
+	const res = await fetch(`${API_URL}/collections/export/shikimori-json`, {
+		method: "GET",
+		credentials: "include",
+	})
+	if (!res.ok) {
+		const data = await res.json().catch(() => ({}))
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to export")
+	}
+	return res.blob()
 }
 
 export async function rateAnime(params: {

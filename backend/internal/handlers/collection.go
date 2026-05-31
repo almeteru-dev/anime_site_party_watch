@@ -1,14 +1,12 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/seva/animevista/internal/app"
 	"github.com/seva/animevista/internal/models"
-	"gorm.io/gorm"
 )
 
 // GetUserCollection fetches all anime in a user's collection
@@ -90,7 +88,7 @@ func RemoveFromCollection(c *gin.Context) {
 
 type AddToCollectionInput struct {
 	AnimeID int64  `json:"anime_id" binding:"required"`
-	Status  string `json:"status" binding:"required"` // watching | planned | completed | on_hold | dropped
+	Status  string `json:"status" binding:"required"` // watching | planned | rewatching | completed | on_hold | dropped
 }
 
 func GetMyCollections(c *gin.Context) {
@@ -142,8 +140,29 @@ func AddToMyCollection(c *gin.Context) {
 	}
 
 	status := strings.ToLower(strings.TrimSpace(input.Status))
-	if status != "watching" && status != "planned" && status != "completed" && status != "on_hold" && status != "dropped" {
+	if status != "watching" && status != "planned" && status != "rewatching" && status != "completed" && status != "on_hold" && status != "dropped" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid status"})
+		return
+	}
+
+	var animeInfo struct {
+		Episodes    int
+		StatusName  string
+		HasStatusID bool
+	}
+	if err := app.DB.Raw(
+		`SELECT a.episodes, COALESCE(s.name, '') AS status_name
+		 FROM anime a
+		 LEFT JOIN statuses s ON s.id = a.status_id
+		 WHERE a.id = ?`,
+		input.AnimeID,
+	).Row().Scan(&animeInfo.Episodes, &animeInfo.StatusName); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Anime not found"})
+		return
+	}
+	isReleased := strings.ToLower(strings.TrimSpace(animeInfo.StatusName)) == "released"
+	if !isReleased && (status == "completed" || status == "rewatching") {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Anime is not released"})
 		return
 	}
 
@@ -153,33 +172,54 @@ func AddToMyCollection(c *gin.Context) {
 		return
 	}
 
-	var existing models.UserCollection
-	err := app.DB.Where("user_id = ? AND anime_id = ?", userID, input.AnimeID).First(&existing).Error
-	if err == nil {
-		existing.CollectionTypeID = collectionType.ID
-		if err := app.DB.Save(&existing).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update collection"})
-			return
+	completedTypeID := 0
+	if status == "completed" {
+		completedTypeID = collectionType.ID
+	} else {
+		var completed models.CollectionType
+		if err := app.DB.Select("id").Where("name = ?", "completed").First(&completed).Error; err == nil {
+			completedTypeID = completed.ID
 		}
-		c.JSON(http.StatusOK, existing)
-		return
 	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
+
+	initialEpisodesWatched := 0
+	if status == "completed" && animeInfo.Episodes > 0 {
+		initialEpisodesWatched = animeInfo.Episodes
+	}
+
+	var out struct {
+		ID              int64 `json:"id"`
+		UserID          int64 `json:"user_id"`
+		AnimeID         int64 `json:"anime_id"`
+		CollectionType  int   `json:"collection_type_id"`
+		EpisodesWatched int   `json:"episodes_watched"`
+	}
+
+	err := app.DB.Raw(
+		`INSERT INTO user_collections (user_id, anime_id, collection_type_id, episodes_watched)
+		 VALUES (?, ?, ?, ?)
+		 ON CONFLICT (user_id, anime_id) DO UPDATE
+		 SET collection_type_id = EXCLUDED.collection_type_id,
+		     episodes_watched = CASE
+		       WHEN EXCLUDED.collection_type_id = ? AND ? > 0 THEN ?
+		       ELSE user_collections.episodes_watched
+		     END,
+		     updated_at = NOW()
+		 RETURNING id, user_id, anime_id, collection_type_id, episodes_watched`,
+		userID,
+		input.AnimeID,
+		collectionType.ID,
+		initialEpisodesWatched,
+		completedTypeID,
+		animeInfo.Episodes,
+		animeInfo.Episodes,
+	).Scan(&out).Error
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update collection"})
 		return
 	}
 
-	entry := models.UserCollection{
-		UserID:           userID,
-		AnimeID:          input.AnimeID,
-		CollectionTypeID: collectionType.ID,
-	}
-	if err := app.DB.Create(&entry).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add to collection"})
-		return
-	}
-
-	c.JSON(http.StatusCreated, entry)
+	c.JSON(http.StatusOK, out)
 }
 
 func RemoveFromMyCollection(c *gin.Context) {

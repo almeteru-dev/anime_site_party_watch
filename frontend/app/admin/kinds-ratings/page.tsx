@@ -719,7 +719,7 @@ export default function AdminKindsRatingsPage() {
                       <div>
                         <div className="text-sm font-semibold text-foreground truncate">{item.name}</div>
                         {supportsRussianName && "ru_name" in item && item.ru_name ? (
-                          <div className="text-xs text-foreground-subtle truncate">{item.ru_name}</div>
+                          <div className="text-xs text-foreground-subtle truncate">{String(item.ru_name)}</div>
                         ) : null}
                       </div>
                     )}

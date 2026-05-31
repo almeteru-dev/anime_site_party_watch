@@ -18,6 +18,7 @@ import {
   type UserCollectionEntry 
 } from "@/lib/api"
 import { cn } from "@/lib/utils"
+import { ListsSyncPanel } from "@/components/profile/lists-sync-panel"
 
 export default function ProfilePage() {
   const { user: authUser } = useAuth()
@@ -187,10 +188,7 @@ export default function ProfilePage() {
     }
   }
 
-  const watchedCount = collection.filter(item => 
-    item.collection_type.name.toLowerCase() === "watched" || 
-    item.collection_type.name.toLowerCase() === "completed"
-  ).length
+  const watchedCount = collection.filter((item) => item.collection_type.name.toLowerCase() === "completed").length
   
   const totalInList = collection.length
 
@@ -295,6 +293,8 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+
+		<ListsSyncPanel onChanged={fetchData} />
 
         {/* Forms Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

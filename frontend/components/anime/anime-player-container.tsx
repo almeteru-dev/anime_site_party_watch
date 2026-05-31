@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
-import { addToMyCollection, type Anime, type Episode, type WatchlistStatus } from "@/lib/api"
+import { addToMyCollection, getMyCollection, type Anime, type Episode, type WatchlistStatus } from "@/lib/api"
 import { AddToUserList, type UserListStatus } from "@/components/anime/add-to-user-list"
 import { ArtVideoPlayer, type ArtVideoPlayerHandle } from "@/components/anime/art-video-player"
 import { SourceSelector, type PlayerSource } from "@/components/anime/source-selector"
@@ -63,6 +63,37 @@ export function AnimePlayerContainer({
   startWatchingNonce?: number
 }) {
   const { user } = useAuth()
+	const [initialListStatus, setInitialListStatus] = useState<UserListStatus | null>(null)
+	const [initialEpisodesWatched, setInitialEpisodesWatched] = useState<number>(0)
+
+	useEffect(() => {
+		if (!user) {
+			setInitialListStatus(null)
+			setInitialEpisodesWatched(0)
+			return
+		}
+		let mounted = true
+		getMyCollection()
+			.then((list) => {
+				if (!mounted) return
+				const entry = list.find((x) => x.anime_id === anime.id)
+				if (!entry) {
+					setInitialListStatus(null)
+					setInitialEpisodesWatched(0)
+					return
+				}
+				setInitialListStatus(entry.collection_type.name.toLowerCase().replace(" ", "_") as UserListStatus)
+				setInitialEpisodesWatched(entry.episodes_watched || 0)
+			})
+			.catch(() => {
+				if (!mounted) return
+				setInitialListStatus(null)
+				setInitialEpisodesWatched(0)
+			})
+		return () => {
+			mounted = false
+		}
+	}, [anime.id, user])
   const artRef = useRef<ArtVideoPlayerHandle | null>(null)
   const [selectedServer, setSelectedServer] = useState("")
   const [selectedAudio, setSelectedAudio] = useState("Subbed")
@@ -213,7 +244,14 @@ export function AnimePlayerContainer({
             onChangeAudio={onChangeAudio}
           />
 
-          <AddToUserList animeId={String(anime.id)} onUpdate={handleUpdateList} />
+          <AddToUserList
+				animeId={String(anime.id)}
+				onUpdate={handleUpdateList}
+				initialStatus={initialListStatus}
+				initialEpisodesWatched={initialEpisodesWatched}
+				totalEpisodes={anime.episodes}
+				animeStatusName={anime.status?.name || null}
+			/>
         </div>
       </div>
     </section>

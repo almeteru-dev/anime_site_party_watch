@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { Star, Play, Check, XCircle, Clock } from "lucide-react"
+import { Star, Play, Check, XCircle, Clock, Pause, Repeat2 } from "lucide-react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
@@ -11,22 +11,32 @@ import { type Anime as BackendAnime, getLocalizedTitle } from "@/lib/api"
 
 // Status color configuration for visual indicators
 const statusColors = {
-  watched: {
+  completed: {
     border: "ring-2 ring-emerald-500/60",
     badge: "bg-emerald-500",
     icon: Check,
+  },
+  rewatching: {
+    border: "ring-2 ring-purple-500/60",
+    badge: "bg-purple-500",
+    icon: Repeat2,
   },
   planned: {
     border: "ring-2 ring-amber-500/60",
     badge: "bg-amber-500",
     icon: Clock,
   },
+  on_hold: {
+    border: "ring-2 ring-cyan-500/60",
+    badge: "bg-cyan-500",
+    icon: Pause,
+  },
   dropped: {
     border: "ring-2 ring-red-500/60",
     badge: "bg-red-500",
     icon: XCircle,
   },
-  inProgress: {
+  watching: {
     border: "ring-2 ring-primary/60",
     badge: "bg-primary",
     icon: Play,
@@ -160,6 +170,7 @@ export function AnimeCard(props: AnimeCardProps) {
                 currentStatus={localStatus}
                 onStatusChange={handleLocalStatusChange}
                 variant="icon"
+                isReleased={(data?.status?.name || "").toLowerCase() === "released"}
                 className="opacity-70 hover:opacity-100"
               />
             </div>
@@ -217,6 +228,7 @@ export function AnimeCard(props: AnimeCardProps) {
                 currentStatus={localStatus}
                 onStatusChange={handleLocalStatusChange}
                 variant="icon"
+                isReleased={(data?.status?.name || "").toLowerCase() === "released"}
                 className="opacity-70 hover:opacity-100"
               />
             </div>
@@ -292,6 +304,7 @@ export function AnimeCard(props: AnimeCardProps) {
                 currentStatus={localStatus}
                 onStatusChange={handleLocalStatusChange}
                 variant="icon"
+                isReleased={(data?.status?.name || "").toLowerCase() === "released"}
                 className="opacity-70 hover:opacity-100"
               />
             </div>

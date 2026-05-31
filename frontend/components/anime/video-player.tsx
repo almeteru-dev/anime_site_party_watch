@@ -61,16 +61,22 @@ export function VideoPlayer({ posterImage, title, episode, source }: VideoPlayer
 		if (!source || source.type !== "iframe") return null
 		const raw = source.src
 		if (!raw) return raw
+		let normalized = raw
+		if (normalized.startsWith("//")) normalized = `https:${normalized}`
 		let u: URL
 		try {
-			u = new URL(raw)
+			u = new URL(normalized)
 		} catch {
 			return raw
 		}
-		if (!/kodikplayer\.com$/i.test(u.hostname)) return raw
-		if (!kodikSettings) return raw
+		if (!u.hostname.toLowerCase().includes("kodik")) return raw
 
 		const sp = u.searchParams
+		sp.set("translations", "false")
+		if (!kodikSettings) {
+			u.search = sp.toString()
+			return u.toString()
+		}
 		const geoblock = (kodikSettings.geoblock || "")
 			.split(",")
 			.map((x) => x.trim().toUpperCase())

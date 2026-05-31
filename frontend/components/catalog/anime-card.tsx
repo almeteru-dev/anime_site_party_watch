@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
-import { Star, Play, Info, Check, Clock, XCircle, Film, PauseCircle } from 'lucide-react'
+import { Star, Play, Info, Check, Clock, XCircle, Film, PauseCircle, Repeat2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { addToMyCollection, getAnimePosterUrl, getLocalizedDescription, getLocalizedTitle, removeFromMyCollection, type Anime, type WatchlistStatus } from '@/lib/api'
@@ -27,6 +27,12 @@ const statusColors = {
     badge: "bg-emerald-500",
     glow: "shadow-[0_0_20px_rgba(16,185,129,0.3)]",
     icon: Check,
+  },
+  rewatching: {
+    border: "ring-2 ring-purple-500/60",
+    badge: "bg-purple-500",
+    glow: "shadow-[0_0_20px_rgba(168,85,247,0.25)]",
+    icon: Repeat2,
   },
   planned: {
     border: "ring-2 ring-amber-500/60",
@@ -289,6 +295,7 @@ export function AnimeCard({
           onStatusChange={handleLocalStatusChange}
           onRemove={handleLocalRemove}
           showDelete={showRemoveOption}
+          isReleased={(anime.status?.name || "").toLowerCase() === "released"}
           variant="icon"
           className="opacity-80 group-hover:opacity-100 transition-opacity"
         />

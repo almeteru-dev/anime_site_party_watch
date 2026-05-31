@@ -80,7 +80,6 @@ function withAutoplay(url: string): string {
 
 function applyKodikIframeSettings(url: string, settings: { geoblock: string; hide_selectors: boolean; skip_button: string } | null): string {
 	const trimmed = url.trim()
-	if (!settings) return trimmed
 	let normalized = trimmed
 	if (normalized.startsWith("//")) normalized = `https:${normalized}`
 	let u: URL
@@ -89,9 +88,14 @@ function applyKodikIframeSettings(url: string, settings: { geoblock: string; hid
 	} catch {
 		return trimmed
 	}
-	if (!/kodikplayer\.com$/i.test(u.hostname)) return trimmed
+	if (!u.hostname.toLowerCase().includes("kodik")) return trimmed
 
 	const sp = u.searchParams
+	sp.set("translations", "false")
+	if (!settings) {
+		u.search = sp.toString()
+		return u.toString()
+	}
 	const geoblock = (settings.geoblock || "")
 		.split(",")
 		.map((x) => x.trim().toUpperCase())
@@ -141,6 +145,7 @@ export function AnimeStreamPlayer({
   const [resumePlay, setResumePlay] = useState(false)
   const [autoplayTrailer, setAutoplayTrailer] = useState(false)
   const [initialListStatus, setInitialStatus] = useState<UserListStatus | null>(null)
+	const [initialEpisodesWatched, setInitialEpisodesWatched] = useState<number>(0)
   const [autoplayBlocked, setAutoplayBlocked] = useState(false)
 	const [kodikSettings, setKodikSettings] = useState<{ geoblock: string; hide_selectors: boolean; skip_button: string } | null>(null)
 	const [watchProgressEpisodeNumber, setWatchProgressEpisodeNumber] = useState<number | null>(null)
@@ -430,6 +435,7 @@ export function AnimeStreamPlayer({
       const entry = list.find((x) => x.anime_id === anime.id)
       if (entry) {
         setInitialStatus(entry.collection_type.name.toLowerCase().replace(" ", "_") as UserListStatus)
+				setInitialEpisodesWatched(entry.episodes_watched || 0)
       }
     })
   }, [anime.id, user])
@@ -700,7 +706,7 @@ export function AnimeStreamPlayer({
 		if (!syncEnabled) return false
 		try {
 			const u = new URL(iframeSrc)
-			return /kodikplayer\.com$/i.test(u.hostname) && !kodikSettingsReady
+			return u.hostname.toLowerCase().includes("kodik") && !kodikSettingsReady
 		} catch {
 			return false
 		}
@@ -896,19 +902,24 @@ export function AnimeStreamPlayer({
 						Загрузка плеера…
 					</div>
 				) : (
-					<iframe
-					  id="kodik-player"
-					  key={`${selectedType}:${selectedEpisodeNumber}:${selectedSourceId}`}
-					  src={iframeSrc}
-              ref={(el) => {
-                if (el?.contentWindow) {
-                  kodikIframeRef.current = el.contentWindow
-                }
-              }}
-              className="absolute inset-0 w-full h-full"
-              allow="autoplay *; fullscreen *; encrypted-media *; picture-in-picture *"
-              allowFullScreen
-					/>
+							<>
+								<iframe
+								  id="kodik-player"
+								  key={`${selectedType}:${selectedEpisodeNumber}:${selectedSourceId}`}
+								  src={iframeSrc}
+								  ref={(el) => {
+									if (el?.contentWindow) {
+									  kodikIframeRef.current = el.contentWindow
+									}
+								  }}
+								  className="absolute inset-0 w-full h-full"
+								  allow="autoplay *; fullscreen *; encrypted-media *; picture-in-picture *"
+								  allowFullScreen
+								/>
+								{kodikSettings?.hide_selectors ? (
+									<div className="absolute top-2 left-2 w-[150px] h-10 pointer-events-auto" />
+								) : null}
+							</>
 				)
           ) : (
             <ArtVideoPlayer
@@ -1059,6 +1070,9 @@ export function AnimeStreamPlayer({
 						animeId={String(anime.id)}
 						onUpdate={handleUpdateList}
 						initialStatus={initialListStatus}
+						initialEpisodesWatched={initialEpisodesWatched}
+						totalEpisodes={anime.episodes}
+						animeStatusName={anime.status?.name || null}
 					/>
 				</div>
         </div>
