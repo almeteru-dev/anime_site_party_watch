@@ -22,15 +22,17 @@ import {
 export const faqSchema = z.object({
   question: z.string().trim().min(3, "Question is required"),
   question_ru: z.string().trim().optional(),
+  question_uk: z.string().trim().optional(),
   answer: z.string().trim().min(3, "Answer is required"),
   answer_ru: z.string().trim().optional(),
+  answer_uk: z.string().trim().optional(),
   is_published: z.boolean().default(false),
   priority: z.coerce.number().int().min(0).max(100000).default(0),
 })
 
 export type FAQFormValues = z.infer<typeof faqSchema>
 
-const emptyDefaults: FAQFormValues = { question: "", question_ru: "", answer: "", answer_ru: "", is_published: false, priority: 0 }
+const emptyDefaults: FAQFormValues = { question: "", question_ru: "", question_uk: "", answer: "", answer_ru: "", answer_uk: "", is_published: false, priority: 0 }
 
 export function FAQFormDialog(props: {
   open: boolean
@@ -54,8 +56,10 @@ export function FAQFormDialog(props: {
       form.reset({
         question: props.initial.question || "",
         question_ru: props.initial.question_ru || "",
+        question_uk: props.initial.question_uk || "",
         answer: props.initial.answer || "",
         answer_ru: props.initial.answer_ru || "",
+        answer_uk: props.initial.answer_uk || "",
         is_published: !!props.initial.is_published,
         priority: Number.isFinite(props.initial.priority) ? props.initial.priority : 0,
       })
@@ -97,6 +101,14 @@ export function FAQFormDialog(props: {
           </div>
 
           <div className="space-y-2">
+            <label className="text-sm font-semibold text-foreground">Question (UA)</label>
+            <Input {...form.register("question_uk")} placeholder="Наприклад: Як скинути пароль?" />
+            {form.formState.errors.question_uk ? (
+              <div className="text-xs text-red-300">{form.formState.errors.question_uk.message}</div>
+            ) : null}
+          </div>
+
+          <div className="space-y-2">
             <label className="text-sm font-semibold text-foreground">Answer</label>
             <Textarea {...form.register("answer")} placeholder="Write a clear answer…" className="min-h-32" />
             {form.formState.errors.answer ? (
@@ -109,6 +121,14 @@ export function FAQFormDialog(props: {
             <Textarea {...form.register("answer_ru")} placeholder="Напишите понятный ответ…" className="min-h-32" />
             {form.formState.errors.answer_ru ? (
               <div className="text-xs text-red-300">{form.formState.errors.answer_ru.message}</div>
+            ) : null}
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-foreground">Answer (UA)</label>
+            <Textarea {...form.register("answer_uk")} placeholder="Напишіть зрозумілу відповідь…" className="min-h-32" />
+            {form.formState.errors.answer_uk ? (
+              <div className="text-xs text-red-300">{form.formState.errors.answer_uk.message}</div>
             ) : null}
           </div>
 

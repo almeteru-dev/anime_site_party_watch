@@ -1,22 +1,22 @@
 package models
 
-import (
-	"time"
-)
+import "time"
 
 type User struct {
-	ID           int64     `gorm:"primaryKey;autoIncrement" json:"id"`
-	Username     string    `gorm:"unique;not null;type:varchar(40)" json:"username"`
-	Email        string    `gorm:"unique;not null;type:varchar(255)" json:"email"`
-	PasswordHash string    `gorm:"not null;type:varchar(255)" json:"-"`
-	AvatarURL    string    `gorm:"type:varchar(500)" json:"avatar_url"`
-	Age          int       `json:"age"`
-	IsVerified   bool      `gorm:"default:false" json:"is_verified"`
-	Role         string    `gorm:"not null;default:'user';type:varchar(20)" json:"role"`
-	TokenVersion int       `gorm:"not null;default:1" json:"-"`
-	IsBanned     bool      `gorm:"default:false" json:"is_banned"`
-	BanReason    *string   `gorm:"type:text" json:"ban_reason"`
-	CreatedAt    time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
+	ID           int64         `gorm:"primaryKey;autoIncrement" json:"id"`
+	Username     string        `gorm:"unique;not null;type:varchar(40)" json:"username"`
+	Email        string        `gorm:"unique;not null;type:varchar(255)" json:"email"`
+	PasswordHash string        `gorm:"not null;type:varchar(255)" json:"-"`
+	AvatarURL    string        `gorm:"type:varchar(500)" json:"avatar_url"`
+	Age          int           `json:"age"`
+	IsVerified   bool          `gorm:"default:false" json:"is_verified"`
+	Role         string        `gorm:"not null;default:'user';type:varchar(20)" json:"role"`
+	Achievements []Achievement `gorm:"-" json:"achievements,omitempty"`
+	Titles                []Title               `gorm:"-" json:"titles,omitempty"`
+	TokenVersion int           `gorm:"not null;default:1" json:"-"`
+	IsBanned     bool          `gorm:"default:false" json:"is_banned"`
+	BanReason    *string       `gorm:"type:text" json:"ban_reason"`
+	CreatedAt    time.Time     `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
 }
 
 type UserCollection struct {

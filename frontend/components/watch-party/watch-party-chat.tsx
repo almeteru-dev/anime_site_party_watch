@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
 import type { WatchPartyMessage } from "@/hooks/use-watch-party-room"
+import { useLanguage } from "@/contexts/language-context"
+import { toBcp47 } from "@/lib/localized"
 
 export function WatchPartyChat({
 	messages,
@@ -13,6 +15,7 @@ export function WatchPartyChat({
 }) {
 	const [text, setText] = useState("")
 	const listRef = useRef<HTMLDivElement | null>(null)
+	const { locale } = useLanguage()
 
 	useEffect(() => {
 		const el = listRef.current
@@ -25,12 +28,12 @@ export function WatchPartyChat({
 	return (
 		<div className="h-full flex flex-col rounded-2xl border border-border/60 bg-background">
 			<div className="px-4 py-3 border-b border-border/60">
-				<div className="text-sm font-semibold">Chat</div>
-				<div className="text-xs text-foreground-muted">Real-time messages</div>
+				<div className="text-sm font-semibold">{locale === "ru" ? "Чат" : locale === "uk" ? "Чат" : "Chat"}</div>
+				<div className="text-xs text-foreground-muted">{locale === "ru" ? "Сообщения в реальном времени" : locale === "uk" ? "Повідомлення в реальному часі" : "Real-time messages"}</div>
 			</div>
 			<div ref={listRef} className="flex-1 overflow-auto px-4 py-3 space-y-3">
 				{messages.length === 0 ? (
-					<div className="text-sm text-foreground-muted">Say hi to the room.</div>
+					<div className="text-sm text-foreground-muted">{locale === "ru" ? "Напишите приветствие в комнате." : locale === "uk" ? "Напишіть привітання в кімнаті." : "Say hi to the room."}</div>
 				) : (
 					messages.map((m) => (
 						<div key={m.id} className="flex items-start gap-3">
@@ -42,7 +45,7 @@ export function WatchPartyChat({
 							<div className="min-w-0">
 								<div className="flex items-baseline gap-2">
 									<div className="text-sm font-semibold truncate">{m.username}</div>
-									<div className="text-xs text-foreground-subtle">{new Date(m.created_at).toLocaleTimeString()}</div>
+									<div className="text-xs text-foreground-subtle">{new Date(m.created_at).toLocaleTimeString(toBcp47(locale), { hour: "2-digit", minute: "2-digit" })}</div>
 								</div>
 								<div className="text-sm text-foreground break-words">{m.message}</div>
 							</div>
@@ -64,7 +67,7 @@ export function WatchPartyChat({
 					<input
 						value={text}
 						onChange={(e) => setText(e.target.value)}
-						placeholder="Write a message…"
+						placeholder={locale === "ru" ? "Написать сообщение…" : locale === "uk" ? "Написати повідомлення…" : "Write a message…"}
 						className="flex-1 h-11 rounded-xl bg-background border border-border/60 px-4 text-sm text-foreground outline-none focus:border-primary/50"
 					/>
 					<button
@@ -75,11 +78,10 @@ export function WatchPartyChat({
 							canSend ? "bg-primary text-primary-foreground hover:bg-primary/90" : "bg-background-tertiary/30 text-foreground-muted"
 						)}
 					>
-						Send
+						{locale === "ru" ? "Отправить" : locale === "uk" ? "Надіслати" : "Send"}
 					</button>
 				</div>
 			</form>
 		</div>
 	)
 }
-

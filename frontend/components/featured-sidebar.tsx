@@ -20,8 +20,8 @@ export function FeaturedSidebar({ animes }: FeaturedSidebarProps) {
           <Sparkles className="w-4 h-4 text-primary-foreground" />
         </div>
         <div>
-          <h3 className="font-bold text-foreground">{locale === "ru" ? "Рекомендуемое" : "Featured"}</h3>
-          <p className="text-xs text-foreground-muted">{locale === "ru" ? "Подборка" : "Picks"}</p>
+			<h3 className="font-bold text-foreground">{locale === "ru" ? "Рекомендуемое" : locale === "uk" ? "Рекомендоване" : "Featured"}</h3>
+			<p className="text-xs text-foreground-muted">{locale === "ru" ? "Подборка" : locale === "uk" ? "Добірка" : "Picks"}</p>
         </div>
       </div>
 
@@ -44,9 +44,8 @@ export function FeaturedSidebar({ animes }: FeaturedSidebarProps) {
       </div>
 
       <button className="w-full mt-4 py-2.5 text-sm font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/10 transition-colors">
-        {locale === "ru" ? "Смотреть все" : "View all"}
+		{locale === "ru" ? "Смотреть все" : locale === "uk" ? "Дивитися все" : "View all"}
       </button>
     </aside>
   )
 }
-

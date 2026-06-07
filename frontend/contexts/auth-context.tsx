@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { getMe } from "@/lib/api"
 
 interface User {
   id: number
@@ -42,15 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     ;(async () => {
       try {
-        const res = await fetch('/api/me', { credentials: 'include', cache: 'no-store' })
-        if (res.status === 401) {
-          window.dispatchEvent(new CustomEvent('auth:force-logout', { detail: { error_code: 'REVOKED' } }))
-          return
-        }
-        if (!res.ok) return
-
-        const data = (await res.json()) as any
-        const nextUser = data?.user || data
+			const nextUser = (await getMe()) as any
         if (nextUser && typeof nextUser === 'object') {
           setUser(nextUser)
           const encoded = JSON.stringify(nextUser)

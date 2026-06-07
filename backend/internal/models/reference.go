@@ -1,8 +1,5 @@
 package models
 
-// Project Rule: We only support two languages: Russian (RU) and English (EN).
-// For the English locale, we use Romaji titles/names only.
-
 type Language struct {
 	ID   int    `gorm:"primaryKey;autoIncrement" json:"id"`
 	Code string `gorm:"unique;not null;type:varchar(10)" json:"code"`
@@ -13,12 +10,14 @@ type Status struct {
 	ID     int     `gorm:"primaryKey;autoIncrement" json:"id"`
 	Name   string  `gorm:"not null;type:varchar(255)" json:"name"`
 	RUName *string `gorm:"-" json:"ru_name,omitempty"`
+	UKName *string `gorm:"-" json:"uk_name,omitempty"`
 }
 
 type Source struct {
 	ID     int     `gorm:"primaryKey;autoIncrement" json:"id"`
 	Name   string  `gorm:"not null;type:varchar(255)" json:"name"`
 	RUName *string `gorm:"-" json:"ru_name,omitempty"`
+	UKName *string `gorm:"-" json:"uk_name,omitempty"`
 }
 
 type CollectionType struct {
@@ -32,6 +31,8 @@ type Genre struct {
 	RUName *string `gorm:"-" json:"ru_name,omitempty"`
 	DescriptionEN *string `gorm:"column:description_en;type:text" json:"description_en,omitempty"`
 	DescriptionRU *string `gorm:"-" json:"description_ru,omitempty"`
+	UKName *string `gorm:"-" json:"uk_name,omitempty"`
+	DescriptionUK *string `gorm:"-" json:"description_uk,omitempty"`
 }
 
 type Theme struct {
@@ -40,6 +41,8 @@ type Theme struct {
 	RUName *string `gorm:"-" json:"ru_name,omitempty"`
 	DescriptionEN *string `gorm:"column:description_en;type:text" json:"description_en,omitempty"`
 	DescriptionRU *string `gorm:"-" json:"description_ru,omitempty"`
+	UKName *string `gorm:"-" json:"uk_name,omitempty"`
+	DescriptionUK *string `gorm:"-" json:"description_uk,omitempty"`
 }
 
 type Producer struct {
@@ -51,4 +54,5 @@ type Studio struct {
 	ID     int     `gorm:"primaryKey;autoIncrement" json:"id"`
 	Name   string  `gorm:"not null;type:varchar(255)" json:"name"`
 	RUName *string `gorm:"-" json:"ru_name,omitempty"`
+	UKName *string `gorm:"-" json:"uk_name,omitempty"`
 }

@@ -189,11 +189,13 @@ type AdminCreateAnimeInput struct {
 	GenreIDs        []int     `json:"genre_ids"`
 	ThemeIDs        []int     `json:"theme_ids"`
 	TitleRU         string    `json:"title_ru" binding:"required"`
+	TitleUK         string    `json:"title_uk"`
 	TitleEN         string    `json:"title_en" binding:"required"`
 	TitleENRomaji   string    `json:"title_en_romaji" binding:"required"`
 	SeasonNumber    int       `json:"season_number" binding:"required"`
 	FirstSeasonID   *int64    `json:"first_season_id"`
 	DescriptionRU   string    `json:"description_ru"`
+	DescriptionUK   string    `json:"description_uk"`
 	DescriptionEN   string    `json:"description_en"`
 	AltTitles       []string  `json:"alt_titles"`
 	GalleryURLs     []string  `json:"gallery_urls"`
@@ -219,6 +221,8 @@ func AdminCreateAnime(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Missing EN language"})
 		return
 	}
+	var uk models.Language
+	_ = app.DB.Where("code = ?", "uk").First(&uk).Error
 
 	slug := slugify(input.TitleENRomaji)
 	if slug == "" {
@@ -409,6 +413,19 @@ func AdminCreateAnime(c *gin.Context) {
 		Title:       input.TitleRU,
 		Description: input.DescriptionRU,
 	}).Error
+	ukTitle := strings.TrimSpace(input.TitleUK)
+	ukDesc := strings.TrimSpace(input.DescriptionUK)
+	if (ukTitle != "" || ukDesc != "") && uk.ID != 0 {
+		if ukTitle == "" {
+			ukTitle = input.TitleRU
+		}
+		_ = app.DB.Create(&models.AnimeTranslation{
+			AnimeID:     anime.ID,
+			LanguageID:  uk.ID,
+			Title:       ukTitle,
+			Description: ukDesc,
+		}).Error
+	}
 	_ = app.DB.Create(&models.AnimeTranslation{
 		AnimeID:     anime.ID,
 		LanguageID:  en.ID,
@@ -452,11 +469,13 @@ type AdminUpdateAnimeInput struct {
 	GenreIDs        []int     `json:"genre_ids"`
 	ThemeIDs        []int     `json:"theme_ids"`
 	TitleRU         string    `json:"title_ru" binding:"required"`
+	TitleUK         string    `json:"title_uk"`
 	TitleEN         string    `json:"title_en" binding:"required"`
 	TitleENRomaji   string    `json:"title_en_romaji" binding:"required"`
 	SeasonNumber    int       `json:"season_number" binding:"required"`
 	FirstSeasonID   *int64    `json:"first_season_id"`
 	DescriptionRU   string    `json:"description_ru"`
+	DescriptionUK   string    `json:"description_uk"`
 	DescriptionEN   string    `json:"description_en"`
 	AltTitles       []string  `json:"alt_titles"`
 	GalleryURLs     []string  `json:"gallery_urls"`
@@ -491,6 +510,8 @@ func AdminUpdateAnime(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Missing EN language"})
 		return
 	}
+	var uk models.Language
+	_ = app.DB.Where("code = ?", "uk").First(&uk).Error
 
 	slug := slugify(input.TitleENRomaji)
 	if slug == "" {
@@ -663,6 +684,32 @@ func AdminUpdateAnime(c *gin.Context) {
 		tx.Rollback()
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	ukTitle := strings.TrimSpace(input.TitleUK)
+	ukDesc := strings.TrimSpace(input.DescriptionUK)
+	if uk.ID != 0 {
+		if ukTitle == "" && ukDesc == "" {
+			_ = tx.Where("anime_id = ? AND language_id = ?", anime.ID, uk.ID).Delete(&models.AnimeTranslation{}).Error
+		} else {
+			var tUK models.AnimeTranslation
+			_ = tx.Where("anime_id = ? AND language_id = ?", anime.ID, uk.ID).
+				FirstOrCreate(&tUK, models.AnimeTranslation{AnimeID: anime.ID, LanguageID: uk.ID})
+			if ukTitle == "" {
+				if strings.TrimSpace(tUK.Title) == "" {
+					ukTitle = input.TitleRU
+				} else {
+					ukTitle = tUK.Title
+				}
+			}
+			tUK.Title = ukTitle
+			tUK.Description = ukDesc
+			if err := tx.Save(&tUK).Error; err != nil {
+				tx.Rollback()
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+				return
+			}
+		}
 	}
 
 	var tEN models.AnimeTranslation

@@ -69,6 +69,9 @@ export function Footer() {
             <Link href="/dmca" className="text-foreground-muted hover:text-primary transition-colors text-sm">
               {t.footer.dmca}
             </Link>
+						<Link href="/rules" className="text-foreground-muted hover:text-primary transition-colors text-sm">
+							{t.footer.rules}
+						</Link>
             <a href={contactURL.trim() || "#contact"} className="text-foreground-muted hover:text-primary transition-colors text-sm">
               {t.footer.contact}
             </a>

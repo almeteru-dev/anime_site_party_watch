@@ -9,6 +9,7 @@ import type { Locale } from "@/lib/translations"
 const languages: { code: Locale; label: string; nativeLabel: string }[] = [
   { code: "en", label: "Romaji", nativeLabel: "EN" },
   { code: "ru", label: "Русский", nativeLabel: "RU" },
+	{ code: "uk", label: "Українська", nativeLabel: "UA" },
 ]
 
 interface LanguageSwitcherProps {

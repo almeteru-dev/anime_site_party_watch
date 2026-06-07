@@ -22,7 +22,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   // Load saved locale from localStorage on mount
   useEffect(() => {
     const savedLocale = localStorage.getItem(STORAGE_KEY) as Locale | null
-    if (savedLocale && (savedLocale === "en" || savedLocale === "ru")) {
+		if (savedLocale && (savedLocale === "en" || savedLocale === "ru" || savedLocale === "uk")) {
       setLocaleState(savedLocale)
     }
     setIsHydrated(true)

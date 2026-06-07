@@ -25,9 +25,8 @@ import {
   adminUpdateAnime,
 	searchAnimes,
 	type AnimeSearchItem,
-	adminJikanGetAnime,
 	adminKodikImportEpisodes,
-  adminShikimoriGetAnime,
+	adminMoonanimeImportEpisodes,
   getAnimeByID,
   getAnimeEpisodesFiltered,
   adminListVideoLabels,
@@ -47,8 +46,10 @@ import {
 } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { slugify } from "@/lib/slug"
+import { fillDraftFromShikimoriId } from "@/lib/admin/anime-fill/fill"
+import { applyMoonanimeUATranslate } from "@/lib/admin/anime-fill/providers/moonanime-ua"
 
-function pickTranslation(anime: Anime, code: "ru" | "en") {
+function pickTranslation(anime: Anime, code: "ru" | "en" | "uk") {
   return anime.translations?.find((t) => t.language.code === code)
 }
 
@@ -60,32 +61,12 @@ export default function AdminEditAnimePage() {
   const [error, setError] = useState<string | null>(null)
 	const [shikiFillLoading, setShikiFillLoading] = useState(false)
 	const [shikiFillReport, setShikiFillReport] = useState<string | null>(null)
+	const [uaFillLoading, setUaFillLoading] = useState(false)
+	const [uaFillReport, setUaFillReport] = useState<string | null>(null)
 	const [kodikLoading, setKodikLoading] = useState(false)
 	const [kodikReport, setKodikReport] = useState<string | null>(null)
-
-	const stripShikiBBCode = (input: string): string => {
-		let s = String(input || "")
-		s = s.replace(/\[br\]/gi, "\n").replace(/<br\s*\/?>/gi, "\n")
-		s = s.replace(/\[(character|person|anime|manga|ranobe|seyu)=\d+[^\]]*\]([\s\S]*?)\[\/(character|person|anime|manga|ranobe|seyu)\]/gi, "$2")
-		s = s.replace(/\[\/?(b|i|u|s|spoiler|quote|url|center|left|right|color|size)[^\]]*\]/gi, "")
-		s = s.replace(/\[[^\]]+\]/g, "")
-		s = s.replace(/\n{3,}/g, "\n\n")
-		return s.trim()
-	}
-
-	const uniqTitles = (items: string[]) => {
-		const seen = new Set<string>()
-		const out: string[] = []
-		for (const raw of items) {
-			const v = String(raw || "").trim()
-			if (!v) continue
-			const key = v.toLowerCase()
-			if (seen.has(key)) continue
-			seen.add(key)
-			out.push(v)
-		}
-		return out
-	}
+	const [moonanimeLoading, setMoonanimeLoading] = useState(false)
+	const [moonanimeReport, setMoonanimeReport] = useState<string | null>(null)
   const [genresMode, setGenresMode] = useState<"grid" | "list">("grid")
   const [genreQuery, setGenreQuery] = useState("")
   const [themesMode, setThemesMode] = useState<"grid" | "list">("grid")
@@ -142,12 +123,14 @@ export default function AdminEditAnimePage() {
 
   const [form, setForm] = useState({
     title_ru: "",
+	title_uk: "",
 		title_en: "",
     title_en_romaji: "",
 		season_number: 1,
 		first_season_id: null as number | null,
     alt_titles: [] as string[],
     description_ru: "",
+	description_uk: "",
     description_en: "",
     poster_url: "",
 	background_url: "",
@@ -192,255 +175,32 @@ export default function AdminEditAnimePage() {
 		setError(null)
 		setShikiFillReport(null)
 		try {
-			const a: any = await adminShikimoriGetAnime({ id })
-			const missing: string[] = []
-			const nextMeta: AdminMeta = {
-				...meta,
-				genres: [...(meta.genres || [])],
-				themes: [...(meta.themes || [])],
-				producers: [...(meta.producers || [])],
-				studios: [...(meta.studios || [])],
-				statuses: [...(meta.statuses || [])],
-				sources: [...(meta.sources || [])],
-				kinds: [...(meta.kinds || [])],
-				ratings: [...(meta.ratings || [])],
-			}
-			const norm = (s: string) => s.trim().toLowerCase()
-			const ensureStatus = async (name: string, ruName?: string) => {
-				const key = norm(name)
-				const found = nextMeta.statuses.find((x) => norm(x.name) === key)
-				if (found) return found
-				const created = await adminCreateStatus({ name, ru_name: ruName ?? null })
-				nextMeta.statuses.push(created)
-				return created
-			}
-			const ensureRating = async (name: string) => {
-				const key = norm(name)
-				const found = nextMeta.ratings.find((x) => norm(x.name) === key)
-				if (found) return found
-				const created = await adminCreateRating({ name })
-				nextMeta.ratings.push(created)
-				return created
-			}
-			const ensureKind = async (name: string) => {
-				const key = norm(name)
-				const found = nextMeta.kinds.find((x) => norm(x.name) === key)
-				if (found) return found
-				const created = await adminCreateKind({ name, ru_name: null })
-				nextMeta.kinds.push(created)
-				return created
-			}
-			const ensureStudio = async (name: string) => {
-				const key = norm(name)
-				const found = nextMeta.studios.find((x) => norm(x.name) === key)
-				if (found) return found
-				const created = await adminCreateStudio({ name, ru_name: null })
-				nextMeta.studios.push(created)
-				return created
-			}
-			const ensureSource = async (name: string) => {
-				const key = norm(name)
-				const found = nextMeta.sources.find((x) => norm(x.name) === key)
-				if (found) return found
-				const created = await adminCreateSource({ name, ru_name: null })
-				nextMeta.sources.push(created)
-				return created
-			}
-			const ensureProducer = async (name: string) => {
-				const key = norm(name)
-				const found = nextMeta.producers.find((x) => norm(x.name) === key)
-				if (found) return found
-				const created = await adminCreateProducer({ name })
-				nextMeta.producers.push(created)
-				return created
-			}
-			const ensureGenre = async (name: string, ruName?: string) => {
-				const key = norm(name)
-				const found = nextMeta.genres.find((x) => norm(x.name) === key)
-				if (found) return found
-				const created = await adminCreateGenre({ name, ru_name: ruName ?? null })
-				nextMeta.genres.push(created)
-				return created
-			}
-			const ensureTheme = async (name: string) => {
-				const key = norm(name)
-				const found = nextMeta.themes.find((x) => norm(x.name) === key)
-				if (found) return found
-				const created = await adminCreateTheme({ name, ru_name: null })
-				nextMeta.themes.push(created)
-				return created
-			}
-			const pickedTrailer = (() => {
-				const vids = Array.isArray(a?.videos) ? a.videos : []
-				const pv = vids.find((v: any) => v?.kind === "pv" && typeof v?.player_url === "string") || vids.find((v: any) => typeof v?.player_url === "string")
-				if (!pv) return ""
-				const raw = String(pv.player_url || "").trim()
-				if (!raw) return ""
-				return raw.replace(/^http:\/\//, "https://")
-			})()
-			const ratingMap: Record<string, string> = { pg_13: "pg-13", r_17: "r-17+", r_plus: "r+" }
-			const next = { ...form }
-			if (!next.title_ru.trim() && typeof a?.russian === "string") next.title_ru = a.russian
-			if (!next.title_en.trim() && Array.isArray(a?.english) && a.english.length) {
-				const v = String(a.english[0] || "").trim()
-				if (v) next.title_en = v
-			}
-			if (!next.title_en_romaji.trim() && typeof a?.name === "string") next.title_en_romaji = a.name
-			if (!next.title_en.trim() && typeof a?.name === "string") next.title_en = a.name
-			if ((!next.kind || !next.kind.trim()) && typeof a?.kind === "string") next.kind = a.kind
-			if (typeof next.kind === "string" && next.kind.trim()) {
-				try {
-					await ensureKind(next.kind)
-				} catch {
-					missing.push("kind")
-				}
-			}
-			if (((next.duration || 0) <= 0 || next.duration === 24) && typeof a?.duration === "number" && a.duration > 0) next.duration = a.duration
-			if (((next.episodes || 0) <= 0 || next.episodes === 12) && typeof a?.episodes === "number" && a.episodes > 0) next.episodes = a.episodes
-			if ((next.episodes_aired || 0) <= 0 && typeof a?.episodes_aired === "number" && a.episodes_aired > 0) next.episodes_aired = a.episodes_aired
-			if (!next.aired_on && typeof a?.aired_on === "string") next.aired_on = a.aired_on
-			if (!next.released_on && typeof a?.released_on === "string") next.released_on = a.released_on
-			if ((next.status_id == null) && typeof a?.status === "string" && a.status.trim()) {
-				const ruStatus: Record<string, string> = { ongoing: "Онгоинг", released: "Вышло", anons: "Анонс" }
-				try {
-					const st = await ensureStatus(a.status, ruStatus[a.status])
-					next.status_id = st.id
-				} catch {
-					missing.push("status_id")
-				}
-			}
-			const mal = typeof a?.myanimelist_id === "number" ? a.myanimelist_id : typeof a?.mal_id === "number" ? a.mal_id : null
-			if ((next.mal_id == null || next.mal_id === 0) && typeof mal === "number") next.mal_id = mal
-			if (typeof next.mal_id === "number" && next.mal_id > 0) {
-				try {
-					const j: any = await adminJikanGetAnime({ id: next.mal_id })
-					const data: any = j?.data
-						const posterWebp =
-							data?.images?.webp?.large_image_url ||
-							data?.images?.webp?.image_url ||
-							data?.images?.jpg?.large_image_url ||
-							data?.images?.jpg?.image_url
-						if ((!next.poster_url || !next.poster_url.trim()) && typeof posterWebp === "string" && posterWebp.trim()) {
-							next.poster_url = posterWebp.trim()
-						}
-						if ((!next.background_url || !next.background_url.trim()) && next.poster_url) next.background_url = next.poster_url
-						const tr = data?.trailer?.embed_url || data?.trailer?.url
-						if ((!next.trailer_url || !next.trailer_url.trim()) && typeof tr === "string" && tr.trim()) {
-							next.trailer_url = String(tr).trim().replace(/^http:\/\//, "https://")
-						}
-					if ((!next.description_en || !next.description_en.trim()) && typeof data?.synopsis === "string" && data.synopsis.trim()) {
-						next.description_en = data.synopsis
-					}
-					if (next.source_id == null && typeof data?.source === "string" && data.source.trim()) {
-						try {
-							const src = await ensureSource(String(data.source))
-							next.source_id = src.id
-						} catch {
-							missing.push("source_id")
-						}
-					}
-					if ((!next.producer_ids || next.producer_ids.length === 0) && Array.isArray(data?.producers) && data.producers.length) {
-						const pids: number[] = []
-						for (const pr of data.producers) {
-							const pname = String(pr?.name || "").trim()
-							if (!pname) continue
-							try {
-								const p = await ensureProducer(pname)
-								pids.push(p.id)
-							} catch {
-								missing.push("producer_ids")
-							}
-						}
-						if (pids.length) {
-							next.producer_ids = Array.from(new Set(pids))
-							next.producer_id = next.producer_ids[0]
-						}
-					}
-					if ((next.theme_ids || []).length === 0 && Array.isArray(data?.themes) && data.themes.length) {
-						const tids: number[] = []
-						for (const t of data.themes) {
-							const tname = String(t?.name || "").trim()
-							if (!tname) continue
-							try {
-								const th = await ensureTheme(tname)
-								tids.push(th.id)
-							} catch {
-								missing.push("theme_ids")
-							}
-						}
-						if (tids.length) next.theme_ids = Array.from(new Set(tids))
-					}
-				} catch {
-					missing.push("mal")
-				}
-			}
-			if (!next.poster_url && typeof a?.image?.original === "string") {
-				const src = a.image.original
-				if (!String(src).includes("/assets/globals/missing_")) {
-					next.poster_url = /^https?:\/\//.test(src) ? src : `https://shikimori.one${src}`
-				}
-			}
-			if ((!next.background_url || !next.background_url.trim()) && next.poster_url) next.background_url = next.poster_url
-				if ((!next.description_ru || !next.description_ru.trim()) && typeof a?.description === "string") {
-					next.description_ru = stripShikiBBCode(a.description)
-				}
-			if ((!next.trailer_url || !next.trailer_url.trim()) && pickedTrailer) next.trailer_url = pickedTrailer
-			if ((!next.rating || !next.rating.trim()) && typeof a?.rating === "string") {
-				const mapped = ratingMap[String(a.rating)] || String(a.rating)
-				try {
-					await ensureRating(mapped)
-					next.rating = mapped
-				} catch {
-					missing.push("rating")
-				}
-			}
-			if ((next.studio_id == null) && Array.isArray(a?.studios)) {
-				const sname = String(a.studios?.[0]?.name || "").trim()
-				if (sname) {
-					try {
-						const st = await ensureStudio(sname)
-						next.studio_id = st.id
-					} catch {
-						missing.push("studio_id")
-					}
-				}
-			}
-			if (!next.shiki_english?.length && Array.isArray(a?.english)) next.shiki_english = a.english.filter(Boolean)
-			if (!next.shiki_japanese?.length && Array.isArray(a?.japanese)) next.shiki_japanese = a.japanese.filter(Boolean)
-			if (!next.shiki_synonyms?.length && Array.isArray(a?.synonyms)) next.shiki_synonyms = a.synonyms.filter(Boolean)
-			if (!next.shiki_fansubbers?.length && Array.isArray(a?.fansubbers)) next.shiki_fansubbers = a.fansubbers.filter(Boolean)
-			if (!next.shiki_fandubbers?.length && Array.isArray(a?.fandubbers)) next.shiki_fandubbers = a.fandubbers.filter(Boolean)
-				if ((next.alt_titles || []).length === 0) {
-					const titles = uniqTitles([
-						...(Array.isArray(a?.english) ? a.english : []),
-						...(Array.isArray(a?.japanese) ? a.japanese : []),
-						...(Array.isArray(a?.synonyms) ? a.synonyms : []),
-					])
-					const filtered = titles.filter((t) => t.toLowerCase() !== next.title_en_romaji.toLowerCase() && t.toLowerCase() !== next.title_ru.toLowerCase() && t.toLowerCase() !== next.title_en.toLowerCase())
-					if (filtered.length) next.alt_titles = filtered
-				}
-			if ((next.genre_ids || []).length === 0 && Array.isArray(a?.genres)) {
-				const ids: number[] = []
-				for (const g of a.genres) {
-					const gname = String(g?.name || "").trim()
-					if (!gname) continue
-					try {
-						const created = await ensureGenre(gname, typeof g?.russian === "string" ? g.russian : undefined)
-						ids.push(created.id)
-					} catch {
-						missing.push("genre_ids")
-					}
-				}
-				if (ids.length) next.genre_ids = Array.from(new Set(ids))
-			}
-			setMeta(nextMeta)
-			setForm(next)
-			if (missing.length) setShikiFillReport(`Не удалось заполнить: ${Array.from(new Set(missing)).join(", ")}`)
-			else setShikiFillReport("Все основные поля заполнены")
+			const res = await fillDraftFromShikimoriId({ form: form as any, meta, shikiId: id })
+			setMeta(res.nextMeta)
+			setForm((prev) => ({ ...prev, ...(res.nextForm as any) }))
+			setShikiFillReport(res.report)
 		} catch (e: any) {
 			setError(e?.message || "Failed to fetch Shikimori")
 		} finally {
 			setShikiFillLoading(false)
+		}
+	}
+
+	const fillUATranslate = async () => {
+		const id = form.mal_id
+		if (!id || !meta) return
+		setUaFillLoading(true)
+		setError(null)
+		setUaFillReport(null)
+		try {
+			const res = await applyMoonanimeUATranslate({ form: form as any, meta, malId: id })
+			setMeta(res.nextMeta)
+			setForm((prev) => ({ ...prev, ...(res.nextForm as any) }))
+			setUaFillReport(res.report)
+		} catch (e: any) {
+			setError(e?.message || "Failed to add UA translate")
+		} finally {
+			setUaFillLoading(false)
 		}
 	}
 
@@ -467,6 +227,30 @@ export default function AdminEditAnimePage() {
 		}
 	}
 
+	const importMoonanime = async (mode: "add" | "sync") => {
+		if (!params?.id) return
+		setMoonanimeLoading(true)
+		setMoonanimeReport(null)
+		setError(null)
+		try {
+			const res: any = await adminMoonanimeImportEpisodes({ animeId: params.id, mode })
+			const s = res?.stats
+			setMoonanimeReport(
+				`Moonanime: episodes +${s?.created_episodes || 0}, sources +${s?.created_sources || 0}, updated ${s?.updated_sources || 0}, total ${s?.total_items || 0}`
+			)
+			const [m, eps] = await Promise.all([
+				adminGetMeta({}),
+				getAnimeEpisodesFiltered({ idOrSlug: params.id }),
+			])
+			setMeta(m)
+			setEpisodes(eps)
+		} catch (e: any) {
+			setError(e?.message || "Moonanime import failed")
+		} finally {
+			setMoonanimeLoading(false)
+		}
+	}
+
   const toDateInput = (value: any) => {
     if (!value) return ""
     const s = String(value)
@@ -486,14 +270,17 @@ export default function AdminEditAnimePage() {
 
         const ru = pickTranslation(a, "ru")
         const en = pickTranslation(a, "en")
+			const uk = pickTranslation(a, "uk")
         setForm({
           title_ru: ru?.title || "",
+				title_uk: uk?.title || "",
 			title_en: en?.title || "",
 			title_en_romaji: a.name,
 			season_number: typeof (a as any).season_number === "number" ? (a as any).season_number : 1,
 			first_season_id: (a as any).first_season_id ?? null,
 			  alt_titles: (a.alt_titles || []).map((x) => x.title),
           description_ru: ru?.description || "",
+				description_uk: uk?.description || "",
           description_en: en?.description || "",
           poster_url: a.image_url || a.image || "",
 			  background_url: a.background_url || "",
@@ -984,6 +771,7 @@ export default function AdminEditAnimePage() {
           genre_ids: form.genre_ids,
           theme_ids: form.theme_ids,
           title_ru: form.title_ru,
+			title_uk: form.title_uk,
 			title_en: form.title_en,
           title_en_romaji: form.title_en_romaji,
 			season_number: form.season_number,
@@ -991,6 +779,7 @@ export default function AdminEditAnimePage() {
           alt_titles: form.alt_titles,
           gallery_urls: form.gallery_urls,
           description_ru: form.description_ru,
+			description_uk: form.description_uk,
           description_en: form.description_en,
         },
       })
@@ -1135,6 +924,26 @@ export default function AdminEditAnimePage() {
                 className="w-full h-11 rounded-xl bg-background border border-border/60 px-4 text-sm text-foreground outline-none focus:border-primary/50"
               />
             </div>
+
+			<div className="space-y-2">
+				<div className="flex items-center justify-between gap-2">
+					<label className="text-xs font-semibold text-foreground-muted">Title (UA)</label>
+					<button
+						type="button"
+						onClick={fillUATranslate}
+						disabled={uaFillLoading || !meta || !form.mal_id}
+						className="rounded-full bg-primary/15 px-2 py-1 text-[11px] font-semibold text-primary disabled:opacity-50"
+					>
+						{uaFillLoading ? "Filling…" : "Add UA translate"}
+					</button>
+				</div>
+				<input
+					value={form.title_uk || ""}
+					onChange={(e) => setForm((p) => ({ ...p, title_uk: e.target.value }))}
+					className="w-full h-11 rounded-xl bg-background border border-border/60 px-4 text-sm text-foreground outline-none focus:border-primary/50"
+				/>
+				{uaFillReport ? <div className="text-xs text-foreground-muted">{uaFillReport}</div> : null}
+			</div>
 
 			<div className="space-y-2">
 				<label className="text-xs font-semibold text-foreground-muted">Title (EN)</label>
@@ -1309,6 +1118,16 @@ export default function AdminEditAnimePage() {
                 className="w-full rounded-2xl bg-primary/5 border border-primary/30 px-4 py-3 text-sm text-foreground outline-none focus:border-primary/60"
               />
             </div>
+
+			<div className="space-y-2 lg:col-span-2">
+				<label className="text-xs font-semibold text-foreground-muted">Description (UA)</label>
+				<textarea
+					value={form.description_uk || ""}
+					onChange={(e) => setForm((p) => ({ ...p, description_uk: e.target.value }))}
+					rows={8}
+					className="w-full rounded-2xl bg-primary/5 border border-primary/30 px-4 py-3 text-sm text-foreground outline-none focus:border-primary/60"
+				/>
+			</div>
 
             <div className="space-y-2 lg:col-span-2">
               <label className="text-xs font-semibold text-foreground-muted">Description (Romaji)</label>
@@ -1773,6 +1592,23 @@ export default function AdminEditAnimePage() {
 				>
 					Sync Kodik
 				</button>
+				<div className="w-px h-8 bg-border/60 mx-1 hidden sm:block" />
+				<button
+					type="button"
+					onClick={() => importMoonanime("add")}
+					disabled={moonanimeLoading || !form.mal_id}
+					className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+				>
+					{moonanimeLoading ? "Working…" : "Add Moonanime"}
+				</button>
+				<button
+					type="button"
+					onClick={() => importMoonanime("sync")}
+					disabled={moonanimeLoading || !form.mal_id}
+					className="rounded-xl border border-border/60 bg-background px-4 py-2 text-sm font-semibold text-foreground-muted hover:text-foreground disabled:opacity-50"
+				>
+					Sync Moonanime
+				</button>
 				{editingEpisodeId && (
 					<button
 						type="button"
@@ -1785,6 +1621,7 @@ export default function AdminEditAnimePage() {
 			</div>
         </div>
 		{kodikReport ? <div className="mt-2 text-xs text-foreground-muted">{kodikReport}</div> : null}
+		{moonanimeReport ? <div className="mt-2 text-xs text-foreground-muted">{moonanimeReport}</div> : null}
 
         {episodeError && (
           <div className="mt-4 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-400">

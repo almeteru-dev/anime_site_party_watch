@@ -195,6 +195,7 @@ func GetAnimes(c *gin.Context) {
 		return
 	}
 	_ = hydrateAnimeRefsRU(animes)
+	_ = hydrateAnimeRefsUK(animes)
 
 	c.JSON(http.StatusOK, animes)
 }
@@ -228,6 +229,7 @@ func GetAnimeByID(c *gin.Context) {
 	{
 		tmp := []models.Anime{anime}
 		_ = hydrateAnimeRefsRU(tmp)
+		_ = hydrateAnimeRefsUK(tmp)
 		anime = tmp[0]
 	}
 
@@ -261,6 +263,7 @@ func GetAnimeByID(c *gin.Context) {
 		Label              string                 `json:"label"`
 		Type               models.VideoSourceType `json:"type"`
 		URL                string                 `json:"url"`
+		VodURL             *string                `json:"vod_url,omitempty"`
 		Audio              *string                `json:"audio,omitempty"`
 		IsIntegratedPlayer bool                   `json:"is_integrated_player"`
 		IsDefault          bool                   `json:"is_default"`
@@ -288,9 +291,25 @@ func GetAnimeByID(c *gin.Context) {
 	const integratedGroupID int64 = 0
 	byGroup[integratedGroupID] = &VoiceGroupWithEpisodes{ID: integratedGroupID, Name: "Integrated", Type: models.VoiceGroupTypeDub, Episodes: []EpisodeItem{}}
 
+	byServerGroup := map[string]map[int64]*VoiceGroupWithEpisodes{}
+	ensureServerGroup := func(server string) map[int64]*VoiceGroupWithEpisodes {
+		key := strings.TrimSpace(server)
+		if key == "" {
+			key = "default"
+		}
+		m := byServerGroup[key]
+		if m == nil {
+			m = map[int64]*VoiceGroupWithEpisodes{}
+			m[integratedGroupID] = &VoiceGroupWithEpisodes{ID: integratedGroupID, Name: "Integrated", Type: models.VoiceGroupTypeDub, Episodes: []EpisodeItem{}}
+			byServerGroup[key] = m
+		}
+		return m
+	}
+
 	for _, ep := range episodes {
 		integratedSources := make([]VideoSourceItem, 0)
 		perGroup := map[int64][]VideoSourceItem{}
+		perGroupServer := map[string]map[int64][]VideoSourceItem{}
 
 		for _, s := range ep.VideoSources {
 			var vl *VideoLabelItem
@@ -303,6 +322,7 @@ func GetAnimeByID(c *gin.Context) {
 				Label:              s.Label,
 				Type:               s.Type,
 				URL:                s.URL,
+				VodURL:             s.VodURL,
 				Audio:              s.Audio,
 				IsIntegratedPlayer: s.IsIntegratedPlayer,
 				IsDefault:          s.IsDefault,
@@ -319,11 +339,23 @@ func GetAnimeByID(c *gin.Context) {
 				continue
 			}
 			perGroup[*s.VoiceGroupID] = append(perGroup[*s.VoiceGroupID], item)
+			server := strings.TrimSpace(item.Label)
+			if server == "" {
+				server = "default"
+			}
+			m := perGroupServer[server]
+			if m == nil {
+				m = map[int64][]VideoSourceItem{}
+				perGroupServer[server] = m
+			}
+			m[*s.VoiceGroupID] = append(m[*s.VoiceGroupID], item)
 		}
 
 		if len(integratedSources) > 0 {
 			g := byGroup[integratedGroupID]
 			g.Episodes = append(g.Episodes, EpisodeItem{ID: ep.ID, Number: ep.Number, Duration: ep.Duration, GroupID: integratedGroupID, VideoSources: integratedSources})
+			sg := ensureServerGroup("Integrated")
+			sg[integratedGroupID].Episodes = append(sg[integratedGroupID].Episodes, EpisodeItem{ID: ep.ID, Number: ep.Number, Duration: ep.Duration, GroupID: integratedGroupID, VideoSources: integratedSources})
 		}
 
 		for gid, sources := range perGroup {
@@ -344,31 +376,57 @@ func GetAnimeByID(c *gin.Context) {
 
 			vg.Episodes = append(vg.Episodes, EpisodeItem{ID: ep.ID, Number: ep.Number, Duration: ep.Duration, GroupID: gid, VideoSources: sources})
 		}
+
+		for server, groups := range perGroupServer {
+			sg := ensureServerGroup(server)
+			for gid, sources := range groups {
+				vg := sg[gid]
+				if vg == nil {
+					name := "Team"
+					typeVal := models.VoiceGroupTypeDub
+					for _, s := range ep.VideoSources {
+						if s.VoiceGroupID != nil && *s.VoiceGroupID == gid && s.VoiceGroup != nil {
+							name = s.VoiceGroup.Name
+							typeVal = s.VoiceGroup.Type
+							break
+						}
+					}
+					vg = &VoiceGroupWithEpisodes{ID: gid, Name: name, Type: typeVal, Episodes: []EpisodeItem{}}
+					sg[gid] = vg
+				}
+				vg.Episodes = append(vg.Episodes, EpisodeItem{ID: ep.ID, Number: ep.Number, Duration: ep.Duration, GroupID: gid, VideoSources: sources})
+			}
+		}
 	}
 
-	dub := make([]VoiceGroupWithEpisodes, 0)
-	sub := make([]VoiceGroupWithEpisodes, 0)
-	for _, g := range byGroup {
-		if len(g.Episodes) == 0 {
-			continue
+	serversOut := map[string]interface{}{}
+	for server, groups := range byServerGroup {
+		dub := make([]VoiceGroupWithEpisodes, 0)
+		sub := make([]VoiceGroupWithEpisodes, 0)
+		for _, g := range groups {
+			if len(g.Episodes) == 0 {
+				continue
+			}
+			sort.Slice(g.Episodes, func(i, j int) bool { return g.Episodes[i].Number < g.Episodes[j].Number })
+			if g.Type == models.VoiceGroupTypeDub {
+				dub = append(dub, *g)
+			} else {
+				sub = append(sub, *g)
+			}
 		}
-		sort.Slice(g.Episodes, func(i, j int) bool { return g.Episodes[i].Number < g.Episodes[j].Number })
-		if g.Type == models.VoiceGroupTypeDub {
-			dub = append(dub, *g)
-		} else {
-			sub = append(sub, *g)
+		sort.Slice(dub, func(i, j int) bool { return dub[i].Name < dub[j].Name })
+		sort.Slice(sub, func(i, j int) bool { return sub[i].Name < sub[j].Name })
+		serversOut[server] = map[string]interface{}{
+			"dub": dub,
+			"sub": sub,
 		}
 	}
-	sort.Slice(dub, func(i, j int) bool { return dub[i].Name < dub[j].Name })
-	sort.Slice(sub, func(i, j int) bool { return sub[i].Name < sub[j].Name })
-
-	result := map[string]interface{}{
-		"dub": dub,
-		"sub": sub,
+	if len(serversOut) == 0 {
+		serversOut["default"] = map[string]interface{}{"dub": []VoiceGroupWithEpisodes{}, "sub": []VoiceGroupWithEpisodes{}}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"anime":    anime,
-		"episodes": map[string]interface{}{"default": result},
+		"episodes": serversOut,
 	})
 }

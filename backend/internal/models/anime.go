@@ -23,11 +23,13 @@ type Anime struct {
 	FeaturedAt          *time.Time `gorm:"index" json:"featured_at"`
 	Kind                string     `gorm:"type:varchar(50)" json:"kind"`
 	KindRUName          *string    `gorm:"-" json:"kind_ru_name,omitempty"`
+	KindUKName          *string    `gorm:"-" json:"kind_uk_name,omitempty"`
 	URL                 string     `gorm:"unique;not null;type:varchar(255)" json:"url"`
 	Duration            int        `json:"duration"`
 	Rating              string     `gorm:"type:varchar(50)" json:"rating"`
 	RatingDescriptionEN *string    `gorm:"-" json:"rating_description_en,omitempty"`
 	RatingDescriptionRU *string    `gorm:"-" json:"rating_description_ru,omitempty"`
+	RatingDescriptionUK *string    `gorm:"-" json:"rating_description_uk,omitempty"`
 	ImageURL            string     `gorm:"column:image;type:varchar(500)" json:"image_url"`
 	BackgroundURL       string     `gorm:"type:varchar(500);default:''" json:"background_url"`
 	TrailerURL          string     `gorm:"type:varchar(1000)" json:"trailer_url"`

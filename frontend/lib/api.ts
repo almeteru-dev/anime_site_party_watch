@@ -8,16 +8,20 @@ export interface Genre {
   id: number
   name: string
   ru_name?: string | null
+	uk_name?: string | null
 	description_en?: string | null
 	description_ru?: string | null
+	description_uk?: string | null
 }
 
 export interface Theme {
   id: number
   name: string
   ru_name?: string | null
+	uk_name?: string | null
 	description_en?: string | null
 	description_ru?: string | null
+	description_uk?: string | null
 }
 
 export interface Producer {
@@ -35,6 +39,7 @@ export type WatchPartyContentState = {
   selected_season?: number | null
   selected_voice_group_id?: number | null
   selected_server_label?: string
+	locked_server_label?: string
   selected_source_id?: number | null
 }
 
@@ -76,12 +81,14 @@ export interface Studio {
   id: number
   name: string
   ru_name?: string | null
+	uk_name?: string | null
 }
 
 export interface KindOption {
   id: number
   name: string
   ru_name?: string | null
+	uk_name?: string | null
 }
 
 export interface RatingOption {
@@ -89,18 +96,21 @@ export interface RatingOption {
   name: string
 	description_en?: string | null
 	description_ru?: string | null
+	description_uk?: string | null
 }
 
 export interface Status {
   id: number
   name: string
   ru_name?: string | null
+	uk_name?: string | null
 }
 
 export interface Source {
   id: number
   name: string
   ru_name?: string | null
+	uk_name?: string | null
 }
 
 export interface AnimeTranslation {
@@ -130,8 +140,10 @@ export interface FAQItem {
   id: number
   question: string
   question_ru?: string | null
+	question_uk?: string | null
   answer: string
   answer_ru?: string | null
+	answer_uk?: string | null
   is_published: boolean
   priority: number
   created_at?: string
@@ -148,6 +160,7 @@ export interface VideoSource {
   video_label?: VideoLabel | null
   type: "iframe" | "direct"
   url: string
+	vod_url?: string | null
   audio?: "dub" | "sub" | null
   is_integrated_player?: boolean
   is_default: boolean
@@ -208,11 +221,13 @@ export interface Anime {
   featured_at?: string | null
   kind: string
   kind_ru_name?: string | null
+	kind_uk_name?: string | null
   url: string
   duration: number
   rating: string
 	rating_description_en?: string | null
 	rating_description_ru?: string | null
+	rating_description_uk?: string | null
   image_url: string
   image?: string
 	background_url?: string
@@ -273,9 +288,27 @@ const API_URL = (() => {
 
 const baseFetch: typeof globalThis.fetch = (...args) => globalThis.fetch(...args)
 
+function getPreferredLocale(): string {
+	if (typeof window === "undefined") return ""
+	try {
+		return String(localStorage.getItem("lycorislib-locale") || "")
+	} catch {
+		return ""
+	}
+}
+
 const fetch: typeof globalThis.fetch = async (input: any, init?: any) => {
 	const nextInit: RequestInit = {
 		...(init || {}),
+	}
+
+	const preferredLocale = getPreferredLocale()
+	if (typeof window !== "undefined" && preferredLocale) {
+		const h = new Headers((nextInit.headers as any) || undefined)
+		if (!h.has("Accept-Language")) {
+			h.set("Accept-Language", preferredLocale)
+		}
+		nextInit.headers = h
 	}
 
 	if (typeof window !== "undefined" && !nextInit.credentials) {
@@ -309,6 +342,7 @@ export type AnimeSearchItem = {
 	url: string
 	image_url: string
 	title_ru: string
+	title_uk?: string
 	title_en: string
 }
 
@@ -635,6 +669,21 @@ export async function adminPurgeOldSchedules(params: { }): Promise<{ deleted_cou
 	}
 }
 
+export async function adminPurgeOfflineWatchPartyRooms(params: { older_than_minutes: number }): Promise<{ deleted_count: number }> {
+	const q = new URLSearchParams({ older_than_minutes: String(params.older_than_minutes) })
+	const res = await fetch(`${API_URL}/admin/watch-party/purge-offline?${q.toString()}`, {
+		method: "POST",
+		credentials: "include",
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to purge rooms")
+	}
+	return { deleted_count: typeof data.deleted_count === "number" ? data.deleted_count : 0 }
+}
+
+
 export async function adminSyncTopAnime(): Promise<void> {
 	const res = await fetch(`${API_URL}/admin/settings/sync-top-anime`, {
 		method: "POST",
@@ -754,6 +803,61 @@ export async function adminKodikBulkStatus(): Promise<KodikBulkStatus> {
 	if (!res.ok) {
 		maybeForceLogout(data)
 		throw new Error(data.error || "Failed to fetch Kodik bulk status")
+	}
+	return data
+}
+
+export type MoonanimeBulkScope = "all" | "ongoing" | "range"
+export type MoonanimeBulkMode = "add" | "sync"
+
+export type MoonanimeBulkStatus = {
+	status: "idle" | "running" | "finished"
+	scope?: MoonanimeBulkScope
+	mode?: MoonanimeBulkMode
+	from_id?: number
+	to_id?: number
+	started_at?: string
+	finished_at?: string
+	total?: number
+	processed?: number
+	succeeded?: number
+	skipped?: number
+	created_episodes?: number
+	created_sources?: number
+	updated_sources?: number
+	errors?: string[]
+}
+
+export async function adminMoonanimeBulkStart(params: {
+	scope: MoonanimeBulkScope
+	mode: MoonanimeBulkMode
+	fromId?: number
+	toId?: number
+}): Promise<void> {
+	const body: any = { scope: params.scope, mode: params.mode }
+	if (params.scope === "range") {
+		body.from_id = params.fromId
+		body.to_id = params.toId
+	}
+	const res = await fetch(`${API_URL}/admin/moonanime/bulk/start`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		credentials: "include",
+		body: JSON.stringify(body),
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to start Moonanime bulk")
+	}
+}
+
+export async function adminMoonanimeBulkStatus(): Promise<MoonanimeBulkStatus> {
+	const res = await fetch(`${API_URL}/admin/moonanime/bulk/status`, { credentials: "include" })
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to fetch Moonanime bulk status")
 	}
 	return data
 }
@@ -1008,6 +1112,322 @@ export async function adminDeleteUser(params: { id: string }): Promise<void> {
   }
 }
 
+export type Achievement = {
+	id: number
+	code: string
+	name_en: string
+	name_ru: string | null
+	name_uk: string | null
+	color: string
+	created_at: string
+	updated_at: string
+}
+
+export async function adminBulkAssignAchievementByRole(params: { id: number; role: "user" | "moderator" | "admin" }): Promise<{ assigned_count: number }> {
+	const res = await fetch(`${API_URL}/admin/achievements/${params.id}/assign-by-role`, {
+		method: "POST",
+		credentials: "include",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ role: params.role }),
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to assign")
+	}
+	return { assigned_count: typeof data.assigned_count === "number" ? data.assigned_count : 0 }
+}
+
+export async function adminBulkUnassignAchievementByRole(params: { id: number; role: "user" | "moderator" | "admin" }): Promise<{ removed_count: number }> {
+	const res = await fetch(`${API_URL}/admin/achievements/${params.id}/unassign-by-role`, {
+		method: "POST",
+		credentials: "include",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ role: params.role }),
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to unassign")
+	}
+	return { removed_count: typeof data.removed_count === "number" ? data.removed_count : 0 }
+}
+
+export async function adminBulkAssignAchievementByRegisteredBefore(params: { id: number; registered_before: string }): Promise<{ assigned_count: number }> {
+	const res = await fetch(`${API_URL}/admin/achievements/${params.id}/assign-by-registered-before`, {
+		method: "POST",
+		credentials: "include",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ registered_before: params.registered_before }),
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to assign")
+	}
+	return { assigned_count: typeof data.assigned_count === "number" ? data.assigned_count : 0 }
+}
+
+export type Title = {
+	id: number
+	code: string
+	name_en: string
+	name_ru: string | null
+	name_uk: string | null
+	color: string
+	created_at: string
+	updated_at: string
+}
+
+export async function adminBulkAssignTitleByRole(params: { id: number; role: "user" | "moderator" | "admin" }): Promise<{ assigned_count: number }> {
+	const res = await fetch(`${API_URL}/admin/titles/${params.id}/assign-by-role`, {
+		method: "POST",
+		credentials: "include",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ role: params.role }),
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to assign")
+	}
+	return { assigned_count: typeof data.assigned_count === "number" ? data.assigned_count : 0 }
+}
+
+export async function adminBulkUnassignTitleByRole(params: { id: number; role: "user" | "moderator" | "admin" }): Promise<{ removed_count: number }> {
+	const res = await fetch(`${API_URL}/admin/titles/${params.id}/unassign-by-role`, {
+		method: "POST",
+		credentials: "include",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ role: params.role }),
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to unassign")
+	}
+	return { removed_count: typeof data.removed_count === "number" ? data.removed_count : 0 }
+}
+
+export type AdminUserProfile = {
+	user: AdminUser
+	achievements: Achievement[]
+	titles: Title[]
+}
+
+export async function adminGetUserProfileByUsername(params: { username: string }): Promise<AdminUserProfile> {
+	const uname = encodeURIComponent(params.username.trim())
+	const res = await fetch(`${API_URL}/admin/users/by-username/${uname}`, {
+		credentials: "include",
+		cache: "no-store",
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to load user")
+	}
+	return data
+}
+
+export type RuleItem = {
+	id: number
+	body_en: string
+	body_ru: string | null
+	body_uk: string | null
+	created_at: string
+	updated_at: string
+}
+
+export async function listRules(): Promise<RuleItem[]> {
+	const res = await fetch(`${API_URL}/rules`, {
+		cache: "no-store",
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		throw new Error(data.error || "Failed to load rules")
+	}
+	return data
+}
+
+export async function adminListRules(): Promise<RuleItem[]> {
+	const res = await fetch(`${API_URL}/admin/rules`, {
+		credentials: "include",
+		cache: "no-store",
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to load rules")
+	}
+	return data
+}
+
+export async function adminCreateRule(input: { body_en: string; body_ru?: string; body_uk?: string }): Promise<RuleItem> {
+	const res = await fetch(`${API_URL}/admin/rules`, {
+		method: "POST",
+		credentials: "include",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(input),
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to create rule")
+	}
+	return data
+}
+
+export async function adminUpdateRule(params: { id: number; input: { body_en: string; body_ru?: string; body_uk?: string } }): Promise<RuleItem> {
+	const res = await fetch(`${API_URL}/admin/rules/${params.id}`, {
+		method: "PUT",
+		credentials: "include",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(params.input),
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to update rule")
+	}
+	return data
+}
+
+export async function adminDeleteRule(params: { id: number }): Promise<void> {
+	const res = await fetch(`${API_URL}/admin/rules/${params.id}`, {
+		method: "DELETE",
+		credentials: "include",
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to delete rule")
+	}
+}
+
+export async function adminBulkAssignTitleByRegisteredBefore(params: { id: number; registered_before: string }): Promise<{ assigned_count: number }> {
+	const res = await fetch(`${API_URL}/admin/titles/${params.id}/assign-by-registered-before`, {
+		method: "POST",
+		credentials: "include",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ registered_before: params.registered_before }),
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to assign")
+	}
+	return { assigned_count: typeof data.assigned_count === "number" ? data.assigned_count : 0 }
+}
+
+export async function adminListAchievements(): Promise<Achievement[]> {
+	const res = await fetch(`${API_URL}/admin/achievements`, {
+		credentials: "include",
+		cache: "no-store",
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to list achievements")
+	}
+	return data
+}
+
+export async function adminCreateAchievement(input: {
+	code: string
+	name_en: string
+	name_ru?: string
+	name_uk?: string
+	color: string
+}): Promise<Achievement> {
+	const res = await fetch(`${API_URL}/admin/achievements`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		credentials: "include",
+		body: JSON.stringify(input),
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to create achievement")
+	}
+	return data
+}
+
+export async function adminUpdateAchievement(params: {
+	id: number
+	input: {
+		code: string
+		name_en: string
+		name_ru?: string
+		name_uk?: string
+		color: string
+	}
+}): Promise<Achievement> {
+	const res = await fetch(`${API_URL}/admin/achievements/${params.id}`, {
+		method: "PUT",
+		headers: { "Content-Type": "application/json" },
+		credentials: "include",
+		body: JSON.stringify(params.input),
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to update achievement")
+	}
+	return data
+}
+
+export async function adminDeleteAchievement(params: { id: number }): Promise<void> {
+	const res = await fetch(`${API_URL}/admin/achievements/${params.id}`, {
+		method: "DELETE",
+		credentials: "include",
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to delete achievement")
+	}
+}
+
+export async function adminGetUserAchievements(params: { user_id: number }): Promise<Achievement[]> {
+	const res = await fetch(`${API_URL}/admin/users/${params.user_id}/achievements`, {
+		credentials: "include",
+		cache: "no-store",
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to load user achievements")
+	}
+	return data
+}
+
+export async function adminAssignAchievementToUser(params: { user_id: number; achievement_id: number }): Promise<void> {
+	const res = await fetch(`${API_URL}/admin/users/${params.user_id}/achievements`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		credentials: "include",
+		body: JSON.stringify({ achievement_id: params.achievement_id }),
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to assign achievement")
+	}
+}
+
+export async function adminUnassignAchievementFromUser(params: { user_id: number; achievement_id: number }): Promise<void> {
+	const res = await fetch(`${API_URL}/admin/users/${params.user_id}/achievements/${params.achievement_id}`, {
+		method: "DELETE",
+		credentials: "include",
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to unassign achievement")
+	}
+}
+
 export async function getCatalogMeta(): Promise<CatalogMeta> {
   const res = await fetch(`${API_URL}/catalog/meta`, {
     cache: "no-store",
@@ -1068,6 +1488,116 @@ export async function getRandomAnimeUrl(): Promise<string> {
 		throw new Error(data.error || "Failed to fetch random anime")
 	}
 	return String(data.url || "")
+}
+
+export type MalPicture = { medium?: string; large?: string }
+
+export type MalAnimeSearchNode = {
+	id: number
+	title: string
+	main_picture?: MalPicture
+	mean?: number
+	rank?: number
+	popularity?: number
+	num_episodes?: number
+	media_type?: string
+	status?: string
+	start_date?: string
+	alternative_titles?: {
+		synonyms?: string[]
+		en?: string
+		ja?: string
+	}
+}
+
+export type MalAnimeSearchResponse = {
+	data: Array<{ node: MalAnimeSearchNode }>
+	paging?: { next?: string }
+}
+
+export async function publicMalAnimeSearch(params: { q: string; limit?: number }): Promise<MalAnimeSearchResponse> {
+	const q = params.q.trim()
+	if (q.length < 2) return { data: [] }
+	const sp = new URLSearchParams()
+	sp.set("q", q)
+	if (typeof params.limit === "number") sp.set("limit", String(params.limit))
+	const res = await fetch(`${API_URL}/public/mal/anime/search?${sp.toString()}`, { cache: "no-store" })
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		throw new Error((data as any)?.error || "Failed to search via MAL")
+	}
+	return data as MalAnimeSearchResponse
+}
+
+export type MalAnimeDetails = Record<string, any>
+
+export async function publicMalAnimeDetails(id: number): Promise<MalAnimeDetails> {
+	const res = await fetch(`${API_URL}/public/mal/anime/${id}`, { cache: "no-store" })
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		throw new Error((data as any)?.error || "Failed to fetch MAL anime")
+	}
+	return data as MalAnimeDetails
+}
+
+export type AdminMalTokenStatus = {
+	connected: boolean
+	token_type?: string
+	scope?: string
+	expires_at?: string
+	updated_at?: string
+}
+
+export async function adminMalOAuthStart(): Promise<{ authorize_url: string }> {
+	const res = await fetch(`${API_URL}/admin/mal/oauth/start`, { credentials: "include" })
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error((data as any)?.error || "Failed to start MAL OAuth")
+	}
+	return data as { authorize_url: string }
+}
+
+export async function adminMalOAuthCallback(params: { code: string; state: string }): Promise<{ connected: boolean; expires_at?: string }>{
+	const sp = new URLSearchParams()
+	sp.set("code", params.code)
+	sp.set("state", params.state)
+	const res = await fetch(`${API_URL}/admin/mal/oauth/callback?${sp.toString()}`, { credentials: "include" })
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error((data as any)?.error || "Failed to finish MAL OAuth")
+	}
+	return data as any
+}
+
+export async function adminMalTokenStatus(): Promise<AdminMalTokenStatus> {
+	const res = await fetch(`${API_URL}/admin/mal/tokens`, { credentials: "include", cache: "no-store" })
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error((data as any)?.error || "Failed to fetch MAL token status")
+	}
+	return data as AdminMalTokenStatus
+}
+
+export async function adminMalRefreshTokens(): Promise<AdminMalTokenStatus> {
+	const res = await fetch(`${API_URL}/admin/mal/tokens/refresh`, { method: "POST", credentials: "include" })
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error((data as any)?.error || "Failed to refresh MAL tokens")
+	}
+	return data as AdminMalTokenStatus
+}
+
+export async function adminMalRevokeTokens(): Promise<void> {
+	const res = await fetch(`${API_URL}/admin/mal/tokens/revoke`, { method: "POST", credentials: "include" })
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error((data as any)?.error || "Failed to revoke MAL tokens")
+	}
 }
 
 export async function searchAnimes(params: { q: string }): Promise<AnimeSearchItem[]> {
@@ -1302,7 +1832,118 @@ export interface User {
   avatar_url?: string
   age?: number
   role: string
+  achievements?: Achievement[]
+  titles?: Title[]
   created_at: string
+}
+
+export async function adminListTitles(): Promise<Title[]> {
+	const res = await fetch(`${API_URL}/admin/titles`, {
+		credentials: "include",
+		cache: "no-store",
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to list titles")
+	}
+	return data
+}
+
+export async function adminCreateTitle(input: {
+	code: string
+	name_en: string
+	name_ru?: string
+	name_uk?: string
+	color: string
+}): Promise<Title> {
+	const res = await fetch(`${API_URL}/admin/titles`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		credentials: "include",
+		body: JSON.stringify(input),
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to create title")
+	}
+	return data
+}
+
+export async function adminUpdateTitle(params: {
+	id: number
+	input: {
+		code: string
+		name_en: string
+		name_ru?: string
+		name_uk?: string
+		color: string
+	}
+}): Promise<Title> {
+	const res = await fetch(`${API_URL}/admin/titles/${params.id}`, {
+		method: "PUT",
+		headers: { "Content-Type": "application/json" },
+		credentials: "include",
+		body: JSON.stringify(params.input),
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to update title")
+	}
+	return data
+}
+
+export async function adminDeleteTitle(params: { id: number }): Promise<void> {
+	const res = await fetch(`${API_URL}/admin/titles/${params.id}`, {
+		method: "DELETE",
+		credentials: "include",
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to delete title")
+	}
+}
+
+export async function adminGetUserTitles(params: { user_id: number }): Promise<Title[]> {
+	const res = await fetch(`${API_URL}/admin/users/${params.user_id}/titles`, {
+		credentials: "include",
+		cache: "no-store",
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to load user titles")
+	}
+	return data
+}
+
+export async function adminAssignTitleToUser(params: { user_id: number; title_id: number }): Promise<void> {
+	const res = await fetch(`${API_URL}/admin/users/${params.user_id}/titles`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		credentials: "include",
+		body: JSON.stringify({ title_id: params.title_id }),
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to assign title")
+	}
+}
+
+export async function adminUnassignTitleFromUser(params: { user_id: number; title_id: number }): Promise<void> {
+	const res = await fetch(`${API_URL}/admin/users/${params.user_id}/titles/${params.title_id}`, {
+		method: "DELETE",
+		credentials: "include",
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error(data.error || "Failed to unassign title")
+	}
 }
 
 export async function getMe(): Promise<User> {
@@ -1657,6 +2298,21 @@ export async function adminKodikImportEpisodes(params: { animeId: string; mode: 
 	return data
 }
 
+export async function adminMoonanimeImportEpisodes(params: { animeId: string; mode: "add" | "sync" }): Promise<any> {
+	const res = await fetch(`${API_URL}/admin/animes/${params.animeId}/moonanime/import`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		credentials: "include",
+		body: JSON.stringify({ mode: params.mode }),
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error((data as any)?.error || "Failed to import Moonanime episodes")
+	}
+	return data
+}
+
 export async function adminUpdateEpisode(params: {
   episodeId: string
   input: AdminUpsertEpisodeInput
@@ -1962,11 +2618,13 @@ export interface AdminCreateAnimeInput {
   genre_ids: number[]
   theme_ids: number[]
   title_ru: string
+	title_uk?: string
 	title_en: string
   title_en_romaji: string
 	season_number: number
 	first_season_id: number | null
   description_ru?: string
+	description_uk?: string
   description_en?: string
 	alt_titles?: string[]
 	gallery_urls?: string[]
@@ -2010,6 +2668,19 @@ export async function adminShikimoriGetAnime(params: { id: number }): Promise<an
 		throw new Error((data as any)?.error || "Failed to fetch Shikimori anime")
 	}
 	return data
+}
+
+export async function adminMoonanimeGetAnime(params: { id: number }): Promise<any> {
+	const res = await fetch(`${API_URL}/admin/moonanime/animes/${params.id}`, {
+		credentials: "include",
+		cache: "no-store",
+	})
+	const data = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		maybeForceLogout(data)
+		throw new Error((data as any)?.error || "Failed to fetch Moonanime")
+	}
+	return data as any
 }
 
 export async function adminJikanGetAnime(params: { id: number }): Promise<any> {
@@ -2105,7 +2776,7 @@ export async function adminListFAQ(params: { }): Promise<FAQItem[]> {
 }
 
 export async function adminCreateFAQ(params: {
-  input: Pick<FAQItem, "question" | "answer" | "question_ru" | "answer_ru" | "is_published" | "priority">
+  input: Pick<FAQItem, "question" | "answer" | "question_ru" | "answer_ru" | "question_uk" | "answer_uk" | "is_published" | "priority">
 }): Promise<FAQItem> {
   const res = await fetch(`${API_URL}/admin/faq`, {
     method: "POST",
@@ -2125,7 +2796,7 @@ export async function adminCreateFAQ(params: {
 
 export async function adminUpdateFAQ(params: {
   id: number
-  input: Pick<FAQItem, "question" | "answer" | "question_ru" | "answer_ru" | "is_published" | "priority">
+  input: Pick<FAQItem, "question" | "answer" | "question_ru" | "answer_ru" | "question_uk" | "answer_uk" | "is_published" | "priority">
 }): Promise<FAQItem> {
   const res = await fetch(`${API_URL}/admin/faq/${params.id}`, {
     method: "PUT",
@@ -2192,9 +2863,16 @@ export function getLocalizedTitle(anime: Anime, locale: string): string {
   if (!anime.translations) return anime.name
   const primary = anime.translations.find((t) => t.language.code === locale)
   if (primary?.title?.trim()) return primary.title
-  const fallbackCode = locale === "ru" ? "en" : "ru"
-  const fallback = anime.translations.find((t) => t.language.code === fallbackCode)
-  if (fallback?.title?.trim()) return fallback.title
+	const fallbacks =
+		locale === "uk"
+			? ["ru", "en"]
+			: locale === "ru"
+			? ["uk", "en"]
+			: ["ru", "uk"]
+	for (const code of fallbacks) {
+		const tr = anime.translations.find((t) => t.language.code === code)
+		if (tr?.title?.trim()) return tr.title
+	}
   return anime.name
 }
 
@@ -2202,9 +2880,17 @@ export function getLocalizedDescription(anime: Anime, locale: string): string {
   if (!anime.translations) return ""
   const primary = anime.translations.find((t) => t.language.code === locale)
   if (primary?.description?.trim()) return primary.description
-  const fallbackCode = locale === "ru" ? "en" : "ru"
-  const fallback = anime.translations.find((t) => t.language.code === fallbackCode)
-  return fallback?.description || ""
+	const fallbacks =
+		locale === "uk"
+			? ["ru", "en"]
+			: locale === "ru"
+			? ["uk", "en"]
+			: ["ru", "uk"]
+	for (const code of fallbacks) {
+		const tr = anime.translations.find((t) => t.language.code === code)
+		if (tr?.description?.trim()) return tr.description
+	}
+	return ""
 }
 
 export function getLocalizedEpisodeName(episode: Episode | EpisodeItem, locale: string): string {
@@ -2241,8 +2927,10 @@ async function adminListMetaItem<T>(path: string): Promise<T[]> {
 type AdminMetaPayload = {
   name: string
   ru_name?: string | null
+	uk_name?: string | null
 	description_en?: string | null
 	description_ru?: string | null
+	description_uk?: string | null
 }
 
 async function adminCreateMetaItem<T>(path: string, payload: AdminMetaPayload): Promise<T> {
@@ -2293,50 +2981,50 @@ async function adminDeleteMetaItem(path: string, id: number): Promise<void> {
 
 // Kinds
 export const adminListKinds = (p: { }) => adminListMetaItem<KindOption>("kinds")
-export const adminCreateKind = (p: { name: string; ru_name?: string | null }) =>
-  adminCreateMetaItem<KindOption>("kinds", { name: p.name, ru_name: p.ru_name ?? null })
-export const adminUpdateKind = (p: { id: number; name: string; ru_name?: string | null }) =>
-  adminUpdateMetaItem<KindOption>("kinds", p.id, { name: p.name, ru_name: p.ru_name ?? null })
+export const adminCreateKind = (p: { name: string; ru_name?: string | null; uk_name?: string | null }) =>
+  adminCreateMetaItem<KindOption>("kinds", { name: p.name, ru_name: p.ru_name ?? null, uk_name: p.uk_name ?? null })
+export const adminUpdateKind = (p: { id: number; name: string; ru_name?: string | null; uk_name?: string | null }) =>
+  adminUpdateMetaItem<KindOption>("kinds", p.id, { name: p.name, ru_name: p.ru_name ?? null, uk_name: p.uk_name ?? null })
 export const adminDeleteKind = (p: { id: number }) => adminDeleteMetaItem("kinds", p.id)
 
 // Ratings
 export const adminListRatings = (p: { }) => adminListMetaItem<RatingOption>("ratings")
-export const adminCreateRating = (p: { name: string; description_en?: string | null; description_ru?: string | null }) =>
-  adminCreateMetaItem<RatingOption>("ratings", { name: p.name, description_en: p.description_en ?? null, description_ru: p.description_ru ?? null })
-export const adminUpdateRating = (p: { id: number; name: string; description_en?: string | null; description_ru?: string | null }) =>
-  adminUpdateMetaItem<RatingOption>("ratings", p.id, { name: p.name, description_en: p.description_en ?? null, description_ru: p.description_ru ?? null })
+export const adminCreateRating = (p: { name: string; description_en?: string | null; description_ru?: string | null; description_uk?: string | null }) =>
+  adminCreateMetaItem<RatingOption>("ratings", { name: p.name, description_en: p.description_en ?? null, description_ru: p.description_ru ?? null, description_uk: p.description_uk ?? null })
+export const adminUpdateRating = (p: { id: number; name: string; description_en?: string | null; description_ru?: string | null; description_uk?: string | null }) =>
+  adminUpdateMetaItem<RatingOption>("ratings", p.id, { name: p.name, description_en: p.description_en ?? null, description_ru: p.description_ru ?? null, description_uk: p.description_uk ?? null })
 export const adminDeleteRating = (p: { id: number }) => adminDeleteMetaItem("ratings", p.id)
 
 // Statuses
 export const adminListStatuses = (p: { }) => adminListMetaItem<Status>("statuses")
-export const adminCreateStatus = (p: { name: string; ru_name?: string | null }) =>
-  adminCreateMetaItem<Status>("statuses", { name: p.name, ru_name: p.ru_name ?? null })
-export const adminUpdateStatus = (p: { id: number; name: string; ru_name?: string | null }) =>
-  adminUpdateMetaItem<Status>("statuses", p.id, { name: p.name, ru_name: p.ru_name ?? null })
+export const adminCreateStatus = (p: { name: string; ru_name?: string | null; uk_name?: string | null }) =>
+  adminCreateMetaItem<Status>("statuses", { name: p.name, ru_name: p.ru_name ?? null, uk_name: p.uk_name ?? null })
+export const adminUpdateStatus = (p: { id: number; name: string; ru_name?: string | null; uk_name?: string | null }) =>
+  adminUpdateMetaItem<Status>("statuses", p.id, { name: p.name, ru_name: p.ru_name ?? null, uk_name: p.uk_name ?? null })
 export const adminDeleteStatus = (p: { id: number }) => adminDeleteMetaItem("statuses", p.id)
 
 // Studios
 export const adminListStudios = (p: { }) => adminListMetaItem<Studio>("studios")
-export const adminCreateStudio = (p: { name: string; ru_name?: string | null }) =>
-  adminCreateMetaItem<Studio>("studios", { name: p.name, ru_name: p.ru_name ?? null })
-export const adminUpdateStudio = (p: { id: number; name: string; ru_name?: string | null }) =>
-  adminUpdateMetaItem<Studio>("studios", p.id, { name: p.name, ru_name: p.ru_name ?? null })
+export const adminCreateStudio = (p: { name: string; ru_name?: string | null; uk_name?: string | null }) =>
+  adminCreateMetaItem<Studio>("studios", { name: p.name, ru_name: p.ru_name ?? null, uk_name: p.uk_name ?? null })
+export const adminUpdateStudio = (p: { id: number; name: string; ru_name?: string | null; uk_name?: string | null }) =>
+  adminUpdateMetaItem<Studio>("studios", p.id, { name: p.name, ru_name: p.ru_name ?? null, uk_name: p.uk_name ?? null })
 export const adminDeleteStudio = (p: { id: number }) => adminDeleteMetaItem("studios", p.id)
 
 // Sources
 export const adminListSources = (p: { }) => adminListMetaItem<Source>("sources")
-export const adminCreateSource = (p: { name: string; ru_name?: string | null }) =>
-  adminCreateMetaItem<Source>("sources", { name: p.name, ru_name: p.ru_name ?? null })
-export const adminUpdateSource = (p: { id: number; name: string; ru_name?: string | null }) =>
-  adminUpdateMetaItem<Source>("sources", p.id, { name: p.name, ru_name: p.ru_name ?? null })
+export const adminCreateSource = (p: { name: string; ru_name?: string | null; uk_name?: string | null }) =>
+  adminCreateMetaItem<Source>("sources", { name: p.name, ru_name: p.ru_name ?? null, uk_name: p.uk_name ?? null })
+export const adminUpdateSource = (p: { id: number; name: string; ru_name?: string | null; uk_name?: string | null }) =>
+  adminUpdateMetaItem<Source>("sources", p.id, { name: p.name, ru_name: p.ru_name ?? null, uk_name: p.uk_name ?? null })
 export const adminDeleteSource = (p: { id: number }) => adminDeleteMetaItem("sources", p.id)
 
 // Genres
 export const adminListGenres = (p: { }) => adminListMetaItem<Genre>("genres")
-export const adminCreateGenre = (p: { name: string; ru_name?: string | null; description_en?: string | null; description_ru?: string | null }) =>
-  adminCreateMetaItem<Genre>("genres", { name: p.name, ru_name: p.ru_name ?? null, description_en: p.description_en ?? null, description_ru: p.description_ru ?? null })
-export const adminUpdateGenre = (p: { id: number; name: string; ru_name?: string | null; description_en?: string | null; description_ru?: string | null }) =>
-  adminUpdateMetaItem<Genre>("genres", p.id, { name: p.name, ru_name: p.ru_name ?? null, description_en: p.description_en ?? null, description_ru: p.description_ru ?? null })
+export const adminCreateGenre = (p: { name: string; ru_name?: string | null; uk_name?: string | null; description_en?: string | null; description_ru?: string | null; description_uk?: string | null }) =>
+  adminCreateMetaItem<Genre>("genres", { name: p.name, ru_name: p.ru_name ?? null, uk_name: p.uk_name ?? null, description_en: p.description_en ?? null, description_ru: p.description_ru ?? null, description_uk: p.description_uk ?? null })
+export const adminUpdateGenre = (p: { id: number; name: string; ru_name?: string | null; uk_name?: string | null; description_en?: string | null; description_ru?: string | null; description_uk?: string | null }) =>
+  adminUpdateMetaItem<Genre>("genres", p.id, { name: p.name, ru_name: p.ru_name ?? null, uk_name: p.uk_name ?? null, description_en: p.description_en ?? null, description_ru: p.description_ru ?? null, description_uk: p.description_uk ?? null })
 export const adminDeleteGenre = (p: { id: number }) => adminDeleteMetaItem("genres", p.id)
 
 export const adminListThemes = (p: { }) => adminListMetaItem<Theme>("themes")
@@ -2354,10 +3042,10 @@ export async function adminTranslateThemesFromShikimori(): Promise<{ updated: nu
 	}
 	return data as { updated: number; skipped: number; not_found: number }
 }
-export const adminCreateTheme = (p: { name: string; ru_name?: string | null; description_en?: string | null; description_ru?: string | null }) =>
-  adminCreateMetaItem<Theme>("themes", { name: p.name, ru_name: p.ru_name ?? null, description_en: p.description_en ?? null, description_ru: p.description_ru ?? null })
-export const adminUpdateTheme = (p: { id: number; name: string; ru_name?: string | null; description_en?: string | null; description_ru?: string | null }) =>
-  adminUpdateMetaItem<Theme>("themes", p.id, { name: p.name, ru_name: p.ru_name ?? null, description_en: p.description_en ?? null, description_ru: p.description_ru ?? null })
+export const adminCreateTheme = (p: { name: string; ru_name?: string | null; uk_name?: string | null; description_en?: string | null; description_ru?: string | null; description_uk?: string | null }) =>
+  adminCreateMetaItem<Theme>("themes", { name: p.name, ru_name: p.ru_name ?? null, uk_name: p.uk_name ?? null, description_en: p.description_en ?? null, description_ru: p.description_ru ?? null, description_uk: p.description_uk ?? null })
+export const adminUpdateTheme = (p: { id: number; name: string; ru_name?: string | null; uk_name?: string | null; description_en?: string | null; description_ru?: string | null; description_uk?: string | null }) =>
+  adminUpdateMetaItem<Theme>("themes", p.id, { name: p.name, ru_name: p.ru_name ?? null, uk_name: p.uk_name ?? null, description_en: p.description_en ?? null, description_ru: p.description_ru ?? null, description_uk: p.description_uk ?? null })
 export const adminDeleteTheme = (p: { id: number }) => adminDeleteMetaItem("themes", p.id)
 
 export const adminListProducers = (p: { }) => adminListMetaItem<Producer>("producers")

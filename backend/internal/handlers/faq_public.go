@@ -16,7 +16,9 @@ type localizedFAQItem struct {
 }
 
 func pickFAQText(item models.FAQItem, acceptLanguage string) (string, string) {
-	isRU := strings.HasPrefix(strings.ToLower(strings.TrimSpace(acceptLanguage)), "ru")
+	lang := strings.ToLower(strings.TrimSpace(acceptLanguage))
+	isRU := strings.HasPrefix(lang, "ru")
+	isUK := strings.HasPrefix(lang, "uk") || strings.HasPrefix(lang, "ua")
 	q := item.Question
 	a := item.Answer
 	if isRU {
@@ -25,6 +27,14 @@ func pickFAQText(item models.FAQItem, acceptLanguage string) (string, string) {
 		}
 		if item.AnswerRU != nil && strings.TrimSpace(*item.AnswerRU) != "" {
 			a = strings.TrimSpace(*item.AnswerRU)
+		}
+	}
+	if isUK {
+		if item.QuestionUK != nil && strings.TrimSpace(*item.QuestionUK) != "" {
+			q = strings.TrimSpace(*item.QuestionUK)
+		}
+		if item.AnswerUK != nil && strings.TrimSpace(*item.AnswerUK) != "" {
+			a = strings.TrimSpace(*item.AnswerUK)
 		}
 	}
 	return q, a

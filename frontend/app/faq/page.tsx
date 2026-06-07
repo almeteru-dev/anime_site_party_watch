@@ -92,14 +92,22 @@ export default function FAQPage() {
 						>
 							{sorted.map((item) => {
 								const value = `faq-${item.id}`
-								const q =
-									locale === "ru" && item.question_ru && item.question_ru.trim()
-										? item.question_ru
-										: item.question
-								const a =
-									locale === "ru" && item.answer_ru && item.answer_ru.trim()
-										? item.answer_ru
-										: item.answer
+							const q =
+								locale === "uk" && item.question_uk && item.question_uk.trim()
+									? item.question_uk
+									: locale === "uk" && item.question_ru && item.question_ru.trim()
+									? item.question_ru
+									: locale === "ru" && item.question_ru && item.question_ru.trim()
+									? item.question_ru
+									: item.question
+							const a =
+								locale === "uk" && item.answer_uk && item.answer_uk.trim()
+									? item.answer_uk
+									: locale === "uk" && item.answer_ru && item.answer_ru.trim()
+									? item.answer_ru
+									: locale === "ru" && item.answer_ru && item.answer_ru.trim()
+									? item.answer_ru
+									: item.answer
 								return (
 									<AccordionItem key={item.id} value={value} id={value} className="px-4 sm:px-6">
 										<AccordionTrigger className="text-base text-foreground hover:no-underline">

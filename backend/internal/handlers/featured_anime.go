@@ -35,6 +35,7 @@ func GetFeaturedAnimes(c *gin.Context) {
 		return
 	}
 	_ = hydrateAnimeRefsRU(animes)
+	_ = hydrateAnimeRefsUK(animes)
 	c.JSON(http.StatusOK, animes)
 }
 
@@ -56,6 +57,7 @@ func AdminListFeaturedAnimes(c *gin.Context) {
 		return
 	}
 	_ = hydrateAnimeRefsRU(animes)
+	_ = hydrateAnimeRefsUK(animes)
 	c.JSON(http.StatusOK, animes)
 }
 
@@ -135,6 +137,7 @@ func AdminSetAnimeFeatured(c *gin.Context) {
 
 	tmp := []models.Anime{updated}
 	_ = hydrateAnimeRefsRU(tmp)
+	_ = hydrateAnimeRefsUK(tmp)
 	updated = tmp[0]
 	c.JSON(http.StatusOK, updated)
 }

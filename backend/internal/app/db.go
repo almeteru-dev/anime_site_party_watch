@@ -27,6 +27,9 @@ func InitDB() {
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
+	if err := DB.Exec("SET TIME ZONE 'UTC'").Error; err != nil {
+		log.Fatalf("Failed to set DB timezone: %v", err)
+	}
 
 	log.Println("Database connection established")
 
@@ -55,7 +58,13 @@ func dropAllTables(db *gorm.DB) error {
 	}
 	return db.Exec(`
 DROP TABLE IF EXISTS user_watch_progress CASCADE;
+DROP TABLE IF EXISTS user_titles CASCADE;
+DROP TABLE IF EXISTS titles CASCADE;
+DROP TABLE IF EXISTS user_achievements CASCADE;
+DROP TABLE IF EXISTS achievements CASCADE;
 DROP TABLE IF EXISTS user_collections CASCADE;
+DROP TABLE IF EXISTS mal_oauth_state CASCADE;
+DROP TABLE IF EXISTS mal_oauth_tokens CASCADE;
 DROP TABLE IF EXISTS anime_genres CASCADE;
 		DROP TABLE IF EXISTS anime_ratings CASCADE;
 DROP TABLE IF EXISTS video_sources CASCADE;

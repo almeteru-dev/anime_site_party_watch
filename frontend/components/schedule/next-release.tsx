@@ -20,7 +20,7 @@ export function NextRelease() {
         <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
           <Zap className="w-4 h-4 text-primary" />
         </div>
-        <h2 className="text-lg font-bold text-foreground">{locale === "ru" ? "Следующий релиз" : "Next to Release"}</h2>
+        <h2 className="text-lg font-bold text-foreground">{locale === "ru" ? "Следующий релиз" : locale === "uk" ? "Наступний реліз" : "Next to Release"}</h2>
       </div>
 
       {/* Content */}
@@ -71,7 +71,7 @@ export function NextRelease() {
                 {nextRelease.countdown}
               </span>
             </div>
-            <span className="text-foreground-subtle text-sm">{locale === "ru" ? "до релиза" : "until release"}</span>
+			<span className="text-foreground-subtle text-sm">{locale === "ru" ? "до релиза" : locale === "uk" ? "до релізу" : "until release"}</span>
           </div>
         </div>
       </div>

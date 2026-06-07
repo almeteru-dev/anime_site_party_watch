@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/seva/animevista/internal/app"
 	"github.com/seva/animevista/internal/models"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/seva/animevista/internal/security"
 	"gorm.io/gorm"
 )
 
@@ -53,9 +53,16 @@ func AdminTransferRoot(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-	if err := bcrypt.CompareHashAndPassword([]byte(requester.PasswordHash), []byte(password)); err != nil {
+	ok, legacy := security.VerifyPassword(requester.PasswordHash, password)
+	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid password"})
 		return
+	}
+	if legacy {
+		// Optional migration: upgrade old (no-pepper) password hash after a successful verification.
+		if newHash, err := security.HashPassword(password); err == nil {
+			_ = app.DB.Model(&models.User{}).Where("id = ?", requester.ID).Update("password_hash", newHash).Error
+		}
 	}
 
 	var target models.User

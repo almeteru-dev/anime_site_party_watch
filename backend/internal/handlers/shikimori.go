@@ -1,12 +1,9 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -32,34 +29,11 @@ func AdminShikimoriSearch(c *gin.Context) {
 		return
 	}
 
-	apiURL := "https://shikimori.one/api/animes?search=" + url.QueryEscape(q) + "&limit=20"
-	client := &http.Client{Timeout: 12 * time.Second}
-	req, err := http.NewRequest(http.MethodGet, apiURL, nil)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to build request"})
-		return
-	}
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", "LycorisLib")
-
-	resp, err := client.Do(req)
+	items, err := shikimoriSearchAnimeList(c.Request.Context(), q, 20)
 	if err != nil {
 		c.JSON(http.StatusBadGateway, gin.H{"error": "Shikimori request failed"})
 		return
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		c.JSON(http.StatusBadGateway, gin.H{"error": "Shikimori returned non-200", "status": resp.StatusCode})
-		return
-	}
-
-	var items []shikimoriAnimeListItem
-	if err := json.NewDecoder(resp.Body).Decode(&items); err != nil {
-		c.JSON(http.StatusBadGateway, gin.H{"error": "Invalid Shikimori response"})
-		return
-	}
-
 	c.JSON(http.StatusOK, gin.H{"items": items})
 }
 
@@ -71,33 +45,10 @@ func AdminShikimoriGetAnime(c *gin.Context) {
 		return
 	}
 
-	apiURL := "https://shikimori.one/api/animes/" + strconv.Itoa(id)
-	client := &http.Client{Timeout: 12 * time.Second}
-	req, err := http.NewRequest(http.MethodGet, apiURL, nil)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to build request"})
-		return
-	}
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", "LycorisLib")
-
-	resp, err := client.Do(req)
+	raw, err := shikimoriGetAnimeRaw(c.Request.Context(), id)
 	if err != nil {
 		c.JSON(http.StatusBadGateway, gin.H{"error": "Shikimori request failed"})
 		return
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		c.JSON(http.StatusBadGateway, gin.H{"error": "Shikimori returned non-200", "status": resp.StatusCode})
-		return
-	}
-
-	var raw map[string]any
-	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
-		c.JSON(http.StatusBadGateway, gin.H{"error": "Invalid Shikimori response"})
-		return
-	}
-
 	c.JSON(http.StatusOK, raw)
 }

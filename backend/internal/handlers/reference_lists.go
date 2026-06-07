@@ -37,6 +37,7 @@ func AdminListStatuses(c *gin.Context) {
 		return
 	}
 	_ = applyStatusRU(items)
+	_ = applyStatusUK(items)
 	c.JSON(http.StatusOK, items)
 }
 
@@ -66,7 +67,9 @@ func AdminCreateStatus(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save russian name"})
 		return
 	}
+	_ = setStatusUKName(item.ID, input.UKName)
 	item.RUName = normalizeOptionalName(input.RUName)
+	item.UKName = normalizeOptionalName(input.UKName)
 	c.JSON(http.StatusCreated, item)
 }
 
@@ -95,7 +98,9 @@ func AdminUpdateStatus(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save russian name"})
 		return
 	}
+	_ = setStatusUKName(item.ID, input.UKName)
 	item.RUName = normalizeOptionalName(input.RUName)
+	item.UKName = normalizeOptionalName(input.UKName)
 	c.JSON(http.StatusOK, item)
 }
 
@@ -114,6 +119,7 @@ func AdminListStudios(c *gin.Context) {
 		return
 	}
 	_ = applyStudioRU(items)
+	_ = applyStudioUK(items)
 	c.JSON(http.StatusOK, items)
 }
 
@@ -143,7 +149,9 @@ func AdminCreateStudio(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save russian name"})
 		return
 	}
+	_ = setStudioUKName(item.ID, input.UKName)
 	item.RUName = normalizeOptionalName(input.RUName)
+	item.UKName = normalizeOptionalName(input.UKName)
 	c.JSON(http.StatusCreated, item)
 }
 
@@ -172,7 +180,9 @@ func AdminUpdateStudio(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save russian name"})
 		return
 	}
+	_ = setStudioUKName(item.ID, input.UKName)
 	item.RUName = normalizeOptionalName(input.RUName)
+	item.UKName = normalizeOptionalName(input.UKName)
 	c.JSON(http.StatusOK, item)
 }
 
@@ -263,6 +273,7 @@ func AdminListSources(c *gin.Context) {
 		return
 	}
 	_ = applySourceRU(items)
+	_ = applySourceUK(items)
 	c.JSON(http.StatusOK, items)
 }
 
@@ -292,7 +303,9 @@ func AdminCreateSource(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save russian name"})
 		return
 	}
+	_ = setSourceUKName(item.ID, input.UKName)
 	item.RUName = normalizeOptionalName(input.RUName)
+	item.UKName = normalizeOptionalName(input.UKName)
 	c.JSON(http.StatusCreated, item)
 }
 
@@ -321,7 +334,9 @@ func AdminUpdateSource(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save russian name"})
 		return
 	}
+	_ = setSourceUKName(item.ID, input.UKName)
 	item.RUName = normalizeOptionalName(input.RUName)
+	item.UKName = normalizeOptionalName(input.UKName)
 	c.JSON(http.StatusOK, item)
 }
 
@@ -340,6 +355,7 @@ func AdminListGenres(c *gin.Context) {
 		return
 	}
 	_ = applyGenreRU(items)
+	_ = applyGenreUK(items)
 	c.JSON(http.StatusOK, items)
 }
 
@@ -370,8 +386,11 @@ func AdminCreateGenre(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save russian name"})
 		return
 	}
+	_ = setGenreUKName(item.ID, input.UKName, input.DescriptionUK)
 	item.RUName = normalizeOptionalName(input.RUName)
 	item.DescriptionRU = normalizeOptionalName(input.DescriptionRU)
+	item.UKName = normalizeOptionalName(input.UKName)
+	item.DescriptionUK = normalizeOptionalName(input.DescriptionUK)
 	if item.RUName == nil && item.DescriptionRU != nil {
 		v := item.Name
 		item.RUName = &v
@@ -405,8 +424,11 @@ func AdminUpdateGenre(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save russian name"})
 		return
 	}
+	_ = setGenreUKName(item.ID, input.UKName, input.DescriptionUK)
 	item.RUName = normalizeOptionalName(input.RUName)
 	item.DescriptionRU = normalizeOptionalName(input.DescriptionRU)
+	item.UKName = normalizeOptionalName(input.UKName)
+	item.DescriptionUK = normalizeOptionalName(input.DescriptionUK)
 	if item.RUName == nil && item.DescriptionRU != nil {
 		v := item.Name
 		item.RUName = &v
@@ -429,6 +451,7 @@ func AdminListThemes(c *gin.Context) {
 		return
 	}
 	_ = applyThemeRU(items)
+	_ = applyThemeUK(items)
 	c.JSON(http.StatusOK, items)
 }
 
@@ -459,8 +482,11 @@ func AdminCreateTheme(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save russian name"})
 		return
 	}
+	_ = setThemeUKName(item.ID, input.UKName, input.DescriptionUK)
 	item.RUName = normalizeOptionalName(input.RUName)
 	item.DescriptionRU = normalizeOptionalName(input.DescriptionRU)
+	item.UKName = normalizeOptionalName(input.UKName)
+	item.DescriptionUK = normalizeOptionalName(input.DescriptionUK)
 	if item.RUName == nil && item.DescriptionRU != nil {
 		v := item.Name
 		item.RUName = &v
@@ -494,8 +520,11 @@ func AdminUpdateTheme(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save russian name"})
 		return
 	}
+	_ = setThemeUKName(item.ID, input.UKName, input.DescriptionUK)
 	item.RUName = normalizeOptionalName(input.RUName)
 	item.DescriptionRU = normalizeOptionalName(input.DescriptionRU)
+	item.UKName = normalizeOptionalName(input.UKName)
+	item.DescriptionUK = normalizeOptionalName(input.DescriptionUK)
 	if item.RUName == nil && item.DescriptionRU != nil {
 		v := item.Name
 		item.RUName = &v

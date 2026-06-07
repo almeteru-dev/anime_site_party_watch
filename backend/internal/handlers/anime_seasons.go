@@ -57,9 +57,9 @@ func buildSeasonsForAnime(anime models.Anime) ([]models.Anime, error) {
 		return nil, nil
 	}
 	_ = hydrateAnimeRefsRU(seasons)
+	_ = hydrateAnimeRefsUK(seasons)
 	for i := range seasons {
 		seasons[i].Name = strings.TrimSpace(seasons[i].Name)
 	}
 	return seasons, nil
 }
-

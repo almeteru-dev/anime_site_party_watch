@@ -14,7 +14,7 @@ interface SearchBarProps {
 export function SearchBar({ value, onChange, resultCount, onMobileFilterToggle }: SearchBarProps) {
   const { locale, t } = useLanguage()
 
-  const resultText = locale === "ru" ? `${resultCount} ${t.catalog.resultsFound}` : t.catalog.resultsFound
+  const resultText = locale === "ru" || locale === "uk" ? `${resultCount} ${t.catalog.resultsFound}` : t.catalog.resultsFound
 
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-6">
@@ -56,7 +56,7 @@ export function SearchBar({ value, onChange, resultCount, onMobileFilterToggle }
       {/* Result Count */}
       <div className="hidden sm:flex items-center gap-2 text-sm text-foreground-subtle shrink-0">
         <span className="text-accent-primary font-semibold">{resultCount}</span>
-        <span>{locale === "ru" ? t.catalog.resultsFound : resultText}</span>
+        <span>{resultText}</span>
       </div>
     </div>
   )

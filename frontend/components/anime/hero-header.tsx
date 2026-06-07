@@ -19,6 +19,8 @@ export function HeroHeader({ anime, onStartWatching }: HeroHeaderProps) {
   const statusLabel = anime.status
     ? locale === "ru"
       ? anime.status.ru_name || (t.catalog.filters.statusValues as Record<string, string>)[anime.status.name] || anime.status.name
+		: locale === "uk"
+		? anime.status.uk_name || anime.status.ru_name || (t.catalog.filters.statusValues as Record<string, string>)[anime.status.name] || anime.status.name
       : anime.status.name
     : null
   
@@ -87,6 +89,8 @@ export function HeroHeader({ anime, onStartWatching }: HeroHeaderProps) {
 				{anime.studio
 					? locale === "ru"
 						? anime.studio.ru_name || anime.studio.name
+						: locale === "uk"
+						? anime.studio.uk_name || anime.studio.ru_name || anime.studio.name
 						: anime.studio.name
 					: t.common.na}
               </span>
@@ -115,7 +119,7 @@ export function HeroHeader({ anime, onStartWatching }: HeroHeaderProps) {
                 variant="secondary"
                 className="bg-background-secondary text-foreground-muted border border-border hover:bg-background-tertiary hover:border-primary/20 transition-all duration-300 px-3 py-1"
               >
-                {locale === "ru" ? genre.ru_name || genre.name : genre.name}
+				{locale === "uk" ? genre.uk_name || genre.ru_name || genre.name : locale === "ru" ? genre.ru_name || genre.name : genre.name}
               </Badge>
             ))}
             {anime.themes?.map((theme) => (
@@ -124,7 +128,7 @@ export function HeroHeader({ anime, onStartWatching }: HeroHeaderProps) {
                 variant="outline"
                 className="bg-primary/5 text-primary border border-primary/20 hover:bg-primary/10 hover:border-primary/40 transition-all duration-300 px-3 py-1"
               >
-                {locale === "ru" ? theme.ru_name || theme.name : theme.name}
+				{locale === "uk" ? theme.uk_name || theme.ru_name || theme.name : locale === "ru" ? theme.ru_name || theme.name : theme.name}
               </Badge>
             ))}
           </div>

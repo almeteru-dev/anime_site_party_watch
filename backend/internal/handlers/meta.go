@@ -38,21 +38,25 @@ func GetPublicCatalogMeta(c *gin.Context) {
 		return
 	}
 	_ = applyGenreRU(genres)
+	_ = applyGenreUK(genres)
 	if err := app.DB.Order("name asc").Find(&themes).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch themes"})
 		return
 	}
 	_ = applyThemeRU(themes)
+	_ = applyThemeUK(themes)
 	if err := app.DB.Order("name asc").Find(&statuses).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch statuses"})
 		return
 	}
 	_ = applyStatusRU(statuses)
+	_ = applyStatusUK(statuses)
 	if err := app.DB.Order("name asc").Find(&studios).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch studios"})
 		return
 	}
 	_ = applyStudioRU(studios)
+	_ = applyStudioUK(studios)
 	if err := app.DB.Order("name asc").Find(&producers).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch producers"})
 		return
@@ -62,6 +66,7 @@ func GetPublicCatalogMeta(c *gin.Context) {
 		return
 	}
 	_ = applySourceRU(sources)
+	_ = applySourceUK(sources)
 	if err := app.DB.Order("name asc").Find(&ratings).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch ratings"})
 		return

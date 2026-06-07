@@ -5,6 +5,8 @@ import type { WatchPartyRoomState, WatchPartyRole } from "@/lib/api"
 import { useMemo, useState } from "react"
 import type { AnimeSearchItem } from "@/lib/api"
 import { searchAnimes } from "@/lib/api"
+import { useLanguage } from "@/contexts/language-context"
+import { pickAnimeTitle } from "@/lib/localized"
 
 export function WatchPartyRoomHeader({
 	room,
@@ -28,6 +30,7 @@ export function WatchPartyRoomHeader({
 	const [q, setQ] = useState("")
 	const [results, setResults] = useState<AnimeSearchItem[]>([])
 	const [loading, setLoading] = useState(false)
+	const { locale } = useLanguage()
 
 	const statusLabel = useMemo(() => {
 		if (room.status === "active") return "Active"
@@ -149,8 +152,10 @@ export function WatchPartyRoomHeader({
 									{a.image_url ? <img src={a.image_url} alt="" className="w-full h-full object-cover" /> : null}
 								</div>
 								<div className="min-w-0">
-									<div className="text-sm font-semibold truncate">{a.title_en || a.title_ru}</div>
-									<div className="text-xs text-foreground-muted truncate">{a.title_ru}</div>
+									<div className="text-sm font-semibold truncate">{pickAnimeTitle(locale, a)}</div>
+									<div className="text-xs text-foreground-muted truncate">
+										{locale === "en" ? a.title_ru || a.title_uk || "" : a.title_en || ""}
+									</div>
 								</div>
 							</button>
 						))}
@@ -160,4 +165,3 @@ export function WatchPartyRoomHeader({
 		</div>
 	)
 }
-

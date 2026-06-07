@@ -14,6 +14,7 @@ type AnimeSearchItem struct {
 	URL     string `json:"url"`
 	Image   string `json:"image_url"`
 	TitleRU string `json:"title_ru"`
+	TitleUK string `json:"title_uk"`
 	TitleEN string `json:"title_en"`
 }
 
@@ -41,6 +42,13 @@ func SearchAnimes(c *gin.Context) {
 			WHERE at_ru.anime_id = a.id AND l_ru.code = 'ru'
 			LIMIT 1
 		  ), '') AS title_ru,
+		  COALESCE((
+			SELECT at_uk.title
+			FROM anime_translations at_uk
+			JOIN languages l_uk ON l_uk.id = at_uk.language_id
+			WHERE at_uk.anime_id = a.id AND l_uk.code = 'uk'
+			LIMIT 1
+		  ), '') AS title_uk,
 		  COALESCE((
 			SELECT at_en.title
 			FROM anime_translations at_en

@@ -13,8 +13,10 @@ import (
 type AdminFAQInput struct {
 	Question    string `json:"question"`
 	QuestionRU  string `json:"question_ru"`
+	QuestionUK  string `json:"question_uk"`
 	Answer      string `json:"answer"`
 	AnswerRU    string `json:"answer_ru"`
+	AnswerUK    string `json:"answer_uk"`
 	IsPublished bool   `json:"is_published"`
 	Priority    int    `json:"priority"`
 }
@@ -37,8 +39,10 @@ func AdminCreateFAQ(c *gin.Context) {
 
 	question := strings.TrimSpace(input.Question)
 	questionRU := strings.TrimSpace(input.QuestionRU)
+	questionUK := strings.TrimSpace(input.QuestionUK)
 	answer := strings.TrimSpace(input.Answer)
 	answerRU := strings.TrimSpace(input.AnswerRU)
+	answerUK := strings.TrimSpace(input.AnswerUK)
 	if question == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Question is required"})
 		return
@@ -56,12 +60,22 @@ func AdminCreateFAQ(c *gin.Context) {
 	if answerRU != "" {
 		aRuPtr = &answerRU
 	}
+	var qUkPtr *string
+	if questionUK != "" {
+		qUkPtr = &questionUK
+	}
+	var aUkPtr *string
+	if answerUK != "" {
+		aUkPtr = &answerUK
+	}
 
 	item := models.FAQItem{
 		Question:    question,
 		QuestionRU:  qRuPtr,
+		QuestionUK:  qUkPtr,
 		Answer:      answer,
 		AnswerRU:    aRuPtr,
+		AnswerUK:    aUkPtr,
 		IsPublished: input.IsPublished,
 		Priority:    input.Priority,
 	}
@@ -94,8 +108,10 @@ func AdminUpdateFAQ(c *gin.Context) {
 
 	question := strings.TrimSpace(input.Question)
 	questionRU := strings.TrimSpace(input.QuestionRU)
+	questionUK := strings.TrimSpace(input.QuestionUK)
 	answer := strings.TrimSpace(input.Answer)
 	answerRU := strings.TrimSpace(input.AnswerRU)
+	answerUK := strings.TrimSpace(input.AnswerUK)
 	if question == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Question is required"})
 		return
@@ -111,11 +127,21 @@ func AdminUpdateFAQ(c *gin.Context) {
 	} else {
 		item.QuestionRU = &questionRU
 	}
+	if questionUK == "" {
+		item.QuestionUK = nil
+	} else {
+		item.QuestionUK = &questionUK
+	}
 	item.Answer = answer
 	if answerRU == "" {
 		item.AnswerRU = nil
 	} else {
 		item.AnswerRU = &answerRU
+	}
+	if answerUK == "" {
+		item.AnswerUK = nil
+	} else {
+		item.AnswerUK = &answerUK
 	}
 	item.IsPublished = input.IsPublished
 	item.Priority = input.Priority

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { forwardRef, useEffect, useImperativeHandle, useRef } from "react"
-import Artplayer from "artplayer"
+import type ArtplayerCtor from "artplayer"
 
 export type ArtVideoPlayerHandle = {
   getCurrentTime: () => number
@@ -26,7 +26,8 @@ export type ArtVideoPlayerProps = {
 export const ArtVideoPlayer = forwardRef<ArtVideoPlayerHandle, ArtVideoPlayerProps>(
   function ArtVideoPlayer({ url, poster, initialTime, autoPlay, onTimeUpdate, onState, onBufferingChange }, ref) {
     const containerRef = useRef<HTMLDivElement | null>(null)
-    const artRef = useRef<Artplayer | null>(null)
+		type ArtInstance = InstanceType<typeof ArtplayerCtor>
+    const artRef = useRef<ArtInstance | null>(null)
 	  const lastEmitRef = useRef<string>("")
 
     useImperativeHandle(ref, () => ({
@@ -81,23 +82,31 @@ export const ArtVideoPlayer = forwardRef<ArtVideoPlayerHandle, ArtVideoPlayerPro
 
     useEffect(() => {
       if (!containerRef.current) return
+			let cancelled = false
 
       const safePoster = typeof poster === "string" ? poster : ""
+			let art: ArtInstance | null = null
 
-      const art = new Artplayer({
-        container: containerRef.current,
-        url,
-        poster: safePoster,
-        autoplay: false,
-        muted: false,
-        pip: true,
-        fullscreen: true,
-        fullscreenWeb: true,
-        setting: true,
-        loop: false,
-        hotkey: true,
-        playbackRate: true,
-      })
+			void (async () => {
+				const mod = await import("artplayer")
+				if (cancelled) return
+				const Artplayer = mod.default as unknown as typeof ArtplayerCtor
+
+      art =
+					new Artplayer({
+						container: containerRef.current,
+						url,
+						poster: safePoster,
+						autoplay: false,
+						muted: false,
+						pip: true,
+						fullscreen: true,
+						fullscreenWeb: true,
+						setting: true,
+						loop: false,
+						hotkey: true,
+						playbackRate: true,
+					}) as ArtInstance
 
       artRef.current = art
 
@@ -115,33 +124,41 @@ export const ArtVideoPlayer = forwardRef<ArtVideoPlayerHandle, ArtVideoPlayerPro
 			emitState()
       }
 
-      art.on("ready", seek)
-      art.on("video:timeupdate", onVideoTimeUpdate)
-		art.on("play", emitState)
-		art.on("pause", emitState)
-		art.on("seek", emitState)
-		art.on("video:ratechange", emitState)
+		;(art as any).on("ready", seek)
+		;(art as any).on("video:timeupdate", onVideoTimeUpdate)
+		;(art as any).on("play", emitState)
+		;(art as any).on("pause", emitState)
+		;(art as any).on("seek", emitState)
+		;(art as any).on("video:ratechange", emitState)
 		const onWaiting = () => {
-			const currentTime = Number(art.currentTime || 0)
+			const currentTime = Number((art as any).currentTime || 0)
 			onBufferingChange?.(true, Number.isFinite(currentTime) ? currentTime : 0)
 		}
 		const onPlaying = () => {
-			const currentTime = Number(art.currentTime || 0)
+			const currentTime = Number((art as any).currentTime || 0)
 			onBufferingChange?.(false, Number.isFinite(currentTime) ? currentTime : 0)
 		}
-		art.on("video:waiting", onWaiting)
-		art.on("video:playing", onPlaying)
+		;(art as any).on("video:waiting", onWaiting)
+		;(art as any).on("video:playing", onPlaying)
+		})()
 
       return () => {
-        art.off("video:timeupdate", onVideoTimeUpdate)
-			art.off("play", emitState)
-			art.off("pause", emitState)
-			art.off("seek", emitState)
-			art.off("video:ratechange", emitState)
-			art.off("video:waiting", onWaiting)
-			art.off("video:playing", onPlaying)
+			cancelled = true
+			if (art) {
+				try {
+					;(art as any).off("video:timeupdate", onVideoTimeUpdate)
+					;(art as any).off("play", emitState)
+					;(art as any).off("pause", emitState)
+					;(art as any).off("seek", emitState)
+					;(art as any).off("video:ratechange", emitState)
+					;(art as any).off("video:waiting", onWaiting)
+					;(art as any).off("video:playing", onPlaying)
+				} catch {}
+				try {
+					;(art as any).destroy(false)
+				} catch {}
+			}
         artRef.current = null
-        art.destroy(false)
       }
     }, [autoPlay, initialTime, onBufferingChange, onTimeUpdate, onState, poster, url])
 

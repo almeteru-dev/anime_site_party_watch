@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/seva/animevista/internal/models"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/seva/animevista/internal/security"
 	"gorm.io/gorm"
 )
 
@@ -14,9 +14,9 @@ func Seed(db *gorm.DB) {
 
 	defaultTrailer := "https://www.youtube.com/watch?v=I1Pk4UUJQg4"
 
-	// 0. Clean-up: Ensure only the supported locales exist (RU + EN)
+	// 0. Clean-up: Ensure only the supported locales exist (RU + EN + UK)
 	var unsupported []models.Language
-	db.Where("code NOT IN ?", []string{"ru", "en"}).Find(&unsupported)
+	db.Where("code NOT IN ?", []string{"ru", "en", "uk"}).Find(&unsupported)
 	if len(unsupported) > 0 {
 		ids := make([]int, 0, len(unsupported))
 		for _, l := range unsupported {
@@ -31,12 +31,13 @@ func Seed(db *gorm.DB) {
 			db.Where("language_id IN ?", ids).Delete(&models.CollectionTypeTranslation{})
 			// episodes have no translations in the new schema
 		}
-		db.Where("code NOT IN ?", []string{"ru", "en"}).Delete(&models.Language{})
+		db.Where("code NOT IN ?", []string{"ru", "en", "uk"}).Delete(&models.Language{})
 	}
 
 	// 1. Languages
 	languages := []models.Language{
 		{Code: "ru", Name: "Russian"},
+		{Code: "uk", Name: "Ukrainian"},
 		{Code: "en", Name: "Romaji"},
 	}
 	for _, lang := range languages {
@@ -48,11 +49,14 @@ func Seed(db *gorm.DB) {
 	db.Where("code = ?", "en").First(&en)
 
 	// 1.5. Admin User
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("admin"), bcrypt.DefaultCost)
+	hashedPassword, err := security.HashPassword("admin")
+	if err != nil {
+		log.Fatalf("Failed to hash default admin password: %v", err)
+	}
 	adminUser := models.User{
 		Username:     "admin",
 		Email:        "admin@lycoris.tv",
-		PasswordHash: string(hashedPassword),
+		PasswordHash: hashedPassword,
 		Role:         "admin",
 		IsVerified:   true,
 	}

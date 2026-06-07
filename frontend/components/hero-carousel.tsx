@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import Image from "next/image"
 import Link from "next/link"
 import { useLanguage } from "@/contexts/language-context"
+import { pickName } from "@/lib/localized"
 import { type Anime, getAnimeBackgroundUrl, getLocalizedTitle, getLocalizedDescription } from "@/lib/api"
 
 interface HeroCarouselProps {
@@ -76,7 +77,7 @@ export function HeroCarousel({ animes }: HeroCarouselProps) {
                         key={genre.id}
                         className="px-2.5 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-xs font-medium bg-primary/10 text-primary border border-primary/30 rounded-full"
                       >
-						{locale === "ru" ? genre.ru_name || genre.name : genre.name}
+						{pickName(locale, genre) || genre.name}
                       </span>
                     ))}
                   </div>

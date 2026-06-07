@@ -15,9 +15,9 @@ import (
 	"github.com/seva/animevista/internal/app"
 	"github.com/seva/animevista/internal/config"
 	"github.com/seva/animevista/internal/models"
+	"github.com/seva/animevista/internal/security"
 	"github.com/seva/animevista/internal/service"
 	"github.com/seva/animevista/internal/validation"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func publicWebBaseURL() string {
@@ -77,7 +77,7 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	hashedPassword, err := security.HashPassword(input.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
 		return
@@ -290,7 +290,7 @@ func ResetPassword(c *gin.Context) {
 		return
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	hashedPassword, err := security.HashPassword(input.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
 		return
@@ -331,9 +331,16 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password)); err != nil {
+	ok, legacy := security.VerifyPassword(user.PasswordHash, input.Password)
+	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
+	}
+	if legacy {
+		// Seamless migration: re-hash with pepper+sha256+bcrypt(cost=12) after a successful legacy login.
+		if newHash, err := security.HashPassword(input.Password); err == nil {
+			_ = app.DB.Model(&models.User{}).Where("id = ?", user.ID).Update("password_hash", newHash).Error
+		}
 	}
 
 	if user.IsBanned {

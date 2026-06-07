@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import { useLanguage } from "@/contexts/language-context"
 import type { CatalogMeta } from "@/lib/api"
+import { pickDescription, pickName } from "@/lib/localized"
 
 type CollectionKind = "genre" | "theme" | "rating"
 
@@ -24,11 +25,10 @@ export function CollectionHeader({ kind, value, meta, resultCount }: CollectionH
 	const [expanded, setExpanded] = useState(false)
 
 	const data = useMemo(() => {
-		const isRu = locale === "ru"
 		if (kind === "genre") {
 			const g = meta.genres.find((x) => x.name === value)
-			const title = isRu ? g?.ru_name?.trim() || g?.name || value : g?.name || g?.ru_name?.trim() || value
-			const description = isRu ? g?.description_ru || g?.description_en || "" : g?.description_en || g?.description_ru || ""
+			const title = g ? pickName(locale, g) || value : value
+			const description = g ? pickDescription(locale, g) : ""
 			return {
 				title,
 				description,
@@ -36,16 +36,16 @@ export function CollectionHeader({ kind, value, meta, resultCount }: CollectionH
 		}
 		if (kind === "theme") {
 			const t = meta.themes.find((x) => x.name === value)
-			const title = isRu ? t?.ru_name?.trim() || t?.name || value : t?.name || t?.ru_name?.trim() || value
-			const description = isRu ? t?.description_ru || t?.description_en || "" : t?.description_en || t?.description_ru || ""
+			const title = t ? pickName(locale, t) || value : value
+			const description = t ? pickDescription(locale, t) : ""
 			return {
 				title,
 				description,
 			}
 		}
 		const r = meta.ratings.find((x) => x.name === value)
-		const title = isRu ? `Рейтинг: ${value}` : `Rating: ${value}`
-		const description = isRu ? r?.description_ru || r?.description_en || "" : r?.description_en || r?.description_ru || ""
+		const title = locale === "ru" ? `Рейтинг: ${value}` : locale === "uk" ? `Рейтинг: ${value}` : `Rating: ${value}`
+		const description = r ? pickDescription(locale, r) : ""
 		return {
 			title,
 			description,
@@ -58,7 +58,18 @@ export function CollectionHeader({ kind, value, meta, resultCount }: CollectionH
 	const clamped = expanded ? { short: desc, clamped: false } : clampText(desc, limit)
 	const showToggle = clamped.clamped && hasAnyDesc
 
-	const toggleLabel = locale === "ru" ? (expanded ? "Свернуть" : "Развернуть") : (expanded ? "Collapse" : "Expand")
+	const toggleLabel =
+		locale === "ru"
+			? expanded
+				? "Свернуть"
+				: "Развернуть"
+			: locale === "uk"
+			? expanded
+				? "Згорнути"
+				: "Розгорнути"
+			: expanded
+			? "Collapse"
+			: "Expand"
 
 	return (
 		<div className="mb-8 lg:mb-10">
@@ -83,7 +94,7 @@ export function CollectionHeader({ kind, value, meta, resultCount }: CollectionH
 			) : null}
 
 			<div className="mt-4 text-sm text-foreground-subtle">
-				{locale === "ru" ? `Найдено: ${resultCount}` : `Found: ${resultCount}`}
+				{locale === "ru" ? `Найдено: ${resultCount}` : locale === "uk" ? `Знайдено: ${resultCount}` : `Found: ${resultCount}`}
 			</div>
 		</div>
 	)

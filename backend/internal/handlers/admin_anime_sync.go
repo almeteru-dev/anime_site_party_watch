@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"regexp"
@@ -198,24 +197,10 @@ func SyncScheduleFromShikimoriCalendar(ctx context.Context) syncResult {
 			continue
 		}
 
-		shikiFull, err := shikimoriGetAnimeByID(ctx, client, it.Anime.ID, userAgent)
+		shikiFull, malID, enrich, err := fetchShikiAnimeWithJikanEnrichment(ctx, client, it.Anime.ID, userAgent)
 		if err != nil {
 			res.Errors = append(res.Errors, fmt.Sprintf("shiki_id=%d: shikimori: %v", it.Anime.ID, err))
 			continue
-		}
-
-		malID := 0
-		if shikiFull.MALID != nil {
-			malID = *shikiFull.MALID
-		} else if shikiFull.MyAnimeListID != nil {
-			malID = *shikiFull.MyAnimeListID
-		}
-		var enrich *jikanEnrichment
-		if malID > 0 {
-			if e, err := fetchJikanEnrichment(ctx, client, malID); err == nil {
-				enrich = &e
-			}
-			time.Sleep(250 * time.Millisecond)
 		}
 
 		animeID, created, updated, err := upsertAnimeFromShiki(shikiFull, malID, enrich)
@@ -258,174 +243,6 @@ func SyncScheduleFromShikimoriCalendar(ctx context.Context) syncResult {
 	}
 
 	return res
-}
-
-func fetchShikimoriCalendar(ctx context.Context) ([]shikiCalendarItem, error) {
-	apiURL := "https://shikimori.one/api/calendar"
-	client := &http.Client{Timeout: 18 * time.Second}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", fmt.Sprintf("LycorisLib-ScheduleSync/%d", time.Now().Unix()))
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == 429 {
-		time.Sleep(900 * time.Millisecond)
-		return fetchShikimoriCalendar(ctx)
-	}
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		b, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("status=%d body=%s", resp.StatusCode, string(b))
-	}
-	var items []shikiCalendarItem
-	if err := json.NewDecoder(resp.Body).Decode(&items); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-func shikimoriGetAnimeByID(ctx context.Context, client *http.Client, id int, userAgent string) (shikiAnimeFull, error) {
-	if id <= 0 {
-		return shikiAnimeFull{}, errors.New("invalid shikimori id")
-	}
-	apiURL := "https://shikimori.one/api/animes/" + strconv.Itoa(id)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
-	if err != nil {
-		return shikiAnimeFull{}, err
-	}
-	req.Header.Set("Accept", "application/json")
-	if strings.TrimSpace(userAgent) == "" {
-		userAgent = "LycorisLib"
-	}
-	req.Header.Set("User-Agent", userAgent)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return shikiAnimeFull{}, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == 429 {
-		time.Sleep(900 * time.Millisecond)
-		return shikimoriGetAnimeByID(ctx, client, id, userAgent)
-	}
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		b, _ := io.ReadAll(resp.Body)
-		return shikiAnimeFull{}, fmt.Errorf("status=%d body=%s", resp.StatusCode, string(b))
-	}
-	var full shikiAnimeFull
-	if err := json.NewDecoder(resp.Body).Decode(&full); err != nil {
-		return shikiAnimeFull{}, err
-	}
-	full.ID = id
-	if full.MALID == nil && full.MyAnimeListID != nil {
-		mid := *full.MyAnimeListID
-		full.MALID = &mid
-	}
-	return full, nil
-}
-
-func fetchJikanEnrichment(ctx context.Context, client *http.Client, malID int) (jikanEnrichment, error) {
-	apiURL := "https://api.jikan.moe/v4/anime/" + strconv.Itoa(malID)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
-	if err != nil {
-		return jikanEnrichment{}, err
-	}
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", "LycorisLib")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return jikanEnrichment{}, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == 429 || resp.StatusCode == 502 || resp.StatusCode == 504 {
-		time.Sleep(900 * time.Millisecond)
-		return fetchJikanEnrichment(ctx, client, malID)
-	}
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		b, _ := io.ReadAll(resp.Body)
-		return jikanEnrichment{}, fmt.Errorf("status=%d body=%s", resp.StatusCode, string(b))
-	}
-	var raw map[string]any
-	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
-		return jikanEnrichment{}, err
-	}
-	data, _ := raw["data"].(map[string]any)
-	if data == nil {
-		return jikanEnrichment{}, errors.New("missing data")
-	}
-	out := jikanEnrichment{}
-	if v, ok := data["synopsis"].(string); ok {
-		out.Synopsis = strings.TrimSpace(v)
-	}
-	if v, ok := data["title_english"].(string); ok {
-		out.TitleEnglish = strings.TrimSpace(v)
-	}
-	if v, ok := data["source"].(string); ok {
-		out.Source = strings.TrimSpace(v)
-	}
-	if arr, ok := data["producers"].([]any); ok {
-		for _, it := range arr {
-			m, _ := it.(map[string]any)
-			name, _ := m["name"].(string)
-			name = strings.TrimSpace(name)
-			if name != "" {
-				out.Producers = append(out.Producers, name)
-			}
-		}
-	}
-	if arr, ok := data["themes"].([]any); ok {
-		for _, it := range arr {
-			m, _ := it.(map[string]any)
-			name, _ := m["name"].(string)
-			name = strings.TrimSpace(name)
-			if name != "" {
-				out.Themes = append(out.Themes, name)
-			}
-		}
-	}
-	if images, ok := data["images"].(map[string]any); ok {
-		if webp, ok := images["webp"].(map[string]any); ok {
-			if v, ok := webp["large_image_url"].(string); ok {
-				out.PosterURL = strings.TrimSpace(v)
-			}
-			if out.PosterURL == "" {
-				if v, ok := webp["image_url"].(string); ok {
-					out.PosterURL = strings.TrimSpace(v)
-				}
-			}
-		}
-		if out.PosterURL == "" {
-			if jpg, ok := images["jpg"].(map[string]any); ok {
-				if v, ok := jpg["large_image_url"].(string); ok {
-					out.PosterURL = strings.TrimSpace(v)
-				}
-				if out.PosterURL == "" {
-					if v, ok := jpg["image_url"].(string); ok {
-						out.PosterURL = strings.TrimSpace(v)
-					}
-				}
-			}
-		}
-	}
-	if tr, ok := data["trailer"].(map[string]any); ok {
-		if v, ok := tr["embed_url"].(string); ok {
-			out.TrailerURL = strings.TrimSpace(v)
-		}
-		if out.TrailerURL == "" {
-			if v, ok := tr["url"].(string); ok {
-				out.TrailerURL = strings.TrimSpace(v)
-			}
-		}
-		out.TrailerURL = strings.Replace(out.TrailerURL, "http://", "https://", 1)
-	}
-	return out, nil
 }
 
 func normalizeShikiRating(s string) string {

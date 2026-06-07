@@ -4,6 +4,7 @@
 	import { useParams } from "next/navigation"
 	import { useRouter } from "next/navigation"
 	import { getAnimeBySlug, getWatchPartyWsUrl, type AnimeDetailsResponse } from "@/lib/api"
+	import { useLanguage } from "@/contexts/language-context"
 
 	type PlayerState = {
 		isPlaying: boolean
@@ -107,6 +108,7 @@
 		const params = useParams<{ roomId: string }>()
 		const roomId = typeof params?.roomId === "string" ? params.roomId : ""
 		const router = useRouter()
+		const { locale } = useLanguage()
 		const socketRef = useRef<WebSocket | null>(null)
 		const playerIframeElRef = useRef<HTMLIFrameElement | null>(null)
 		const playerWindowRef = useRef<Window | null>(null)
@@ -227,21 +229,35 @@
 				try {
 					const res = await fetch(`/api/watch-party/rooms/${encodeURIComponent(roomId)}`, { credentials: "include" })
 					const data = (await res.json().catch(() => ({}))) as any
-					if (!res.ok) throw new Error(data?.error || "Failed to load room")
+					if (!res.ok) {
+						throw new Error(
+							data?.error || (locale === "ru" ? "Не удалось загрузить комнату" : locale === "uk" ? "Не вдалося завантажити кімнату" : "Failed to load room")
+						)
+					}
 					const content = (data?.room?.content_state || {}) as ContentState
-					if (!content?.anime_slug) throw new Error("Room has no content yet")
+					if (!content?.anime_slug) {
+						throw new Error(locale === "ru" ? "В комнате пока нет контента" : locale === "uk" ? "У кімнаті поки немає контенту" : "Room has no content yet")
+					}
 					contentRef.current = content
 					setContentUi(content)
 					const details = await getAnimeBySlug(content.anime_slug)
 					detailsRef.current = details
 					setAnimeDetails(details)
 					const src = pickKodikUrl(details, content)
-					if (!src) throw new Error("No video sources found for this anime")
+					if (!src) {
+						throw new Error(
+							locale === "ru"
+								? "Для этого аниме не найдено видеоисточников"
+								: locale === "uk"
+								? "Для цього аніме не знайдено відеоджерел"
+								: "No video sources found for this anime"
+						)
+					}
 					if (cancelled) return
 					setIframeSrc(src)
 				} catch (e: any) {
 					if (cancelled) return
-					setError(e?.message || "Failed to load")
+					setError(e?.message || (locale === "ru" ? "Не удалось загрузить" : locale === "uk" ? "Не вдалося завантажити" : "Failed to load"))
 					setIframeSrc("")
 				} finally {
 					if (!cancelled) setLoadingPlayer(false)
@@ -643,21 +659,57 @@
 									onClick={copyInvite}
 									className="h-9 px-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-sm font-semibold"
 								>
-									{copyStatus === "ok" ? "Скопировано" : copyStatus === "err" ? "Ошибка" : "Скопировать ссылку"}
+								{copyStatus === "ok"
+									? locale === "ru"
+										? "Скопировано"
+										: locale === "uk"
+										? "Скопійовано"
+										: "Copied"
+									: copyStatus === "err"
+									? locale === "ru"
+										? "Ошибка"
+										: locale === "uk"
+										? "Помилка"
+										: "Error"
+									: locale === "ru"
+									? "Скопировать ссылку"
+									: locale === "uk"
+									? "Скопіювати посилання"
+									: "Copy link"}
 								</button>
 								{isOwner ? (
 									<button
 										type="button"
 										onClick={() => {
-											if (confirm("Распустить комнату?")) dissolveRoom()
+										if (
+											confirm(
+												locale === "ru"
+													? "Распустить комнату?"
+													: locale === "uk"
+													? "Розпустити кімнату?"
+													: "Dissolve the room?"
+											)
+										) {
+											dissolveRoom()
+										}
 										}}
 										className="h-9 px-3 rounded-lg bg-red-600 hover:bg-red-500 text-sm font-semibold"
 									>
-										Распустить
+									{locale === "ru" ? "Распустить" : locale === "uk" ? "Розпустити" : "Dissolve"}
 									</button>
 								) : null}
 								<span className={`px-3 py-1 rounded-full text-sm ${isConnected ? "bg-green-600" : "bg-red-600"}`}>
-									{isConnected ? "Онлайн" : "Отключено"}
+								{isConnected
+									? locale === "ru"
+										? "Онлайн"
+										: locale === "uk"
+										? "Онлайн"
+										: "Online"
+									: locale === "ru"
+									? "Отключено"
+									: locale === "uk"
+									? "Відключено"
+									: "Offline"}
 								</span>
 							</div>
           </div>
@@ -679,7 +731,9 @@
               className="w-full h-full"
             />
 				{loadingPlayer ? (
-					<div className="absolute inset-0 flex items-center justify-center text-sm text-foreground-muted bg-black/40">Загрузка плеера…</div>
+					<div className="absolute inset-0 flex items-center justify-center text-sm text-foreground-muted bg-black/40">
+						{locale === "ru" ? "Загрузка плеера…" : locale === "uk" ? "Завантаження плеєра…" : "Loading player…"}
+					</div>
 				) : null}
             {/* Для зрителей: оверлей блокирующий клики по плееру */}
             {!isOwner && (
@@ -692,7 +746,7 @@
 							onClick={handleViewerJoin}
 							className="h-11 px-5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"
 						>
-							Войти в трансляцию
+							{locale === "ru" ? "Войти в трансляцию" : locale === "uk" ? "Увійти до трансляції" : "Join stream"}
 						</button>
 					</div>
 				) : null}
@@ -703,7 +757,7 @@
 							onClick={() => setOwnerActivated(true)}
 							className="h-11 px-5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"
 						>
-							Активировать управление
+							{locale === "ru" ? "Активировать управление" : locale === "uk" ? "Активувати керування" : "Activate controls"}
 						</button>
 					</div>
 				) : null}
@@ -714,10 +768,10 @@
 				<div className="mt-6 space-y-4">
 					<div className="flex flex-wrap items-center gap-2">
 						<button type="button" onClick={handleOwnerPlay} className="h-10 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold">
-							Play
+							{locale === "ru" ? "Play" : locale === "uk" ? "Play" : "Play"}
 						</button>
 						<button type="button" onClick={handleOwnerPause} className="h-10 px-4 rounded-lg bg-amber-600 hover:bg-amber-500 text-sm font-semibold">
-							Pause
+							{locale === "ru" ? "Pause" : locale === "uk" ? "Pause" : "Pause"}
 						</button>
 						<button
 							type="button"
@@ -757,7 +811,7 @@
 							<div className="space-y-4">
 								{serverKeys.length > 1 ? (
 									<div>
-										<div className="text-sm font-semibold text-foreground mb-2">Сервер</div>
+									<div className="text-sm font-semibold text-foreground mb-2">{locale === "ru" ? "Сервер" : locale === "uk" ? "Сервер" : "Server"}</div>
 										<div className="flex flex-wrap gap-2">
 											{serverKeys.map((k) => (
 												<button
@@ -778,7 +832,7 @@
 								) : null}
 
 								<div>
-									<div className="text-sm font-semibold text-foreground mb-2">Язык</div>
+								<div className="text-sm font-semibold text-foreground mb-2">{locale === "ru" ? "Язык" : locale === "uk" ? "Мова" : "Language"}</div>
 									<div className="flex gap-2">
 										<button
 											type="button"
@@ -789,7 +843,7 @@
 											}}
 									className={`text-sm ${contentUi.selected_type !== "subbed" ? "h-10 px-4 rounded-full font-semibold bg-primary text-primary-foreground" : "accent-pill"}`}
 										>
-											Озвучка
+											{locale === "ru" ? "Озвучка" : locale === "uk" ? "Озвучення" : "Dub"}
 										</button>
 										<button
 											type="button"
@@ -800,7 +854,7 @@
 											}}
 									className={`text-sm ${contentUi.selected_type === "subbed" ? "h-10 px-4 rounded-full font-semibold bg-primary text-primary-foreground" : "accent-pill"}`}
 										>
-											Субтитры
+											{locale === "ru" ? "Субтитры" : locale === "uk" ? "Субтитри" : "Sub"}
 										</button>
 									</div>
 								</div>
@@ -808,14 +862,36 @@
 								{groups.length > 0 ? (
 									<div>
 										<div className="flex items-center justify-between mb-2">
-											<div className="text-sm font-semibold text-foreground">{contentUi.selected_type === "subbed" ? "Субтитры" : "Озвучка"}</div>
+											<div className="text-sm font-semibold text-foreground">
+												{contentUi.selected_type === "subbed"
+													? locale === "ru"
+														? "Субтитры"
+														: locale === "uk"
+														? "Субтитри"
+														: "Subtitles"
+													: locale === "ru"
+													? "Озвучка"
+													: locale === "uk"
+													? "Озвучення"
+													: "Dub"}
+											</div>
 											{groups.length > 6 ? (
 												<button
 													type="button"
 													onClick={() => setShowAllVoiceGroups((p) => !p)}
 													className="h-8 px-3 rounded-full bg-gray-800 hover:bg-gray-700 text-xs font-semibold"
 												>
-													{showAllVoiceGroups ? "Скрыть" : "Показать все"}
+													{showAllVoiceGroups
+														? locale === "ru"
+															? "Скрыть"
+															: locale === "uk"
+															? "Сховати"
+															: "Hide"
+														: locale === "ru"
+														? "Показать все"
+														: locale === "uk"
+														? "Показати все"
+														: "Show all"}
 												</button>
 											) : null}
 										</div>
@@ -839,7 +915,7 @@
 
 								{visibleEpisodes.length > 0 ? (
 									<div>
-										<div className="text-sm font-semibold text-foreground mb-2">Серии</div>
+									<div className="text-sm font-semibold text-foreground mb-2">{locale === "ru" ? "Серии" : locale === "uk" ? "Серії" : "Episodes"}</div>
 										<div className="flex flex-wrap gap-2">
 											{visibleEpisodes.map((ep) => (
 												<button
@@ -860,7 +936,7 @@
 													className="h-9 px-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-sm font-semibold"
 													disabled={episodesVisibleCount >= maxEpisodes}
 												>
-													Показать еще
+													{locale === "ru" ? "Показать еще" : locale === "uk" ? "Показати ще" : "Show more"}
 												</button>
 												<button
 													type="button"
@@ -868,7 +944,7 @@
 													className="h-9 px-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-sm font-semibold"
 													disabled={episodesVisibleCount >= maxEpisodes}
 												>
-													Показать все
+													{locale === "ru" ? "Показать все" : locale === "uk" ? "Показати все" : "Show all"}
 												</button>
 											</div>
 										) : null}
@@ -884,7 +960,7 @@
         {/* Панель участников */}
 					<div className="w-full lg:w-80 bg-gray-900 rounded-xl p-5 flex flex-col gap-4 max-h-[70vh] lg:max-h-none lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)] overflow-hidden min-h-0">
 						<div>
-							<h2 className="text-xl font-bold mb-4">Участники ({users.length})</h2>
+									<h2 className="text-xl font-bold mb-4">{locale === "ru" ? "Участники" : locale === "uk" ? "Учасники" : "Participants"} ({users.length})</h2>
 							<div className="space-y-3">
             {users.map(user => (
               <div key={user.id} className="flex items-center justify-between py-2">
@@ -897,7 +973,7 @@
                     onClick={() => transferOwnership(user.id)}
                     className="text-xs px-3 py-1 bg-purple-600 hover:bg-purple-500 rounded-md transition-colors"
                   >
-                    Передать права
+										{locale === "ru" ? "Передать права" : locale === "uk" ? "Передати права" : "Transfer"}
                   </button>
                 )}
               </div>
@@ -905,7 +981,7 @@
           </div>
 						</div>
 							<div className="border-t border-white/10 pt-4 flex flex-col min-h-0 flex-1 overflow-hidden">
-							<div className="text-lg font-bold mb-3">Чат</div>
+							<div className="text-lg font-bold mb-3">{locale === "ru" ? "Чат" : locale === "uk" ? "Чат" : "Chat"}</div>
 								<div className="flex-1 min-h-0 overflow-auto space-y-2 pr-1">
 								{chat.map((m) => (
 										<div key={m.id} className="text-sm break-words whitespace-pre-wrap">
@@ -922,7 +998,19 @@
 										if (e.key === "Enter") sendChat()
 									}}
 									disabled={!canChat}
-									placeholder={canChat ? "Напишите сообщение…" : "Войдите в трансляцию"}
+									placeholder={
+										canChat
+											? locale === "ru"
+												? "Напишите сообщение…"
+												: locale === "uk"
+												? "Напишіть повідомлення…"
+												: "Write a message…"
+											: locale === "ru"
+											? "Войдите в трансляцию"
+											: locale === "uk"
+											? "Увійдіть до трансляції"
+											: "Join the stream"
+									}
 										className="flex-1 min-w-0 h-10 px-3 rounded-lg bg-gray-800 border border-gray-700 disabled:opacity-50"
 								/>
 								<button
@@ -931,7 +1019,7 @@
 									disabled={!canChat || !chatText.trim()}
 										className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 shrink-0"
 								>
-										Отправить
+									{locale === "ru" ? "Отправить" : locale === "uk" ? "Надіслати" : "Send"}
 								</button>
 							</div>
 						</div>

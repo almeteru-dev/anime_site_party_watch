@@ -5,6 +5,7 @@ import Link from "next/link"
 import { ArrowLeft, Mail, Calendar, User as UserIcon, CheckCircle, List, Shield, Key, Loader2, Check, Save } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
+import { toBcp47 } from "@/lib/localized"
 import { 
   getMe, 
   getMyCollection, 
@@ -19,10 +20,11 @@ import {
 } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { ListsSyncPanel } from "@/components/profile/lists-sync-panel"
+import { AchievementTags } from "@/components/profile/AchievementTags"
 
 export default function ProfilePage() {
   const { user: authUser } = useAuth()
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
   const [profile, setProfile] = useState<User | null>(null)
   const [collection, setCollection] = useState<UserCollectionEntry[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -193,7 +195,7 @@ export default function ProfilePage() {
   const totalInList = collection.length
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString(undefined, {
+    return new Date(dateStr).toLocaleDateString(toBcp47(locale), {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -293,6 +295,20 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+
+			{profile.achievements && profile.achievements.length > 0 ? (
+				<div className="mb-10 rounded-3xl border border-border/60 bg-background-secondary/20 p-6 shadow-xl">
+					<div className="text-xs font-bold text-foreground-muted uppercase tracking-wider mb-3">{t.profile.achievementsTitle}</div>
+					<AchievementTags achievements={profile.achievements} locale={locale} />
+				</div>
+			) : null}
+
+			{profile.titles && profile.titles.length > 0 ? (
+				<div className="mb-10 rounded-3xl border border-border/60 bg-background-secondary/20 p-6 shadow-xl">
+					<div className="text-xs font-bold text-foreground-muted uppercase tracking-wider mb-3">{t.profile.titlesTitle}</div>
+					<AchievementTags achievements={profile.titles} locale={locale} />
+				</div>
+			) : null}
 
 		<ListsSyncPanel onChanged={fetchData} />
 

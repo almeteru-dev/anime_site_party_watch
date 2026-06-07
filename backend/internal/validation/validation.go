@@ -32,6 +32,9 @@ func UsernameErrorMessage(acceptLanguage string) string {
 	if isRussian(acceptLanguage) {
 		return "Имя пользователя некорректно"
 	}
+	if isUkrainian(acceptLanguage) {
+		return "Ім'я користувача некоректне"
+	}
 	return "Username is incorrect"
 }
 
@@ -39,6 +42,9 @@ func UsernameErrorMessage(acceptLanguage string) string {
 func RegisterUsernameHint(acceptLanguage string) string {
 	if isRussian(acceptLanguage) {
 		return "Можно использовать только английские буквы любого регистра, цифры и символы - и _"
+	}
+	if isUkrainian(acceptLanguage) {
+		return "Можна використовувати лише англійські літери будь-якого регістру, цифри та символи - і _"
 	}
 	return "You can only use English letters of any case, numbers, and symbols - and _"
 }
@@ -211,6 +217,11 @@ func SanitizeSearchQuery(q string) string {
 func isRussian(acceptLanguage string) bool {
 	lang := strings.ToLower(strings.TrimSpace(acceptLanguage))
 	return strings.HasPrefix(lang, "ru")
+}
+
+func isUkrainian(acceptLanguage string) bool {
+	lang := strings.ToLower(strings.TrimSpace(acceptLanguage))
+	return strings.HasPrefix(lang, "uk") || strings.HasPrefix(lang, "ua")
 }
 
 func containsControlOrUnsafe(s string) bool {

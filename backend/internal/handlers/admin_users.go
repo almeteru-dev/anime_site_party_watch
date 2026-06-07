@@ -8,8 +8,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/seva/animevista/internal/app"
 	"github.com/seva/animevista/internal/models"
+	"github.com/seva/animevista/internal/service"
+	"github.com/seva/animevista/internal/security"
 	"github.com/seva/animevista/internal/validation"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"log"
 )
@@ -151,6 +152,37 @@ func AdminGetUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, user)
+}
+
+func AdminGetUserProfileByUsername(c *gin.Context) {
+	username := strings.TrimSpace(c.Param("username"))
+	if username == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Username is required"})
+		return
+	}
+	var user models.User
+	if err := app.DB.Select("id, username, email, role, is_verified, is_banned, ban_reason, created_at").
+		Where("LOWER(username) = ?", strings.ToLower(username)).
+		First(&user).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load user"})
+		return
+	}
+
+	achs, err := service.ListUserAchievements(app.DB, user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load user achievements"})
+		return
+	}
+	titles, err := service.ListUserTitles(app.DB, user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load user titles"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"user": user, "achievements": achs, "titles": titles})
 }
 
 type AdminUpdateUserInput struct {
@@ -302,7 +334,7 @@ func AdminCreateUser(c *gin.Context) {
 		return
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	hashedPassword, err := security.HashPassword(input.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
 		return
@@ -440,7 +472,7 @@ func AdminResetUserPasswordDefault(c *gin.Context) {
 		return
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	hashedPassword, err := security.HashPassword(password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
 		return

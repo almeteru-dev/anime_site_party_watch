@@ -20,6 +20,16 @@ type WatchPartyHub struct {
 	db    *gorm.DB
 }
 
+func (h *WatchPartyHub) ActiveRoomIDs() []string {
+	h.mu.RLock()
+	ids := make([]string, 0, len(h.rooms))
+	for id := range h.rooms {
+		ids = append(ids, id)
+	}
+	h.mu.RUnlock()
+	return ids
+}
+
 // NewWatchPartyHub создает новый инстанс хаба
 func NewWatchPartyHub(db *gorm.DB) *WatchPartyHub {
 	hub := &WatchPartyHub{

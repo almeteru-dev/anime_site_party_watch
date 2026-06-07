@@ -40,6 +40,10 @@ type watchPartyTimeUpdatePayload struct {
 	Time float64 `json:"time"`
 }
 
+type watchPartySyncPayload struct {
+	Time float64 `json:"time"`
+}
+
 type watchPartyAdStatePayload struct {
 	IsAdPlaying bool `json:"is_ad_playing"`
 }
@@ -309,6 +313,17 @@ func (h *WatchPartyHub) RoomWS(c *gin.Context) {
 				continue
 			}
 			h.UpdateOwnerTime(roomID, p.Time, false)
+		case "sync":
+			if !user.IsOwner {
+				continue
+			}
+			var p watchPartySyncPayload
+			_ = json.Unmarshal(in.Payload, &p)
+			if p.Time <= 0 {
+				continue
+			}
+			h.UpdateOwnerTime(roomID, p.Time, false)
+			_ = h.BroadcastExcept(roomID, user, models.WSMessage{Type: "sync", Payload: gin.H{"time": p.Time}})
 		case "ad_state":
 			if !user.IsOwner {
 				continue

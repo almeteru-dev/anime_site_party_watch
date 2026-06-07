@@ -2,11 +2,7 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
-	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -138,40 +134,6 @@ func parseJikanAiredDate(fromISO *string) *time.Time {
 		return &v
 	}
 	return nil
-}
-
-func fetchJikanAnimeFull(ctx context.Context, malID int64) (jikanAnimeResp, error) {
-	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
-	defer cancel()
-	url := "https://api.jikan.moe/v4/anime/" + strconv.FormatInt(malID, 10)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return jikanAnimeResp{}, err
-	}
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", "LycorisLib-JikanHydrate")
-
-	client := &http.Client{Timeout: 25 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return jikanAnimeResp{}, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == 429 || resp.StatusCode == 502 || resp.StatusCode == 503 || resp.StatusCode == 504 {
-		time.Sleep(900 * time.Millisecond)
-		return fetchJikanAnimeFull(ctx, malID)
-	}
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return jikanAnimeResp{}, fmt.Errorf("jikan status=%d", resp.StatusCode)
-	}
-	var parsed jikanAnimeResp
-	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
-		return jikanAnimeResp{}, err
-	}
-	if parsed.Data.MalID <= 0 {
-		return jikanAnimeResp{}, errors.New("invalid jikan payload")
-	}
-	return parsed, nil
 }
 
 func upsertAnimeFromJikan(ctx context.Context, malID int64) (animeID int64, created bool, updated bool, err error) {

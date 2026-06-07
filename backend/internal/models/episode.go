@@ -17,6 +17,7 @@ type VideoSource struct {
 	Label              string          `gorm:"not null;type:varchar(255)" json:"label"`
 	Type               VideoSourceType `gorm:"not null;type:varchar(50);default:'iframe'" json:"type"`
 	URL                string          `gorm:"not null;type:varchar(500)" json:"url"`
+	VodURL             *string         `gorm:"type:varchar(1000)" json:"vod_url,omitempty"`
 	Audio              *string         `gorm:"type:varchar(10)" json:"audio,omitempty"`
 	IsIntegratedPlayer bool            `gorm:"not null;default:false" json:"is_integrated_player"`
 	IsDefault          bool            `gorm:"default:false" json:"is_default"`

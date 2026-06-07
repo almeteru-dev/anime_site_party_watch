@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { LayoutGrid, PlusCircle, LogOut, Shield, List, Users, Tags, Sliders, Settings, HelpCircle } from "lucide-react"
+import { LayoutGrid, PlusCircle, LogOut, Shield, List, Users, Tags, Sliders, Settings, HelpCircle, Trophy, Medal } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/auth-context"
 import { roleLevel } from "@/lib/roles"
@@ -19,22 +19,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   if (!isLoading) {
-    const lvl = roleLevel(user?.role || "user")
-    if (lvl < roleLevel("moderator")) {
-      router.push("/")
-      return null
-    }
-    if (user?.role === "moderator") {
-      const allowed =
-        pathname === "/admin/animes" ||
-        pathname === "/admin/animes/new" ||
-        pathname.startsWith("/admin/animes/") ||
-        pathname === "/admin/schedule"
-      if (!allowed) {
-        router.push("/admin/animes")
-        return null
-      }
-    }
+		const lvl = roleLevel(user?.role || "user")
+		if (lvl < roleLevel("moderator")) {
+			router.push("/")
+			return null
+		}
+		if (user?.role === "moderator") {
+			const allowed =
+				pathname === "/admin/animes" ||
+				pathname === "/admin/animes/new" ||
+				pathname.startsWith("/admin/animes/") ||
+				pathname === "/admin/schedule"
+			if (!allowed) {
+				router.push("/admin/animes")
+				return null
+			}
+		}
   }
 
   type NavItem = { href: string; label: string; icon: any; disabled?: boolean }
@@ -47,13 +47,30 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/video-labels", label: "Video Labels", icon: Tags },
     { href: "/admin/faq", label: "FAQ", icon: HelpCircle },
     { href: "/admin/users", label: "Users", icon: Users },
+    { href: "/admin/mal", label: "MyAnimeList", icon: LayoutGrid },
     { href: "/admin/settings", label: "Settings", icon: Settings },
+		{ href: "/admin/achievements", label: "Achievements", icon: Trophy },
+		{ href: "/admin/titles", label: "Titles", icon: Medal },
+		{ href: "/admin/user-profile", label: "User Profile", icon: Users },
+		{ href: "/admin/rules", label: "Rules", icon: HelpCircle },
   ]
 
   const visibleNav = nav.filter((item) => {
     if (user?.role === "moderator") {
       return item.href === "/admin/animes" || item.href === "/admin/animes/new" || item.href === "/admin/schedule"
     }
+		if (item.href === "/admin/achievements") {
+			return user?.role === "root"
+		}
+		if (item.href === "/admin/titles") {
+			return user?.role === "root"
+		}
+		if (item.href === "/admin/user-profile") {
+			return user?.role === "root"
+		}
+		if (item.href === "/admin/rules") {
+			return user?.role === "root"
+		}
     return true
   })
 

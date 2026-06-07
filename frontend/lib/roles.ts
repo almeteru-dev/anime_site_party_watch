@@ -37,4 +37,3 @@ export function canManageUser(currentRole: string, currentUserId: number | null,
   if (currentRole === "admin") return targetRole !== "admin" && roleLevel(targetRole) < roleLevel("admin")
   return false
 }
-

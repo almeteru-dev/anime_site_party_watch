@@ -11,9 +11,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/seva/animevista/internal/app"
 	"github.com/seva/animevista/internal/models"
+	"github.com/seva/animevista/internal/security"
 	"github.com/seva/animevista/internal/service"
 	"github.com/seva/animevista/internal/validation"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -43,6 +43,20 @@ func GetMe(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
+
+	ach, err := service.ListUserAchievements(app.DB, user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load achievements"})
+		return
+	}
+	user.Achievements = ach
+
+	titles, err := service.ListUserTitles(app.DB, user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load titles"})
+		return
+	}
+	user.Titles = titles
 
 	c.JSON(http.StatusOK, user)
 }
@@ -86,7 +100,7 @@ func UpdatePassword(c *gin.Context) {
 		return
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.CurrentPassword)); err != nil {
+	if ok, _ := security.VerifyPassword(user.PasswordHash, input.CurrentPassword); !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid current password"})
 		return
 	}
@@ -96,7 +110,7 @@ func UpdatePassword(c *gin.Context) {
 		return
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.NewPassword), bcrypt.DefaultCost)
+	hashedPassword, err := security.HashPassword(input.NewPassword)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
 		return

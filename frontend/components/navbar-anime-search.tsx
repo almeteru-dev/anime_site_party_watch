@@ -7,6 +7,7 @@ import { Search, X } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import { cn } from "@/lib/utils"
 import { searchAnimes, type AnimeSearchItem } from "@/lib/api"
+import { pickAnimeTitle } from "@/lib/localized"
 
 export function NavbarAnimeSearch() {
 	const router = useRouter()
@@ -71,17 +72,17 @@ export function NavbarAnimeSearch() {
 	}, [canSearch, isOpen, query])
 
 	const displayTitle = (item: AnimeSearchItem) => {
-		if (locale === "ru") return item.title_ru?.trim() || item.title_en?.trim() || item.url
-		return item.title_en?.trim() || item.title_ru?.trim() || item.url
+		return pickAnimeTitle(locale, item).trim() || item.url
 	}
 
 	const secondaryTitle = (item: AnimeSearchItem) => {
-		if (locale === "ru") {
-			const v = item.title_en?.trim()
-			return v && v !== displayTitle(item) ? v : ""
+		const primary = displayTitle(item)
+		if (locale === "ru" || locale === "uk") {
+			const v = item.title_en?.trim() || ""
+			return v && v !== primary ? v : ""
 		}
-		const v = item.title_ru?.trim()
-		return v && v !== displayTitle(item) ? v : ""
+		const v = item.title_uk?.trim() || item.title_ru?.trim() || ""
+		return v && v !== primary ? v : ""
 	}
 
 	const go = (item: AnimeSearchItem) => {
@@ -129,7 +130,19 @@ export function NavbarAnimeSearch() {
 					"w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200",
 					isOpen ? "bg-muted" : "hover:bg-muted"
 				)}
-				aria-label={isOpen ? "Close search" : "Open search"}
+				aria-label={
+					isOpen
+						? locale === "ru"
+							? "Закрыть поиск"
+							: locale === "uk"
+							? "Закрити пошук"
+							: "Close search"
+						: locale === "ru"
+						? "Открыть поиск"
+						: locale === "uk"
+						? "Відкрити пошук"
+						: "Open search"
+				}
 			>
 				{isOpen ? (
 					<X className="w-5 h-5 text-foreground-muted" />
@@ -166,18 +179,22 @@ export function NavbarAnimeSearch() {
 									setActiveIndex(-1)
 								}}
 								className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full hover:bg-background-secondary/60"
-								aria-label="Close"
+							aria-label={locale === "ru" ? "Закрыть" : locale === "uk" ? "Закрити" : "Close"}
 							>
 								<X className="w-4 h-4 text-foreground-muted" />
 							</button>
 						</div>
-						{!canSearch ? <div className="mt-2 text-xs text-foreground-muted">Type at least 2 characters.</div> : null}
+						{!canSearch ? (
+							<div className="mt-2 text-xs text-foreground-muted">
+								{locale === "ru" ? "Введите минимум 2 символа." : locale === "uk" ? "Введіть щонайменше 2 символи." : "Type at least 2 characters."}
+							</div>
+						) : null}
 					</div>
 
 					{canSearch && isLoading ? (
-						<div className="px-4 py-3 text-sm text-foreground-muted">Searching…</div>
+						<div className="px-4 py-3 text-sm text-foreground-muted">{locale === "ru" ? "Поиск…" : locale === "uk" ? "Пошук…" : "Searching…"}</div>
 					) : canSearch && items.length === 0 ? (
-						<div className="px-4 py-3 text-sm text-foreground-muted">No matches.</div>
+						<div className="px-4 py-3 text-sm text-foreground-muted">{locale === "ru" ? "Ничего не найдено." : locale === "uk" ? "Нічого не знайдено." : "No matches."}</div>
 					) : (
 						<div className="py-2">
 							{items.map((item, idx) => {
@@ -186,7 +203,7 @@ export function NavbarAnimeSearch() {
 								const isActive = idx === activeIndex
 								return (
 									<button
-										key={item.id}
+										key={`local-${item.id}`}
 										onMouseEnter={() => setActiveIndex(idx)}
 										onClick={() => go(item)}
 										className={cn(

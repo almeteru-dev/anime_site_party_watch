@@ -49,6 +49,7 @@ func GetMALTopAnimeCatalog(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load refs"})
 		return
 	}
+	_ = hydrateAnimeRefsUK(animes)
 	c.JSON(http.StatusOK, animes)
 }
 

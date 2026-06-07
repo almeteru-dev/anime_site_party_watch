@@ -6,6 +6,8 @@ import { useAuth } from "@/contexts/auth-context"
 import {
 	adminKodikBulkStart,
 	adminKodikBulkStatus,
+	adminMoonanimeBulkStart,
+	adminMoonanimeBulkStatus,
   adminPurgeOldSchedules,
   adminSetDefaultPassword,
   adminSetFooterLinks,
@@ -17,10 +19,12 @@ import {
 	adminDeleteMALTopAnime,
 	adminGetMALTopAnime,
 	adminUpsertMALTopAnime,
+	adminPurgeOfflineWatchPartyRooms,
   getPublicSettings,
 	type AdminMALTopRow,
   type FooterSocialLinks,
 	type KodikBulkStatus,
+	type MoonanimeBulkStatus,
 } from "@/lib/api"
 import { PasswordChecklist } from "@/components/password-checklist"
 import { cn } from "@/lib/utils"
@@ -64,12 +68,18 @@ export default function RootSettingsPage() {
 	const [kodikRangeFrom, setKodikRangeFrom] = useState<string>("")
 	const [kodikRangeTo, setKodikRangeTo] = useState<string>("")
 	const [kodikBulkError, setKodikBulkError] = useState<string | null>(null)
+	const [moonanimeBulkState, setMoonanimeBulkState] = useState<MoonanimeBulkStatus | null>(null)
+	const [moonanimeRangeFrom, setMoonanimeRangeFrom] = useState<string>("")
+	const [moonanimeRangeTo, setMoonanimeRangeTo] = useState<string>("")
+	const [moonanimeBulkError, setMoonanimeBulkError] = useState<string | null>(null)
 	const [malTopRows, setMalTopRows] = useState<AdminMALTopRow[]>([])
 	const [malTopRank, setMalTopRank] = useState<string>("")
 	const [malTopAnimeId, setMalTopAnimeId] = useState<string>("")
 	const [malTopTitle, setMalTopTitle] = useState<string>("")
 	const [malTopImageUrl, setMalTopImageUrl] = useState<string>("")
 	const [malTopError, setMalTopError] = useState<string | null>(null)
+	const [purgeWpMinutes, setPurgeWpMinutes] = useState<string>("1440")
+	const [purgeWpNotice, setPurgeWpNotice] = useState<string | null>(null)
 
   const pwError = useMemo(() => (pw.trim() ? clientPasswordError(pw) : null), [pw])
 
@@ -109,10 +119,11 @@ export default function RootSettingsPage() {
 		let timer: any
 		const poll = async () => {
 			try {
-				const st = await adminKodikBulkStatus()
+				const [k, m] = await Promise.all([adminKodikBulkStatus(), adminMoonanimeBulkStatus()])
 				if (!mounted) return
-				setKodikBulkState(st)
-				if (st?.status === "running") {
+				setKodikBulkState(k)
+				setMoonanimeBulkState(m)
+				if (k?.status === "running" || m?.status === "running") {
 					timer = window.setTimeout(poll, 2000)
 				}
 			} catch {
@@ -144,7 +155,7 @@ export default function RootSettingsPage() {
 	}, [me?.role])
 
   const onSaveDefaultPassword = async () => {
-    if (me?.role !== "root") {
+    if (!isRootLike) {
       setError("Root access required")
       return
     }
@@ -175,7 +186,7 @@ export default function RootSettingsPage() {
   }
 
   const onSavePrivateMode = async () => {
-    if (me?.role !== "root") {
+    if (!isRootLike) {
       setError("Root access required")
       return
     }
@@ -194,7 +205,7 @@ export default function RootSettingsPage() {
   }
 
 	const onSaveRegistrationDisabled = async () => {
-		if (me?.role !== "root") {
+		if (!isRootLike) {
 			setError("Root access required")
 			return
 		}
@@ -213,7 +224,7 @@ export default function RootSettingsPage() {
 	}
 
 	const onSaveFooterLinks = async () => {
-		if (me?.role !== "root") {
+		if (!isRootLike) {
 			setError("Root access required")
 			return
 		}
@@ -261,6 +272,31 @@ export default function RootSettingsPage() {
 			setIsBusy(false)
 		}
 	}
+
+	const onPurgeOfflineWatchPartyRooms = async () => {
+		if (!isRootLike) {
+			setError("Root access required")
+			return
+		}
+		setError(null)
+		setNotice(null)
+		setPurgeWpNotice(null)
+		const minutes = Number(purgeWpMinutes)
+		if (!Number.isFinite(minutes) || minutes <= 0) {
+			setError("Invalid minutes")
+			return
+		}
+		setIsBusy(true)
+		try {
+			const r = await adminPurgeOfflineWatchPartyRooms({ older_than_minutes: Math.floor(minutes) })
+			setPurgeWpNotice(`Deleted ${r.deleted_count} rooms`)
+		} catch (e: any) {
+			setError(e?.message || "Failed to purge rooms")
+		} finally {
+			setIsBusy(false)
+		}
+	}
+
 
 	const onSaveKodikSettings = async () => {
 		if (me?.role !== "root") {
@@ -440,6 +476,33 @@ export default function RootSettingsPage() {
 			setNotice("Kodik bulk job started")
 		} catch (e: any) {
 			setKodikBulkError(e?.message || "Failed")
+		} finally {
+			setIsBusy(false)
+		}
+	}
+
+	const startMoonanimeBulk = async (scope: "all" | "ongoing" | "range", mode: "add" | "sync") => {
+		if (me?.role !== "root") {
+			setError("Root access required")
+			return
+		}
+		setError(null)
+		setNotice(null)
+		setMoonanimeBulkError(null)
+		setIsBusy(true)
+		try {
+			if (scope === "range") {
+				const fromId = Number(moonanimeRangeFrom)
+				const toId = Number(moonanimeRangeTo)
+				await adminMoonanimeBulkStart({ scope: "range", mode, fromId, toId })
+			} else {
+				await adminMoonanimeBulkStart({ scope, mode })
+			}
+			const st = await adminMoonanimeBulkStatus()
+			setMoonanimeBulkState(st)
+			setNotice("Moonanime bulk job started")
+		} catch (e: any) {
+			setMoonanimeBulkError(e?.message || "Failed")
 		} finally {
 			setIsBusy(false)
 		}
@@ -945,6 +1008,143 @@ export default function RootSettingsPage() {
 			</div>
 
 			<div className="rounded-2xl border border-border/60 bg-background-secondary/40 p-5">
+				<div className="text-sm font-semibold text-foreground">Moonanime bulk</div>
+				<div className="mt-1 text-xs text-foreground-muted">Run Moonanime Add/Sync for many animes. Use with care (root only).</div>
+
+				<div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+					<button
+						type="button"
+						onClick={() => startMoonanimeBulk("all", "add")}
+						disabled={isBusy}
+						className={cn(
+							"rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90",
+							isBusy && "opacity-60 cursor-not-allowed"
+						)}
+					>
+						For all anime Add moonanime
+					</button>
+					<button
+						type="button"
+						onClick={() => startMoonanimeBulk("all", "sync")}
+						disabled={isBusy}
+						className={cn(
+							"rounded-xl border border-border/60 bg-background px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-background-secondary/40",
+							isBusy && "opacity-60 cursor-not-allowed"
+						)}
+					>
+						For all anime Sync moonanime
+					</button>
+					<button
+						type="button"
+						onClick={() => startMoonanimeBulk("ongoing", "add")}
+						disabled={isBusy}
+						className={cn(
+							"rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90",
+							isBusy && "opacity-60 cursor-not-allowed"
+						)}
+					>
+						For ongoing anime Add moonanime
+					</button>
+					<button
+						type="button"
+						onClick={() => startMoonanimeBulk("ongoing", "sync")}
+						disabled={isBusy}
+						className={cn(
+							"rounded-xl border border-border/60 bg-background px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-background-secondary/40",
+							isBusy && "opacity-60 cursor-not-allowed"
+						)}
+					>
+						For ongoing anime Sync moonanime
+					</button>
+				</div>
+
+				<div className="mt-4 grid grid-cols-1 lg:grid-cols-[1fr_1fr_auto_auto] gap-2 items-end">
+					<div className="space-y-2">
+						<label className="text-xs font-semibold text-foreground-muted">From anime id</label>
+						<input
+							value={moonanimeRangeFrom}
+							onChange={(e) => setMoonanimeRangeFrom(e.target.value)}
+							disabled={isBusy}
+							placeholder="130"
+							className="w-full h-11 rounded-xl bg-background border border-border/60 px-4 text-sm text-foreground outline-none focus:border-primary/50"
+						/>
+					</div>
+					<div className="space-y-2">
+						<label className="text-xs font-semibold text-foreground-muted">To anime id</label>
+						<input
+							value={moonanimeRangeTo}
+							onChange={(e) => setMoonanimeRangeTo(e.target.value)}
+							disabled={isBusy}
+							placeholder="230"
+							className="w-full h-11 rounded-xl bg-background border border-border/60 px-4 text-sm text-foreground outline-none focus:border-primary/50"
+						/>
+					</div>
+					<button
+						type="button"
+						onClick={() => startMoonanimeBulk("range", "add")}
+						disabled={isBusy}
+						className={cn(
+							"h-11 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90",
+							isBusy && "opacity-60 cursor-not-allowed"
+						)}
+					>
+						Add moonanime by id range
+					</button>
+					<button
+						type="button"
+						onClick={() => startMoonanimeBulk("range", "sync")}
+						disabled={isBusy}
+						className={cn(
+							"h-11 rounded-xl border border-border/60 bg-background px-4 text-sm font-semibold text-foreground hover:bg-background-secondary/40",
+							isBusy && "opacity-60 cursor-not-allowed"
+						)}
+					>
+						Sync moonanime by id range
+					</button>
+				</div>
+				<div className="mt-1 text-xs text-foreground-muted">Range size must be 100 or less.</div>
+
+				{moonanimeBulkError ? <div className="mt-3 text-sm text-red-300">{moonanimeBulkError}</div> : null}
+				{moonanimeBulkState ? (
+					<div className="mt-3 rounded-xl border border-border/60 bg-background/40 px-4 py-3 text-sm text-foreground">
+						<div className="flex flex-wrap gap-x-4 gap-y-1">
+							<div>
+								<span className="font-semibold">Status:</span> {moonanimeBulkState.status}
+							</div>
+							{moonanimeBulkState.scope ? (
+								<div>
+									<span className="font-semibold">Scope:</span> {moonanimeBulkState.scope}
+								</div>
+							) : null}
+							{moonanimeBulkState.mode ? (
+								<div>
+									<span className="font-semibold">Mode:</span> {moonanimeBulkState.mode}
+								</div>
+							) : null}
+							{typeof moonanimeBulkState.processed === "number" && typeof moonanimeBulkState.total === "number" ? (
+								<div>
+									<span className="font-semibold">Progress:</span> {moonanimeBulkState.processed}/{moonanimeBulkState.total}
+								</div>
+							) : null}
+							{typeof moonanimeBulkState.created_sources === "number" ? (
+								<div>
+									<span className="font-semibold">Sources:</span> +{moonanimeBulkState.created_sources} / ~{moonanimeBulkState.updated_sources || 0}
+								</div>
+							) : null}
+						</div>
+						{moonanimeBulkState.errors?.length ? (
+							<div className="mt-2 max-h-28 overflow-auto text-xs text-foreground-muted">
+								{moonanimeBulkState.errors.slice(0, 20).map((e, i) => (
+									<div key={i}>{e}</div>
+								))}
+								{moonanimeBulkState.errors.length > 20 ? <div>…</div> : null}
+							</div>
+						) : null}
+					</div>
+				) : null}
+			</div>
+
+			<div className="rounded-2xl border border-border/60 bg-background-secondary/40 p-5">
 				<div className="text-sm font-semibold text-foreground">MAL Top 100</div>
 				<div className="mt-1 text-xs text-foreground-muted">Manually refresh cached Top 100 anime list.</div>
 				<div className="mt-4 flex justify-end">
@@ -1074,6 +1274,37 @@ export default function RootSettingsPage() {
 					</div>
 				</div>
 			</div>
+
+		<div className="rounded-2xl border border-border/60 bg-background-secondary/40 p-5">
+			<div className="text-sm font-semibold text-foreground">Watch Party cleanup</div>
+			<div className="mt-1 text-xs text-foreground-muted">Delete rooms that are offline (no active WebSocket connections) and older than N minutes.</div>
+			<div className="mt-4 flex flex-wrap items-end justify-between gap-3">
+				<div>
+					<div className="text-xs text-foreground-muted">Older than (minutes)</div>
+					<input
+						type="number"
+						min={1}
+						step={1}
+						value={purgeWpMinutes}
+						onChange={(e) => setPurgeWpMinutes(e.target.value)}
+						className="mt-1 h-10 w-40 rounded-xl border border-border/60 bg-background px-3 text-sm outline-none"
+					/>
+					{purgeWpNotice ? <div className="mt-2 text-xs text-foreground-muted">{purgeWpNotice}</div> : null}
+				</div>
+				<button
+					type="button"
+					onClick={onPurgeOfflineWatchPartyRooms}
+					disabled={isBusy}
+					className={cn(
+						"inline-flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-2.5 text-sm font-semibold text-red-300 hover:bg-red-500/15",
+						isBusy && "opacity-60 cursor-not-allowed"
+					)}
+				>
+					<Trash2 className="w-4 h-4" />
+					Delete Offline Rooms
+				</button>
+			</div>
+		</div>
 
 		<div className="rounded-2xl border border-border/60 bg-background-secondary/40 p-5">
 			<div className="text-sm font-semibold text-foreground">Schedule cleanup</div>

@@ -12,8 +12,10 @@ import (
 type NameInput struct {
 	Name          string  `json:"name"`
 	RUName        *string `json:"ru_name"`
+	UKName        *string `json:"uk_name"`
 	DescriptionEN *string `json:"description_en"`
 	DescriptionRU *string `json:"description_ru"`
+	DescriptionUK *string `json:"description_uk"`
 }
 
 func AdminListKinds(c *gin.Context) {
@@ -37,7 +39,8 @@ func AdminCreateKind(c *gin.Context) {
 		return
 	}
 	ru := normalizeOptionalName(input.RUName)
-	item := models.KindOption{Name: name, RUName: ru}
+	uk := normalizeOptionalName(input.UKName)
+	item := models.KindOption{Name: name, RUName: ru, UKName: uk}
 	if err := app.DB.Create(&item).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to create kind"})
 		return
@@ -63,6 +66,7 @@ func AdminUpdateKind(c *gin.Context) {
 	}
 	item.Name = name
 	item.RUName = normalizeOptionalName(input.RUName)
+	item.UKName = normalizeOptionalName(input.UKName)
 	if err := app.DB.Save(&item).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to update kind"})
 		return
@@ -100,7 +104,8 @@ func AdminCreateRating(c *gin.Context) {
 	}
 	descEn := normalizeOptionalName(input.DescriptionEN)
 	descRu := normalizeOptionalName(input.DescriptionRU)
-	item := models.RatingOption{Name: name, DescriptionEN: descEn, DescriptionRU: descRu}
+	descUk := normalizeOptionalName(input.DescriptionUK)
+	item := models.RatingOption{Name: name, DescriptionEN: descEn, DescriptionRU: descRu, DescriptionUK: descUk}
 	if err := app.DB.Create(&item).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to create rating"})
 		return
@@ -127,6 +132,7 @@ func AdminUpdateRating(c *gin.Context) {
 	item.Name = name
 	item.DescriptionEN = normalizeOptionalName(input.DescriptionEN)
 	item.DescriptionRU = normalizeOptionalName(input.DescriptionRU)
+	item.DescriptionUK = normalizeOptionalName(input.DescriptionUK)
 	if err := app.DB.Save(&item).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to update rating"})
 		return

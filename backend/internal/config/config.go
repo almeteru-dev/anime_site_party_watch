@@ -17,6 +17,11 @@ type Config struct {
 	JWT_SECRET      string
 	RESEND_API_KEY  string
 	KODIK_API_KEY   string
+	MOONANIME_API_KEY string
+	PEPPER_PASS     string
+	MAL_CLIENT_ID   string
+	MAL_CLIENT_SECRET string
+	MAL_REDIRECT_URI string
 	DB_HOST         string
 	DB_PORT         string
 	DB_USER         string
@@ -40,6 +45,11 @@ func LoadConfig() {
 		JWT_SECRET:      getEnv("JWT_SECRET", "your-secret-key"),
 		RESEND_API_KEY:  getEnv("RESEND_API_KEY", ""),
 		KODIK_API_KEY:   getEnv("KODIK_API_KEY", ""),
+		MOONANIME_API_KEY: strings.TrimSpace(getEnv("MOONANIME_API_KEY", "")),
+		PEPPER_PASS:     strings.TrimSpace(getEnv("PEPPER_PASS", "")),
+		MAL_CLIENT_ID:   strings.TrimSpace(getEnv("MAL_CLIENT_ID", "")),
+		MAL_CLIENT_SECRET: strings.TrimSpace(getEnv("MAL_CLIENT_SECRET", "")),
+		MAL_REDIRECT_URI: strings.TrimSpace(getEnv("MAL_REDIRECT_URI", "http://localhost:3000/admin/mal/callback")),
 		DB_HOST:         getEnv("DB_HOST", "localhost"),
 		DB_PORT:         getEnv("DB_PORT", "5432"),
 		DB_USER:         getEnv("DB_USER", "postgres"),
@@ -49,6 +59,10 @@ func LoadConfig() {
 		COOKIE_DOMAIN:   strings.TrimSpace(getEnv("COOKIE_DOMAIN", "")),
 		COOKIE_SAMESITE: strings.TrimSpace(getEnv("COOKIE_SAMESITE", "lax")),
 		COOKIE_SECURE:   strings.TrimSpace(getEnv("COOKIE_SECURE", "auto")),
+	}
+
+	if AppConfig.PEPPER_PASS == "" {
+		log.Fatalf("CRITICAL: PEPPER_PASS is required")
 	}
 
 	if isProd {

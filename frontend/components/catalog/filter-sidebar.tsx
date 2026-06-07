@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/contexts/language-context'
+import { pickName } from "@/lib/localized"
 import type { Genre, KindOption, Producer, Source, Status, Studio, Theme } from '@/lib/api'
 
 export interface FilterState {
@@ -90,17 +91,18 @@ export function FilterSidebar({
   typeOptions,
 }: FilterSidebarProps) {
   const { locale, t } = useLanguage()
-	const producersTitle = locale === "ru" ? "Продюсеры" : "Producers"
-	const showAllLabel = locale === "ru" ? "Показать все" : "Show all"
-	const showLessLabel = locale === "ru" ? "Свернуть" : "Show less"
+	const producersTitle = locale === "ru" ? "Продюсеры" : locale === "uk" ? "Продюсери" : "Producers"
+	const showAllLabel = locale === "ru" ? "Показать все" : locale === "uk" ? "Показати все" : "Show all"
+	const showLessLabel = locale === "ru" ? "Свернуть" : locale === "uk" ? "Згорнути" : "Show less"
 	const limit = 10
 	const [showAllGenres, setShowAllGenres] = useState(false)
 	const [showAllThemes, setShowAllThemes] = useState(false)
 	const [showAllProducers, setShowAllProducers] = useState(false)
 
-  const getItemLabel = (item: { name: string; ru_name?: string | null }, fallbackRu?: string) => {
-    if (locale !== "ru") return item.name
-    return item.ru_name?.trim() || fallbackRu || item.name
+  const getItemLabel = (item: { name: string; ru_name?: string | null; uk_name?: string | null }, fallbackRu?: string) => {
+		if (locale === "ru") return item.ru_name?.trim() || fallbackRu || item.name
+		if (locale === "uk") return item.uk_name?.trim() || item.ru_name?.trim() || fallbackRu || item.name
+		return pickName(locale, item)
   }
 
   const toggleGenre = (genre: string) => {

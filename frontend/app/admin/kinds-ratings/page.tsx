@@ -76,13 +76,17 @@ export default function AdminKindsRatingsPage() {
 
   const [newName, setNewName] = useState("")
   const [newRuName, setNewRuName] = useState("")
+	const [newUkName, setNewUkName] = useState("")
 	const [newDescriptionEn, setNewDescriptionEn] = useState("")
 	const [newDescriptionRu, setNewDescriptionRu] = useState("")
+	const [newDescriptionUk, setNewDescriptionUk] = useState("")
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editingName, setEditingName] = useState("")
   const [editingRuName, setEditingRuName] = useState("")
+	const [editingUkName, setEditingUkName] = useState("")
 	const [editingDescriptionEn, setEditingDescriptionEn] = useState("")
 	const [editingDescriptionRu, setEditingDescriptionRu] = useState("")
+	const [editingDescriptionUk, setEditingDescriptionUk] = useState("")
 
   const supportsRussianName = useMemo(() => {
     return tab === "genres" || tab === "themes" || tab === "statuses" || tab === "sources" || tab === "kinds"
@@ -149,20 +153,24 @@ export default function AdminKindsRatingsPage() {
     }
   }, [])
 
-  const startEdit = (id: number, name: string, ruName: string, descriptionEn: string, descriptionRu: string) => {
+  const startEdit = (id: number, name: string, ruName: string, ukName: string, descriptionEn: string, descriptionRu: string, descriptionUk: string) => {
     setEditingId(id)
     setEditingName(name)
     setEditingRuName(ruName)
+		setEditingUkName(ukName)
 		setEditingDescriptionEn(descriptionEn)
 		setEditingDescriptionRu(descriptionRu)
+		setEditingDescriptionUk(descriptionUk)
   }
 
   const cancelEdit = () => {
     setEditingId(null)
     setEditingName("")
     setEditingRuName("")
+		setEditingUkName("")
 		setEditingDescriptionEn("")
 		setEditingDescriptionRu("")
+		setEditingDescriptionUk("")
   }
 
 	const translateThemesFromEn = async () => {
@@ -184,26 +192,28 @@ export default function AdminKindsRatingsPage() {
   const saveEdit = async () => {
     const name = editingName.trim()
     const ru_name = supportsRussianName ? (editingRuName.trim() || null) : null
+		const uk_name = supportsRussianName ? (editingUkName.trim() || null) : null
 		const description_en = supportsDescriptions ? (editingDescriptionEn.trim() || null) : null
 		const description_ru = supportsDescriptions ? (editingDescriptionRu.trim() || null) : null
+		const description_uk = supportsDescriptions ? (editingDescriptionUk.trim() || null) : null
     if (!editingId || !name) return
     setSaving(true)
     setError(null)
     try {
       if (tab === "kinds") {
-        const updated = await adminUpdateKind({ id: editingId, name, ru_name })
+        const updated = await adminUpdateKind({ id: editingId, name, ru_name, uk_name })
         setKinds((prev) => (prev ? prev.map((x) => (x.id === updated.id ? updated : x)).sort((a, b) => a.name.localeCompare(b.name)) : prev))
       } else if (tab === "ratings") {
-        const updated = await adminUpdateRating({ id: editingId, name, description_en, description_ru })
+        const updated = await adminUpdateRating({ id: editingId, name, description_en, description_ru, description_uk })
         setRatings((prev) => (prev ? prev.map((x) => (x.id === updated.id ? updated : x)).sort((a, b) => a.name.localeCompare(b.name)) : prev))
       } else if (tab === "genres") {
-        const updated = await adminUpdateGenre({ id: editingId, name, ru_name, description_en, description_ru })
+        const updated = await adminUpdateGenre({ id: editingId, name, ru_name, uk_name, description_en, description_ru, description_uk })
         setGenres((prev) => (prev ? prev.map((x) => (x.id === updated.id ? updated : x)).sort((a, b) => a.name.localeCompare(b.name)) : prev))
       } else if (tab === "themes") {
-        const updated = await adminUpdateTheme({ id: editingId, name, ru_name, description_en, description_ru })
+        const updated = await adminUpdateTheme({ id: editingId, name, ru_name, uk_name, description_en, description_ru, description_uk })
         setThemes((prev) => (prev ? prev.map((x) => (x.id === updated.id ? updated : x)).sort((a, b) => a.name.localeCompare(b.name)) : prev))
       } else if (tab === "statuses") {
-        const updated = await adminUpdateStatus({ id: editingId, name, ru_name })
+        const updated = await adminUpdateStatus({ id: editingId, name, ru_name, uk_name })
         setStatuses((prev) => (prev ? prev.map((x) => (x.id === updated.id ? updated : x)).sort((a, b) => a.name.localeCompare(b.name)) : prev))
       } else if (tab === "studios") {
         const updated = await adminUpdateStudio({ id: editingId, name })
@@ -212,7 +222,7 @@ export default function AdminKindsRatingsPage() {
         const updated = await adminUpdateProducer({ id: editingId, name })
         setProducers((prev) => (prev ? prev.map((x) => (x.id === updated.id ? updated : x)).sort((a, b) => a.name.localeCompare(b.name)) : prev))
       } else {
-        const updated = await adminUpdateSource({ id: editingId, name, ru_name })
+        const updated = await adminUpdateSource({ id: editingId, name, ru_name, uk_name })
         setSources((prev) => (prev ? prev.map((x) => (x.id === updated.id ? updated : x)).sort((a, b) => a.name.localeCompare(b.name)) : prev))
       }
       cancelEdit()
@@ -226,26 +236,28 @@ export default function AdminKindsRatingsPage() {
   const create = async () => {
     const name = newName.trim()
     const ru_name = supportsRussianName ? (newRuName.trim() || null) : null
+		const uk_name = supportsRussianName ? (newUkName.trim() || null) : null
 		const description_en = supportsDescriptions ? (newDescriptionEn.trim() || null) : null
 		const description_ru = supportsDescriptions ? (newDescriptionRu.trim() || null) : null
+		const description_uk = supportsDescriptions ? (newDescriptionUk.trim() || null) : null
     if (!name) return
     setSaving(true)
     setError(null)
     try {
       if (tab === "kinds") {
-        const created = await adminCreateKind({ name, ru_name })
+        const created = await adminCreateKind({ name, ru_name, uk_name })
         setKinds((prev) => ([...(prev || []), created].sort((a, b) => a.name.localeCompare(b.name))))
       } else if (tab === "ratings") {
-        const created = await adminCreateRating({ name, description_en, description_ru })
+        const created = await adminCreateRating({ name, description_en, description_ru, description_uk })
         setRatings((prev) => ([...(prev || []), created].sort((a, b) => a.name.localeCompare(b.name))))
       } else if (tab === "genres") {
-        const created = await adminCreateGenre({ name, ru_name, description_en, description_ru })
+        const created = await adminCreateGenre({ name, ru_name, uk_name, description_en, description_ru, description_uk })
         setGenres((prev) => ([...(prev || []), created].sort((a, b) => a.name.localeCompare(b.name))))
       } else if (tab === "themes") {
-        const created = await adminCreateTheme({ name, ru_name, description_en, description_ru })
+        const created = await adminCreateTheme({ name, ru_name, uk_name, description_en, description_ru, description_uk })
         setThemes((prev) => ([...(prev || []), created].sort((a, b) => a.name.localeCompare(b.name))))
       } else if (tab === "statuses") {
-        const created = await adminCreateStatus({ name, ru_name })
+        const created = await adminCreateStatus({ name, ru_name, uk_name })
         setStatuses((prev) => ([...(prev || []), created].sort((a, b) => a.name.localeCompare(b.name))))
       } else if (tab === "studios") {
         const created = await adminCreateStudio({ name })
@@ -254,13 +266,15 @@ export default function AdminKindsRatingsPage() {
         const created = await adminCreateProducer({ name })
         setProducers((prev) => ([...(prev || []), created].sort((a, b) => a.name.localeCompare(b.name))))
       } else {
-        const created = await adminCreateSource({ name, ru_name })
+        const created = await adminCreateSource({ name, ru_name, uk_name })
         setSources((prev) => ([...(prev || []), created].sort((a, b) => a.name.localeCompare(b.name))))
       }
       setNewName("")
 	  setNewRuName("")
+		setNewUkName("")
 		setNewDescriptionEn("")
 		setNewDescriptionRu("")
+		setNewDescriptionUk("")
     } catch (e: any) {
       setError(e.message || "Failed to create")
     } finally {
@@ -633,6 +647,15 @@ export default function AdminKindsRatingsPage() {
               />
             ) : null}
 
+			{supportsRussianName ? (
+				<input
+					value={newUkName}
+					onChange={(e) => setNewUkName(e.target.value)}
+					placeholder="Ukrainian name (UA)"
+					className="w-full h-11 rounded-xl bg-background border border-border/60 px-4 text-sm text-foreground outline-none focus:border-primary/50"
+				/>
+			) : null}
+
 			{supportsDescriptions ? (
 				<>
 					<textarea
@@ -645,6 +668,12 @@ export default function AdminKindsRatingsPage() {
 						value={newDescriptionRu}
 						onChange={(e) => setNewDescriptionRu(e.target.value)}
 						placeholder="Описание (RU)"
+						className="w-full min-h-24 rounded-xl bg-background border border-border/60 px-4 py-3 text-sm text-foreground outline-none focus:border-primary/50"
+					/>
+					<textarea
+						value={newDescriptionUk}
+						onChange={(e) => setNewDescriptionUk(e.target.value)}
+						placeholder="Опис (UA)"
 						className="w-full min-h-24 rounded-xl bg-background border border-border/60 px-4 py-3 text-sm text-foreground outline-none focus:border-primary/50"
 					/>
 				</>
@@ -698,6 +727,14 @@ export default function AdminKindsRatingsPage() {
                             className="w-full h-10 rounded-xl bg-background border border-border/60 px-3 text-sm text-foreground outline-none focus:border-primary/50"
                           />
                         ) : null}
+						{supportsRussianName ? (
+							<input
+								value={editingUkName}
+								onChange={(e) => setEditingUkName(e.target.value)}
+								placeholder="Ukrainian name (UA)"
+								className="w-full h-10 rounded-xl bg-background border border-border/60 px-3 text-sm text-foreground outline-none focus:border-primary/50"
+							/>
+						) : null}
 						{supportsDescriptions ? (
 							<>
 								<textarea
@@ -712,6 +749,12 @@ export default function AdminKindsRatingsPage() {
 									placeholder="Описание (RU)"
 									className="w-full min-h-24 rounded-xl bg-background border border-border/60 px-3 py-2 text-sm text-foreground outline-none focus:border-primary/50"
 								/>
+								<textarea
+									value={editingDescriptionUk}
+									onChange={(e) => setEditingDescriptionUk(e.target.value)}
+								placeholder="Опис (UA)"
+									className="w-full min-h-24 rounded-xl bg-background border border-border/60 px-3 py-2 text-sm text-foreground outline-none focus:border-primary/50"
+								/>
 							</>
 						) : null}
                       </div>
@@ -721,6 +764,9 @@ export default function AdminKindsRatingsPage() {
                         {supportsRussianName && "ru_name" in item && item.ru_name ? (
                           <div className="text-xs text-foreground-subtle truncate">{String(item.ru_name)}</div>
                         ) : null}
+						{supportsRussianName && "uk_name" in item && item.uk_name ? (
+							<div className="text-xs text-foreground-subtle truncate">{String(item.uk_name)}</div>
+						) : null}
                       </div>
                     )}
                   </div>
@@ -757,8 +803,11 @@ export default function AdminKindsRatingsPage() {
 									item.id,
 									item.name,
 									("ru_name" in item && item.ru_name ? String(item.ru_name) : ""),
+								("uk_name" in item && item.uk_name ? String(item.uk_name) : ""),
 									("description_en" in item && item.description_en ? String(item.description_en) : ""),
 									("description_ru" in item && item.description_ru ? String(item.description_ru) : "")
+								,
+								("description_uk" in item && item.description_uk ? String(item.description_uk) : "")
 								)
 							}
                           className="rounded-lg border border-border/60 bg-background px-3 py-2 text-xs font-semibold text-foreground-muted hover:text-foreground"

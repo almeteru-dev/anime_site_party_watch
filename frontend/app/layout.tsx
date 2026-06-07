@@ -44,7 +44,7 @@ export default function RootLayout({
   const enableVercelAnalytics = process.env.NEXT_PUBLIC_ENABLE_VERCEL_ANALYTICS === "1"
 
   return (
-    <html lang="en" className="bg-background" suppressHydrationWarning>
+    <html lang="ru" className="bg-background" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem storageKey="ll_theme">
           <AuthProvider>

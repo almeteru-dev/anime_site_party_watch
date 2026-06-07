@@ -7,7 +7,7 @@ export type CreateUserForm = {
   username: string
   email: string
   password: string
-  role: "user" | "moderator" | "admin"
+	role: "user" | "moderator" | "admin"
 }
 
 export function CreateUserModal(props: {
@@ -20,7 +20,7 @@ export function CreateUserModal(props: {
   onChange: (next: CreateUserForm) => void
   onSubmit: () => void
 }) {
-  const canCreateAdmin = props.currentRole === "root"
+	const canCreateAdmin = props.currentRole === "root"
   return (
     <Modal open={props.open} title="Create user" onClose={props.onClose}>
       <div className="space-y-4">

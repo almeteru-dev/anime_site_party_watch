@@ -86,12 +86,16 @@ export function AnimeCard({
   const statusLabel = anime.status
     ? locale === "ru"
       ? anime.status.ru_name || (t.catalog.filters.statusValues as Record<string, string>)[anime.status.name] || anime.status.name
+		: locale === "uk"
+		? anime.status.uk_name || anime.status.ru_name || (t.catalog.filters.statusValues as Record<string, string>)[anime.status.name] || anime.status.name
       : anime.status.name
     : null
 
   const kindLabel =
     locale === "ru"
       ? anime.kind_ru_name || (t.catalog.filters.typeValues as Record<string, string>)[anime.kind] || anime.kind
+		: locale === "uk"
+		? anime.kind_uk_name || anime.kind_ru_name || (t.catalog.filters.typeValues as Record<string, string>)[anime.kind] || anime.kind
       : anime.kind
   
   // Get current status styling
@@ -227,7 +231,7 @@ export function AnimeCard({
                   key={`genre-${genre.id}`}
                   className="rounded-md bg-background-secondary/80 px-2 py-0.5 text-[10px] font-medium text-foreground-muted backdrop-blur-sm"
                 >
-                  {locale === "ru" ? genre.ru_name || genre.name : genre.name}
+							{locale === "uk" ? genre.uk_name || genre.ru_name || genre.name : locale === "ru" ? genre.ru_name || genre.name : genre.name}
                 </span>
               ))}
               {displayThemes.map(theme => (
@@ -235,7 +239,7 @@ export function AnimeCard({
                   key={`theme-${theme.id}`}
                   className="rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-medium text-primary backdrop-blur-sm"
                 >
-                  {locale === "ru" ? theme.ru_name || theme.name : theme.name}
+							{locale === "uk" ? theme.uk_name || theme.ru_name || theme.name : locale === "ru" ? theme.ru_name || theme.name : theme.name}
                 </span>
               ))}
             </div>
