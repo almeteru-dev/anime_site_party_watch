@@ -48,39 +48,41 @@ func Seed(db *gorm.DB) {
 	db.Where("code = ?", "ru").First(&ru)
 	db.Where("code = ?", "en").First(&en)
 
-	// 1.5. Admin User (Clean up and ensure only one root exists)
-	log.Println("Ensuring single root admin user...")
+	// 1.5. Admin User (Ensure root admin exists)
+	log.Println("Checking admin user...")
 
-	// 1. Delete all users except the target root admin
 	targetEmail := "admin@lycoris.tv"
-	db.Unscoped().Where("email <> ?", targetEmail).Delete(&models.User{})
+	var existingAdmin models.User
+	err := db.Where("email = ?", targetEmail).First(&existingAdmin).Error
 
-	hashedPassword, err := security.HashPassword("admin")
 	if err != nil {
-		log.Fatalf("Failed to hash default admin password: %v", err)
-	}
-
-	adminUser := models.User{
-		Username:     "admin",
-		Email:        targetEmail,
-		PasswordHash: hashedPassword,
-		Role:         "root",
-		IsVerified:   true,
-	}
-
-	// 2. Create or Update the admin user
-	if err := db.Where(models.User{Email: targetEmail}).First(&adminUser).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			db.Create(&adminUser)
+			log.Println("Creating default root admin...")
+			hashedPassword, err := security.HashPassword("admin")
+			if err != nil {
+				log.Fatalf("Failed to hash default admin password: %v", err)
+			}
+			adminUser := models.User{
+				Username:     "admin",
+				Email:        targetEmail,
+				PasswordHash: hashedPassword,
+				Role:         "root",
+				IsVerified:   true,
+			}
+			if err := db.Create(&adminUser).Error; err != nil {
+				log.Printf("Warning: Failed to create admin user: %v", err)
+			}
 		} else {
-			log.Fatalf("Failed to query admin user: %v", err)
+			log.Printf("Error querying admin user: %v", err)
 		}
 	} else {
-		// If user exists, ensure they are root and verified
-		db.Model(&adminUser).Updates(map[string]interface{}{
-			"role":        "root",
-			"is_verified": true,
-		})
+		// Ensure existing admin has correct role and verification status
+		if existingAdmin.Role != "root" || !existingAdmin.IsVerified {
+			db.Model(&existingAdmin).Updates(map[string]interface{}{
+				"role":        "root",
+				"is_verified": true,
+			})
+		}
 	}
 
 	// 1.6. Collection Types
