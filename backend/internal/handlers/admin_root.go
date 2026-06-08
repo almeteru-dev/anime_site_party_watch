@@ -59,7 +59,7 @@ func AdminTransferRoot(c *gin.Context) {
 		return
 	}
 	if legacy {
-		// Optional migration: upgrade old (no-pepper) password hash after a successful verification.
+		// Optional migration: upgrade old (peppered) password hash after a successful verification.
 		if newHash, err := security.HashPassword(password); err == nil {
 			_ = app.DB.Model(&models.User{}).Where("id = ?", requester.ID).Update("password_hash", newHash).Error
 		}

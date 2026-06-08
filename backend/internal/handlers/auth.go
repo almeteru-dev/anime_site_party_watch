@@ -337,7 +337,7 @@ func Login(c *gin.Context) {
 		return
 	}
 	if legacy {
-		// Seamless migration: re-hash with pepper+sha256+bcrypt(cost=12) after a successful legacy login.
+		// Seamless migration: re-hash with standard bcrypt(cost=12) after a successful login with old peppered hash.
 		if newHash, err := security.HashPassword(input.Password); err == nil {
 			_ = app.DB.Model(&models.User{}).Where("id = ?", user.ID).Update("password_hash", newHash).Error
 		}

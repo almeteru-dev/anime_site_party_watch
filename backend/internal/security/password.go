@@ -12,18 +12,9 @@ import (
 // We use an explicit value to avoid unexpected changes in DefaultCost.
 const PasswordHashCost = 12
 
-// prehashPassword returns SHA256(password + pepper) in hex form.
-// Pepper is a secret global value stored in env var PEPPER_PASS.
-func prehashPassword(password string) string {
-	pepper := config.AppConfig.PEPPER_PASS
-	sum := sha256.Sum256([]byte(password + pepper))
-	return hex.EncodeToString(sum[:])
-}
-
-// HashPassword hashes a password using pepper+sha256 prehash and bcrypt.
+// HashPassword hashes a password using standard bcrypt.
 func HashPassword(password string) (string, error) {
-	pre := prehashPassword(password)
-	h, err := bcrypt.GenerateFromPassword([]byte(pre), PasswordHashCost)
+	h, err := bcrypt.GenerateFromPassword([]byte(password), PasswordHashCost)
 	if err != nil {
 		return "", err
 	}
@@ -31,23 +22,28 @@ func HashPassword(password string) (string, error) {
 }
 
 // VerifyPassword checks password against hash.
-// It supports a legacy mode where password was fed directly into bcrypt (no pepper).
+// It supports a transition mode where the old password was pre-hashed with SHA256 + Pepper.
 // Return values:
 // - ok: the password matches
-// - legacy: match used the legacy (no-pepper) scheme
+// - legacy: match used the old peppered scheme (should be re-hashed)
 func VerifyPassword(hash string, password string) (ok bool, legacy bool) {
 	if hash == "" {
 		return false, false
 	}
 
-	pre := prehashPassword(password)
-	if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(pre)); err == nil {
+	// 1. Try standard bcrypt (the new/current way)
+	if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)); err == nil {
 		return true, false
 	}
 
-	// Legacy fallback: bcrypt(hash, rawPassword)
-	if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)); err == nil {
-		return true, true
+	// 2. Try old peppered scheme (if PEPPER_PASS is still available in config)
+	// This allows users to login and have their hash updated to the standard one.
+	if pepper := config.AppConfig.PEPPER_PASS; pepper != "" {
+		sum := sha256.Sum256([]byte(password + pepper))
+		pre := hex.EncodeToString(sum[:])
+		if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(pre)); err == nil {
+			return true, true
+		}
 	}
 
 	return false, false

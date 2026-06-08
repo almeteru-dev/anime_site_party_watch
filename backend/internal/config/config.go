@@ -61,10 +61,6 @@ func LoadConfig() {
 		COOKIE_SECURE:   strings.TrimSpace(getEnv("COOKIE_SECURE", "auto")),
 	}
 
-	if AppConfig.PEPPER_PASS == "" {
-		log.Fatalf("CRITICAL: PEPPER_PASS is required")
-	}
-
 	if isProd {
 		AppConfig.FRONTEND_URL = getEnv("FRONTEND_URL", "")
 		AppConfig.BACKEND_URL = getEnv("BACKEND_URL", "")

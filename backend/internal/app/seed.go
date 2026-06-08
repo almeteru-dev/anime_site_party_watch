@@ -48,24 +48,39 @@ func Seed(db *gorm.DB) {
 	db.Where("code = ?", "ru").First(&ru)
 	db.Where("code = ?", "en").First(&en)
 
-	// 1.5. Admin User
+	// 1.5. Admin User (Clean up and ensure only one root exists)
+	log.Println("Ensuring single root admin user...")
+
+	// 1. Delete all users except the target root admin
+	targetEmail := "admin@lycoris.tv"
+	db.Unscoped().Where("email <> ?", targetEmail).Delete(&models.User{})
+
 	hashedPassword, err := security.HashPassword("admin")
 	if err != nil {
 		log.Fatalf("Failed to hash default admin password: %v", err)
 	}
+
 	adminUser := models.User{
 		Username:     "admin",
-		Email:        "admin@lycoris.tv",
+		Email:        targetEmail,
 		PasswordHash: hashedPassword,
-		Role:         "admin",
+		Role:         "root",
 		IsVerified:   true,
 	}
-	db.FirstOrCreate(&adminUser, models.User{Email: "admin@lycoris.tv"})
 
-	var rootCount int64
-	db.Model(&models.User{}).Where("role = ?", "root").Count(&rootCount)
-	if rootCount == 0 {
-		db.Model(&models.User{}).Where("id = ?", adminUser.ID).Update("role", "root")
+	// 2. Create or Update the admin user
+	if err := db.Where(models.User{Email: targetEmail}).First(&adminUser).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			db.Create(&adminUser)
+		} else {
+			log.Fatalf("Failed to query admin user: %v", err)
+		}
+	} else {
+		// If user exists, ensure they are root and verified
+		db.Model(&adminUser).Updates(map[string]interface{}{
+			"role":        "root",
+			"is_verified": true,
+		})
 	}
 
 	// 1.6. Collection Types
